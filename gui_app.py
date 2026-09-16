@@ -2709,10 +2709,11 @@ class J360MoreApp:
             active_vars = []
             for v_name, v_cfg in g.get("env_vars", {}).items():
                 if isinstance(v_cfg, dict) and v_cfg.get("enabled", False):
-                    val = v_cfg.get("value", "1")
                     if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
+                        val = str(self.config.get("max_controllers", 8))
                         active_vars.append(f"FNA({val})")
                     else:
+                        val = v_cfg.get("value", "1")
                         clean_n = v_name.replace("SDL_JOYSTICK_", "").replace("SDL_", "")
                         active_vars.append(f"{clean_n}={val}")
             env_summary = ", ".join(active_vars) if active_vars else "Ninguna"
@@ -2750,14 +2751,15 @@ class J360MoreApp:
         game_data = games_list[game_index] if (is_edit and 0 <= game_index < len(games_list)) else {}
 
         dlg = tk.Toplevel(self.root)
-        dlg.title(self.t("dlg_edit_game") if is_edit else self.t("dlg_add_game"))
-        dlg.geometry("620x540")
+        dlg.title(self.t("dialog_edit_game") if is_edit else self.t("dialog_add_game"))
+        dlg.geometry("640x520")
         dlg.resizable(False, False)
         dlg.transient(self.root)
         dlg.grab_set()
 
-        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 310)
-        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 270)
+        # Centrar sobre la ventana principal
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 320)
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 260)
         dlg.geometry(f"+{x}+{y}")
 
         frame = ttk.Frame(dlg, padding=14)
@@ -2816,7 +2818,7 @@ class J360MoreApp:
         # Definición de variables estándar
         default_max = str(self.config.get("max_controllers", 8))
         env_specs = [
-            ("FNA_GAMEPAD_NUM_GAMEPADS", True, default_max, "Permite más de 4 mandos en juegos desarrollados con FNA / MonoGame"),
+            ("FNA_GAMEPAD_NUM_GAMEPADS", True, default_max, f"Ajustado según mandos virtuales a emular ({default_max} mandos)"),
             ("SDL_JOYSTICK_DIRECTINPUT", True, "1", "Habilita la enumeración mediante la API DirectInput de Windows"),
             ("SDL_JOYSTICK_RAWINPUT", True, "1", "Habilita la lectura de hardware mediante RawInput de Windows"),
             ("SDL_JOYSTICK_RAWINPUT_CORRELATE_XINPUT", True, "0", "Evita que SDL correlacione y bloquee mandos mediante el límite XInput"),
@@ -2832,22 +2834,23 @@ class J360MoreApp:
         for v_name, def_en, def_val, desc in env_specs:
             v_saved = saved_envs.get(v_name, {})
             is_enabled = v_saved.get("enabled", def_en) if isinstance(v_saved, dict) else def_en
-            val_str = v_saved.get("value", def_val) if isinstance(v_saved, dict) else def_val
 
             row = ttk.Frame(chk_container)
             row.pack(fill=tk.X, pady=1)
 
             c_var = tk.BooleanVar(value=is_enabled)
-            val_holder = tk.StringVar(value=val_str)
+            val_holder = tk.StringVar(value=default_max if v_name == "FNA_GAMEPAD_NUM_GAMEPADS" else def_val)
 
             chk = ttk.Checkbutton(row, text=v_name, variable=c_var)
             chk.pack(side=tk.LEFT, padx=(0, 6))
 
             if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
-                cb_fna = ttk.Combobox(row, textvariable=val_holder, values=["4", "6", "8", "10", "12", "16"], width=4, state="readonly")
-                cb_fna.pack(side=tk.LEFT, padx=2)
+                lbl_val = ttk.Label(row, text=f'= "{default_max}"', font=("Segoe UI", 8, "bold"), foreground="#0066cc")
+                lbl_val.pack(side=tk.LEFT, padx=2)
+                lbl_auto = ttk.Label(row, text=f"({default_max} en Ajustes)", font=("Segoe UI", 7, "italic"), foreground="#008800")
+                lbl_auto.pack(side=tk.LEFT, padx=2)
             else:
-                lbl_val = ttk.Label(row, text=f'= "{val_str}"', font=("Segoe UI", 8, "bold"), foreground="#0066cc")
+                lbl_val = ttk.Label(row, text=f'= "{def_val}"', font=("Segoe UI", 8, "bold"), foreground="#0066cc")
                 lbl_val.pack(side=tk.LEFT, padx=2)
 
             lbl_desc = ttk.Label(row, text=f"({desc})", font=("Segoe UI", 7), foreground="#777777")
@@ -2868,9 +2871,10 @@ class J360MoreApp:
 
             built_env = {}
             for v_name, (c_var, val_var) in env_checkboxes.items():
+                val_to_save = str(self.config.get("max_controllers", 8)) if v_name == "FNA_GAMEPAD_NUM_GAMEPADS" else str(val_var.get())
                 built_env[v_name] = {
                     "enabled": bool(c_var.get()),
-                    "value": str(val_var.get())
+                    "value": val_to_save
                 }
 
             entry_dict = {
@@ -2916,7 +2920,8 @@ class J360MoreApp:
             ]
             for v_name, (c_var, val_var) in env_checkboxes.items():
                 if c_var.get():
-                    bat_lines.append(f"set {v_name}={val_var.get()}")
+                    val_to_write = str(self.config.get("max_controllers", 8)) if v_name == "FNA_GAMEPAD_NUM_GAMEPADS" else str(val_var.get())
+                    bat_lines.append(f"set {v_name}={val_to_write}")
 
             args_str = f" {args_var.get().strip()}" if args_var.get().strip() else ""
             bat_lines.append(f"start \"\" \"{p_str}\"{args_str}")
@@ -2959,7 +2964,10 @@ class J360MoreApp:
         env = os.environ.copy()
         for v_name, v_cfg in game.get("env_vars", {}).items():
             if isinstance(v_cfg, dict) and v_cfg.get("enabled", False):
-                env[v_name] = str(v_cfg.get("value", "1"))
+                if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
+                    env[v_name] = str(self.config.get("max_controllers", 8))
+                else:
+                    env[v_name] = str(v_cfg.get("value", "1"))
 
         working_dir = game.get("working_dir") or os.path.dirname(exe_path)
         if not os.path.exists(working_dir):
