@@ -1,12 +1,14 @@
 import os
 import time
 import ctypes
+import threading
 from typing import Dict, List, Optional, Tuple, Any, Set
 
 # Permitir ejecucion de pygame sin crear ventana grafica propia
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
 import pygame
 from driver_manager import DriverManager
+from raw_keyboard import RawKeyboardManager
 
 # Inicializar subsistema de joystick de pygame
 pygame.init()
@@ -60,6 +62,8 @@ def _get_present_pnp_device_instance_paths() -> List[str]:
 class DeviceManager:
     def __init__(self, driver_manager: Optional[DriverManager] = None):
         self.driver_manager = driver_manager or DriverManager()
+        self.keyboard_manager = RawKeyboardManager.get_instance()
+        self.keyboard_manager.start()
         self.joysticks: Dict[int, pygame.joystick.Joystick] = {}
         self._cancel_capture = False
         self._physical_map: Dict[str, int] = {}  # Mapea 'joy_0', 'joy_1' al índice SDL real
@@ -81,6 +85,13 @@ class DeviceManager:
     def cancel_capture(self):
         """Cancela inmediatamente cualquier proceso de captura en curso."""
         self._cancel_capture = True
+        if hasattr(self, "keyboard_manager") and self.keyboard_manager:
+            self.keyboard_manager.cancel_capture()
+
+    def stop(self):
+        """Detiene el gestor de teclados y libera recursos."""
+        if hasattr(self, "keyboard_manager") and self.keyboard_manager:
+            self.keyboard_manager.stop()
 
     def _is_virtual_gamepad(self, joy: pygame.joystick.Joystick) -> bool:
         """Determina si un joystick es un mando virtual creado por ViGEmBus."""
@@ -124,23 +135,40 @@ class DeviceManager:
             },
             {
                 "id": "keyboard",
-                "name": "Teclado (Mapeo de Teclas)",
+                "name": "⌨ Teclado (Cualquiera / Global)",
                 "type": "keyboard",
-                "vendor_name": "(Dispositivos de sistema estándar)",
-                "product_name": "Teclado del Sistema",
-                "instance_id": "6F1D2B61",
-                "conn_type": "SYS"
-            },
-            {
-                "id": "mouse",
-                "name": "Mouse (Puntero / Botones)",
-                "type": "mouse",
-                "vendor_name": "(Dispositivos de sistema estándar)",
-                "product_name": "Mouse del Sistema",
-                "instance_id": "6F1D2B60",
+                "vendor_name": "(Sistema)",
+                "product_name": "Cualquier Teclado",
+                "instance_id": "GLOBAL",
                 "conn_type": "SYS"
             }
         ]
+
+        # Enumerar teclados físicos individuales vía Windows Raw Input
+        if hasattr(self, "keyboard_manager") and self.keyboard_manager:
+            raw_keyboards = self.keyboard_manager.refresh_devices()
+            for idx, k in enumerate(raw_keyboards):
+                conn_lbl = "USB" if k["conn_type"] == "USB" else ("Bluetooth" if k["conn_type"] in ("BT", "BTH") else ("Interno" if k["conn_type"] == "INT" else k["conn_type"]))
+                device_list.append({
+                    "id": k["id"],
+                    "name": f"⌨ Teclado {idx + 1}: {k['product_name']} ({conn_lbl})",
+                    "type": "keyboard",
+                    "vendor_name": k.get("vendor_name", "(Genérico)"),
+                    "product_name": k.get("product_name", "Teclado"),
+                    "instance_id": k.get("instance_id", "KBD"),
+                    "conn_type": k.get("conn_type", "USB"),
+                    "instance_path": k.get("path", "")
+                })
+
+        device_list.append({
+            "id": "mouse",
+            "name": "Mouse (Puntero / Botones)",
+            "type": "mouse",
+            "vendor_name": "(Dispositivos de sistema estándar)",
+            "product_name": "Mouse del Sistema",
+            "instance_id": "6F1D2B60",
+            "conn_type": "SYS"
+        })
 
         count = pygame.joystick.get_count()
         phys_idx = 0
@@ -369,7 +397,8 @@ class DeviceManager:
         state = {
             "buttons": {},
             "axes": {},
-            "hats": {}
+            "hats": {},
+            "keys": set()
         }
 
         if dev_id.startswith("joy_"):
@@ -390,6 +419,15 @@ class DeviceManager:
                 if not self._pending_hotplug_check:
                     self._pending_hotplug_check = True
                     self._last_hotplug_event_time = time.time()
+        elif dev_id.startswith("kbd_"):
+            if hasattr(self, "keyboard_manager") and self.keyboard_manager:
+                state["keys"] = self.keyboard_manager.get_pressed_keys(dev_id)
+        elif dev_id == "keyboard":
+            if hasattr(self, "keyboard_manager") and self.keyboard_manager:
+                all_k = set()
+                for k in self.keyboard_manager.get_available_keyboards():
+                    all_k.update(self.keyboard_manager.get_pressed_keys(k["id"]))
+                state["keys"] = all_k
 
         return state
 
@@ -402,9 +440,31 @@ class DeviceManager:
             return None
 
         self._cancel_capture = False
-        self.pump_events()
-
         start_time = time.time()
+
+        # Captura de teclas para teclado físico específico o global
+        if dev_id.startswith("kbd_") or dev_id == "keyboard":
+            if not hasattr(self, "keyboard_manager") or not self.keyboard_manager:
+                return None
+            target_kbd = dev_id if dev_id.startswith("kbd_") else None
+            captured_res = [None]
+            done_ev = threading.Event()
+
+            def _on_key_captured(k_name):
+                captured_res[0] = k_name
+                done_ev.set()
+
+            self.keyboard_manager.start_capture(target_kbd, _on_key_captured)
+            while time.time() - start_time < timeout:
+                if self._cancel_capture:
+                    self.keyboard_manager.cancel_capture()
+                    return None
+                if done_ev.wait(timeout=0.03):
+                    break
+            self.keyboard_manager.cancel_capture()
+            return captured_res[0]
+
+        self.pump_events()
 
         # Guardar linea base de botones, hats y ejes para detectar movimiento relativo
         baseline_axes = {}

@@ -182,7 +182,13 @@ class EmulatorEngine:
         # 1. Mapeo a Teclado
         if mapping_str.lower().startswith("tecla: ") or mapping_str.lower().startswith("key: "):
             k = mapping_str.split(":", 1)[1].strip().lower()
-            pressed = k in self.pressed_keys
+            kbd_keys = joy_state.get("keys", set())
+            pressed = any(
+                k == pk.split(":", 1)[1].strip().lower() if ":" in pk else k == pk.lower()
+                for pk in kbd_keys
+            )
+            if not pressed and hasattr(self, "pressed_keys"):
+                pressed = k in self.pressed_keys
             return pressed, (1.0 if pressed else 0.0)
 
         # 2. Mapeo a Boton de Joystick

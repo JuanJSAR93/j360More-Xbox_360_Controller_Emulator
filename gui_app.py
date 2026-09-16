@@ -1765,7 +1765,7 @@ class J360MoreApp:
                     continue
 
                 xinput_str = ", ".join(assigned_map.get(dev["id"], []))
-                conn_icon = "🔌 USB" if dev["conn_type"] == "USB" else ("📶 BT" if dev["conn_type"] == "BT" else "⌨️ SYS")
+                conn_icon = "🔌 USB" if dev["conn_type"] == "USB" else ("📶 BT" if dev["conn_type"] in ("BT", "BTH") else ("💻 INT" if dev["conn_type"] == "INT" else "⌨️ SYS"))
                 status_str = self.t("dev_status_connected")
 
                 inst_path = dev.get("instance_path")
@@ -2993,6 +2993,8 @@ class J360MoreApp:
         if self.engine.is_running():
             self.engine.stop()
             self._unhide_emulation_devices()
+        if hasattr(self.device_manager, "stop"):
+            self.device_manager.stop()
         self.root.destroy()
 
 def run_gui():
