@@ -63,7 +63,16 @@ class DeviceManager:
         self.joysticks: Dict[int, pygame.joystick.Joystick] = {}
         self._cancel_capture = False
         self._physical_map: Dict[str, int] = {}  # Mapea 'joy_0', 'joy_1' al índice SDL real
+        self._device_cache: List[Dict[str, Any]] = []
+        self._on_devices_changed_callbacks = []
+        self._pending_hotplug_check = False
+        self._last_hotplug_event_time = 0.0
         self.refresh_devices()
+
+    def add_on_devices_changed_callback(self, callback):
+        """Registra una función callback a invocar cuando se detecta reconexión/cambio de mandos."""
+        if callback not in self._on_devices_changed_callbacks:
+            self._on_devices_changed_callbacks.append(callback)
 
     def set_excluded_virtual_indices(self, indices):
         """Compatibilidad con versiones anteriores."""
@@ -262,7 +271,27 @@ class DeviceManager:
             except Exception as e:
                 print(f"[!] Error inicializando joystick {i}: {e}")
 
+        self._device_cache = list(device_list)
         return device_list
+
+    def get_cached_devices(self) -> List[Dict[str, Any]]:
+        """Retorna la lista de dispositivos en caché sin reiniciar los joysticks."""
+        return list(self._device_cache)
+
+    def _mark_device_disconnected(self, dev_id: str, sdl_idx: Optional[int] = None):
+        """Cierra y desconecta ÚNICAMENTE el joystick indicado sin afectar a los demás."""
+        if sdl_idx is None:
+            sdl_idx = self._physical_map.get(dev_id)
+        if sdl_idx is not None and sdl_idx in self.joysticks:
+            try:
+                joy = self.joysticks[sdl_idx]
+                joy.quit()
+            except Exception:
+                pass
+            self.joysticks.pop(sdl_idx, None)
+
+        self._pending_hotplug_check = True
+        self._last_hotplug_event_time = time.time()
 
     def get_joystick(self, dev_id_or_idx) -> Optional[pygame.joystick.Joystick]:
         """Obtiene el joystick por dev_id ('joy_0') o por índice SDL numérico."""
@@ -288,11 +317,51 @@ class DeviceManager:
         return self.joysticks.get(sdl_idx)
 
     def pump_events(self):
-        """Actualiza el estado interno de eventos de pygame."""
+        """Actualiza el estado de eventos de pygame y procesa hotplug selectivo."""
         try:
-            pygame.event.pump()
+            # Procesar eventos individuales de agregación / remoción generados por SDL
+            hotplug_events = pygame.event.get([pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED])
+            if hotplug_events:
+                now = time.time()
+                for ev in hotplug_events:
+                    if ev.type == pygame.JOYDEVICEREMOVED:
+                        inst_id = getattr(ev, 'instance_id', None)
+                        # Localizar el joystick específico desconectado por su instance_id
+                        for s_idx, j in list(self.joysticks.items()):
+                            try:
+                                if j.get_instance_id() == inst_id:
+                                    try:
+                                        j.quit()
+                                    except Exception:
+                                        pass
+                                    self.joysticks.pop(s_idx, None)
+                                    break
+                            except Exception:
+                                pass
+                    elif ev.type == pygame.JOYDEVICEADDED:
+                        pass
+                self._pending_hotplug_check = True
+                self._last_hotplug_event_time = now
+
+            # Debounce: si hubo eventos de hotplug y ya pasaron ~300ms de calma USB, refrescar
+            if self._pending_hotplug_check and (time.time() - self._last_hotplug_event_time >= 0.3):
+                self._pending_hotplug_check = False
+                self._perform_selective_reconnect()
         except Exception:
             pass
+
+    def _perform_selective_reconnect(self):
+        """Re-escanea dispositivos preservando los mandos sanos y reconectando los perdidos."""
+        try:
+            new_list = self.refresh_devices()
+            # Notificar a los observadores (ej. GUI) de forma segura
+            for cb in list(self._on_devices_changed_callbacks):
+                try:
+                    cb(new_list)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"[!] Error en auto-reconexión selectiva: {e}")
 
     def read_physical_state(self, dev_id: str) -> Dict[str, Any]:
         """Lee el estado crudo actual de botones, ejes y cruceta de un dispositivo."""
@@ -304,17 +373,23 @@ class DeviceManager:
         }
 
         if dev_id.startswith("joy_"):
-            try:
-                joy = self.get_joystick(dev_id)
-                if joy and joy.get_init():
+            joy = self.get_joystick(dev_id)
+            if joy and joy.get_init():
+                try:
                     for b in range(joy.get_numbuttons()):
                         state["buttons"][b] = bool(joy.get_button(b))
                     for a in range(joy.get_numaxes()):
                         state["axes"][a] = float(joy.get_axis(a))
                     for h in range(joy.get_numhats()):
                         state["hats"][h] = joy.get_hat(h)  # (x, y)
-            except Exception:
-                pass
+                except Exception:
+                    # Falla de lectura (handle roto por micro-desconexión en este mando específico)
+                    self._mark_device_disconnected(dev_id)
+            else:
+                # El mando no está inicializado o está ausente
+                if not self._pending_hotplug_check:
+                    self._pending_hotplug_check = True
+                    self._last_hotplug_event_time = time.time()
 
         return state
 

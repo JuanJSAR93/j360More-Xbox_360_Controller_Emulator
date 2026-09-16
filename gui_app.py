@@ -232,6 +232,7 @@ class J360MoreApp:
         self._load_assets()
         self._build_ui()
         self._refresh_all_devices()
+        self.device_manager.add_on_devices_changed_callback(lambda devs: self.root.after(0, self._on_devices_hotplugged, devs))
 
         # Comprobar estado de drivers (ViGEmBus y aviso leve de HidHide)
         self.root.after(200, self._check_system_drivers)
@@ -1057,6 +1058,38 @@ class J360MoreApp:
 
             has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
             self._update_tab_state(pad_id, has_dev)
+
+    def _on_devices_hotplugged(self, new_devices: List[Dict[str, Any]]):
+        """Manejador ejecutado en el hilo de la UI cuando el DeviceManager auto-reconecta mandos."""
+        try:
+            self.available_devices = new_devices
+            dev_names = []
+            for d in self.available_devices:
+                if d["id"] == "none":
+                    dev_names.append(self.t("none_disconnected"))
+                elif d["id"] == "keyboard":
+                    dev_names.append(self.t("keyboard_device_name"))
+                else:
+                    dev_names.append(d["name"])
+
+            for pad_id, widgets in self.tab_widgets.items():
+                cb = widgets["dev_combo"]
+                cb["values"] = dev_names
+
+                cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+                saved_dev_id = cfg.get("physical_device_id", "none")
+
+                match_idx = 0
+                for idx, dev in enumerate(self.available_devices):
+                    if dev["id"] == saved_dev_id:
+                        match_idx = idx
+                        break
+                cb.current(match_idx)
+
+                has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
+                self._update_tab_state(pad_id, has_dev)
+        except Exception:
+            pass
 
     def _on_device_selected(self, pad_id: int):
         widgets = self.tab_widgets[pad_id]
