@@ -416,11 +416,13 @@ class J360MoreApp:
                                 "mappings": dict(DEFAULT_MAPPINGS),
                                 "calibration": json.loads(json.dumps(DEFAULT_CALIBRATION))
                             }
+                    if "games" not in data or not isinstance(data["games"], list):
+                        data["games"] = []
                     return data
             except Exception as e:
                 print(f"[!] Error leyendo {CONFIG_FILE}: {e}")
 
-        cfg = {"version": "2.0", "author": "JuanJSAR", "language": "es", "max_controllers": 8, "controllers": {}}
+        cfg = {"version": "2.0", "author": "JuanJSAR", "language": "es", "max_controllers": 8, "games": [], "controllers": {}}
         for i in range(1, 13):
             cfg["controllers"][str(i)] = {
                 "name": f"Jugador {i}",
@@ -521,13 +523,18 @@ class J360MoreApp:
 
         for i in range(1, count + 1):
             tab = ttk.Frame(self.notebook, padding=4)
-            tab_text = self.t("tab_c", i=i) if count > 8 else self.t("tab_control", i=i)
+            tab_text = self.t("tab_control", i=i)
             self.notebook.add(tab, text=f" {tab_text} ")
             self.tab_frames[i] = tab
             self._build_tab_content(i, tab)
 
+        # Pestaña fija de Juegos al extremo derecho
+        self.tab_games = ttk.Frame(self.notebook, padding=6)
+        self.notebook.add(self.tab_games, text=f" {self.t('tab_games')} ")
+        self._build_games_tab(self.tab_games)
+
         if count > 0:
-            target_idx = min(cur_idx, count - 1)
+            target_idx = min(cur_idx, count)  # permitir seleccionar pestaña de juegos si estaba activa
             self.notebook.select(target_idx)
 
         if hasattr(self, "title_lbl"):
@@ -1934,8 +1941,10 @@ class J360MoreApp:
                         cb.current(idx)
                         self._on_device_selected(cur_pad_id)
                         break
-            populate_tree()
-            messagebox.showinfo(self.t("dev_dlg_title"), self.t("dev_assign_success", id=cur_pad_id))
+                populate_tree()
+                messagebox.showinfo(self.t("dev_dlg_title"), self.t("dev_assign_success", id=cur_pad_id))
+            else:
+                messagebox.showwarning(self.t("dev_dlg_title"), "Selecciona una pestaña de control (Control 1 a 12) antes de asignar.")
 
         ttk.Button(bottom_box, text=self.t("dev_btn_assign"), command=assign_to_current_tab).pack(side=tk.LEFT, padx=4)
 
@@ -2635,6 +2644,342 @@ class J360MoreApp:
             pass
 
         self.root.after(30, self._update_loop)
+
+    # =========================================================================
+    # PESTAÑA DE JUEGOS: SOPORTE MULTI-GAMEPAD (+4 MANDOS CON VARIABLES ENV)
+    # =========================================================================
+    def _build_games_tab(self, parent: ttk.Frame):
+        """Construye la interfaz de la pestaña de Juegos para gestionar y lanzar con variables ENV."""
+        # Barra superior de acciones
+        actions_bar = ttk.Frame(parent, padding=4)
+        actions_bar.pack(fill=tk.X, pady=(0, 4))
+
+        btn_add = ttk.Button(actions_bar, text=self.t("btn_add_game"), command=lambda: self._open_game_editor_dialog(None))
+        btn_add.pack(side=tk.LEFT, padx=4)
+
+        btn_edit = ttk.Button(actions_bar, text=self.t("btn_edit_game"), command=self._edit_selected_game)
+        btn_edit.pack(side=tk.LEFT, padx=4)
+
+        btn_del = ttk.Button(actions_bar, text=self.t("btn_delete_game"), command=self._delete_selected_game)
+        btn_del.pack(side=tk.LEFT, padx=4)
+
+        btn_launch = ttk.Button(actions_bar, text=self.t("btn_launch_game"), command=self._launch_selected_game)
+        btn_launch.pack(side=tk.RIGHT, padx=4)
+
+        # Contenedor para Treeview y Scrollbar
+        tree_frame = ttk.Frame(parent)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=2)
+
+        cols = ("title", "path", "env")
+        self.games_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
+        self.games_tree.heading("title", text=self.t("col_game_title"))
+        self.games_tree.heading("path", text=self.t("col_game_path"))
+        self.games_tree.heading("env", text=self.t("col_game_env"))
+
+        self.games_tree.column("title", width=220, minwidth=140)
+        self.games_tree.column("path", width=420, minwidth=200)
+        self.games_tree.column("env", width=300, minwidth=160)
+
+        sb = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.games_tree.yview)
+        self.games_tree.configure(yscrollcommand=sb.set)
+
+        self.games_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.games_tree.bind("<Double-1>", lambda e: self._launch_selected_game())
+
+        # Pie con nota explicativa
+        footer = ttk.Frame(parent, padding=4)
+        footer.pack(fill=tk.X, side=tk.BOTTOM)
+        ttk.Label(footer, text=self.t("games_empty_hint"), font=("Segoe UI", 8, "italic"), foreground="#555555").pack(side=tk.LEFT)
+
+        self._populate_games_tree()
+
+    def _populate_games_tree(self):
+        """Rellena el Treeview con la lista de juegos registrados."""
+        if not hasattr(self, "games_tree"):
+            return
+        for item in self.games_tree.get_children():
+            self.games_tree.delete(item)
+
+        games_list = self.config.get("games", [])
+        for idx, g in enumerate(games_list):
+            title = g.get("title", f"Juego {idx + 1}")
+            path = g.get("path", "")
+            active_vars = []
+            for v_name, v_cfg in g.get("env_vars", {}).items():
+                if isinstance(v_cfg, dict) and v_cfg.get("enabled", False):
+                    val = v_cfg.get("value", "1")
+                    if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
+                        active_vars.append(f"FNA({val})")
+                    else:
+                        clean_n = v_name.replace("SDL_JOYSTICK_", "").replace("SDL_", "")
+                        active_vars.append(f"{clean_n}={val}")
+            env_summary = ", ".join(active_vars) if active_vars else "Ninguna"
+            self.games_tree.insert("", tk.END, iid=str(idx), values=(title, path, env_summary))
+
+    def _edit_selected_game(self):
+        sel = self.games_tree.selection()
+        if not sel:
+            messagebox.showinfo(self.t("tab_games"), self.t("select_game_first"))
+            return
+        idx = int(sel[0])
+        games_list = self.config.get("games", [])
+        if 0 <= idx < len(games_list):
+            self._open_game_editor_dialog(idx)
+
+    def _delete_selected_game(self):
+        sel = self.games_tree.selection()
+        if not sel:
+            messagebox.showinfo(self.t("tab_games"), self.t("select_game_first"))
+            return
+        idx = int(sel[0])
+        games_list = self.config.get("games", [])
+        if 0 <= idx < len(games_list):
+            g = games_list[idx]
+            if messagebox.askyesno(self.t("btn_delete_game"), self.t("confirm_delete_game", title=g.get("title", ""))):
+                games_list.pop(idx)
+                self.config["games"] = games_list
+                self.save_config(silent=True)
+                self._populate_games_tree()
+
+    def _open_game_editor_dialog(self, game_index: Optional[int] = None):
+        """Abre la ventana modal para agregar o editar un juego."""
+        is_edit = (game_index is not None)
+        games_list = self.config.setdefault("games", [])
+        game_data = games_list[game_index] if (is_edit and 0 <= game_index < len(games_list)) else {}
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title(self.t("dlg_edit_game") if is_edit else self.t("dlg_add_game"))
+        dlg.geometry("620x540")
+        dlg.resizable(False, False)
+        dlg.transient(self.root)
+        dlg.grab_set()
+
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 310)
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 270)
+        dlg.geometry(f"+{x}+{y}")
+
+        frame = ttk.Frame(dlg, padding=14)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # 1. Título del juego
+        ttk.Label(frame, text=self.t("lbl_game_title"), font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        title_var = tk.StringVar(value=game_data.get("title", ""))
+        entry_title = ttk.Entry(frame, textvariable=title_var, font=("Segoe UI", 9))
+        entry_title.pack(fill=tk.X, pady=(2, 8))
+
+        # 2. Ruta del ejecutable
+        ttk.Label(frame, text=self.t("lbl_game_path"), font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        path_row = ttk.Frame(frame)
+        path_row.pack(fill=tk.X, pady=(2, 8))
+
+        path_var = tk.StringVar(value=game_data.get("path", ""))
+        entry_path = ttk.Entry(path_row, textvariable=path_var, font=("Segoe UI", 9))
+        entry_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+
+        def on_browse():
+            chosen = filedialog.askopenfilename(
+                title=self.t("btn_browse_game"),
+                filetypes=[
+                    ("Ejecutables y Scripts", "*.exe;*.cmd;*.bat"),
+                    ("Archivos Ejecutables (*.exe)", "*.exe"),
+                    ("Scripts de Comandos (*.cmd, *.bat)", "*.cmd;*.bat"),
+                    ("Todos los Archivos (*.*)", "*.*")
+                ]
+            )
+            if chosen:
+                path_var.set(chosen)
+                if not title_var.get().strip():
+                    # Autocompletar título con el nombre base sin extensión
+                    base_name = os.path.splitext(os.path.basename(chosen))[0]
+                    title_var.set(base_name.replace("_", " ").replace("-", " ").title())
+
+        btn_browse = ttk.Button(path_row, text=self.t("btn_browse_game"), command=on_browse)
+        btn_browse.pack(side=tk.RIGHT)
+
+        # 3. Argumentos adicionales
+        ttk.Label(frame, text=self.t("lbl_game_args"), font=("Segoe UI", 8)).pack(anchor="w")
+        args_var = tk.StringVar(value=game_data.get("args", ""))
+        entry_args = ttk.Entry(frame, textvariable=args_var, font=("Segoe UI", 8))
+        entry_args.pack(fill=tk.X, pady=(2, 10))
+
+        # 4. Grupo de Variables de Entorno
+        box_env = ttk.LabelFrame(frame, text=self.t("grp_env_vars"), padding=8)
+        box_env.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        ttk.Label(box_env, text=self.t("env_hint"), font=("Segoe UI", 8, "italic"), foreground="#555555").pack(anchor="w", pady=(0, 6))
+
+        saved_envs = game_data.get("env_vars", {})
+        env_checkboxes = {}
+
+        # Definición de variables estándar
+        default_max = str(self.config.get("max_controllers", 8))
+        env_specs = [
+            ("FNA_GAMEPAD_NUM_GAMEPADS", True, default_max, "Permite más de 4 mandos en juegos desarrollados con FNA / MonoGame"),
+            ("SDL_JOYSTICK_DIRECTINPUT", True, "1", "Habilita la enumeración mediante la API DirectInput de Windows"),
+            ("SDL_JOYSTICK_RAWINPUT", True, "1", "Habilita la lectura de hardware mediante RawInput de Windows"),
+            ("SDL_JOYSTICK_RAWINPUT_CORRELATE_XINPUT", True, "0", "Evita que SDL correlacione y bloquee mandos mediante el límite XInput"),
+            ("SDL_XINPUT_ENABLED", True, "0", "Desactiva el límite estricto de 4 mandos impuesto por Microsoft XInput"),
+            ("SDL_JOYSTICK_GAMEINPUT", True, "1", "Habilita el backend moderno de GameInput si está soportado"),
+            ("SDL_JOYSTICK_THREAD", True, "1", "Ejecuta el escaneo y procesamiento de joysticks en un hilo separado")
+        ]
+
+        # Contenedor con scroll para checkboxes si fuese necesario
+        chk_container = ttk.Frame(box_env)
+        chk_container.pack(fill=tk.BOTH, expand=True)
+
+        for v_name, def_en, def_val, desc in env_specs:
+            v_saved = saved_envs.get(v_name, {})
+            is_enabled = v_saved.get("enabled", def_en) if isinstance(v_saved, dict) else def_en
+            val_str = v_saved.get("value", def_val) if isinstance(v_saved, dict) else def_val
+
+            row = ttk.Frame(chk_container)
+            row.pack(fill=tk.X, pady=1)
+
+            c_var = tk.BooleanVar(value=is_enabled)
+            val_holder = tk.StringVar(value=val_str)
+
+            chk = ttk.Checkbutton(row, text=v_name, variable=c_var)
+            chk.pack(side=tk.LEFT, padx=(0, 6))
+
+            if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
+                cb_fna = ttk.Combobox(row, textvariable=val_holder, values=["4", "6", "8", "10", "12", "16"], width=4, state="readonly")
+                cb_fna.pack(side=tk.LEFT, padx=2)
+            else:
+                lbl_val = ttk.Label(row, text=f'= "{val_str}"', font=("Segoe UI", 8, "bold"), foreground="#0066cc")
+                lbl_val.pack(side=tk.LEFT, padx=2)
+
+            lbl_desc = ttk.Label(row, text=f"({desc})", font=("Segoe UI", 7), foreground="#777777")
+            lbl_desc.pack(side=tk.LEFT, padx=6)
+
+            env_checkboxes[v_name] = (c_var, val_holder)
+
+        # 5. Botonera inferior
+        btn_bar = ttk.Frame(frame)
+        btn_bar.pack(fill=tk.X, side=tk.BOTTOM)
+
+        def save_and_close():
+            t_str = title_var.get().strip() or "Juego Sin Título"
+            p_str = path_var.get().strip()
+            if not p_str:
+                messagebox.showwarning(self.t("tab_games"), "Por favor indica la ruta del ejecutable.")
+                return
+
+            built_env = {}
+            for v_name, (c_var, val_var) in env_checkboxes.items():
+                built_env[v_name] = {
+                    "enabled": bool(c_var.get()),
+                    "value": str(val_var.get())
+                }
+
+            entry_dict = {
+                "title": t_str,
+                "path": p_str,
+                "args": args_var.get().strip(),
+                "working_dir": os.path.dirname(p_str) if p_str else "",
+                "env_vars": built_env
+            }
+
+            if is_edit:
+                games_list[game_index] = entry_dict
+            else:
+                games_list.append(entry_dict)
+
+            self.config["games"] = games_list
+            self.save_config(silent=True)
+            self._populate_games_tree()
+            dlg.destroy()
+
+        def create_bat_shortcut():
+            p_str = path_var.get().strip()
+            if not p_str:
+                messagebox.showwarning(self.t("tab_games"), "Indica primero la ruta del ejecutable.")
+                return
+
+            default_bat_name = f"Launch_{os.path.splitext(os.path.basename(p_str))[0]}_MultiPad.bat"
+            desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+            chosen_bat = filedialog.asksaveasfilename(
+                title=self.t("btn_create_bat"),
+                initialdir=desktop_dir if os.path.exists(desktop_dir) else os.path.dirname(p_str),
+                initialfile=default_bat_name,
+                defaultextension=".bat",
+                filetypes=[("Archivo por lotes (*.bat)", "*.bat"), ("Todos los archivos", "*.*")]
+            )
+            if not chosen_bat:
+                return
+
+            bat_lines = [
+                "@echo off",
+                f"rem Lanzador generado por j360More con soporte +4 mandos",
+                f"cd /d \"{os.path.dirname(p_str)}\""
+            ]
+            for v_name, (c_var, val_var) in env_checkboxes.items():
+                if c_var.get():
+                    bat_lines.append(f"set {v_name}={val_var.get()}")
+
+            args_str = f" {args_var.get().strip()}" if args_var.get().strip() else ""
+            bat_lines.append(f"start \"\" \"{p_str}\"{args_str}")
+
+            try:
+                with open(chosen_bat, "w", encoding="utf-8") as f:
+                    f.write("\r\n".join(bat_lines) + "\r\n")
+                messagebox.showinfo(self.t("tab_games"), self.t("bat_created_success", path=chosen_bat))
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo guardar el archivo .bat: {e}")
+
+        btn_save = ttk.Button(btn_bar, text="💾 Guardar", command=save_and_close)
+        btn_save.pack(side=tk.LEFT, padx=(0, 6))
+
+        btn_bat = ttk.Button(btn_bar, text=self.t("btn_create_bat"), command=create_bat_shortcut)
+        btn_bat.pack(side=tk.LEFT, padx=6)
+
+        btn_cancel = ttk.Button(btn_bar, text="Cancelar", command=dlg.destroy)
+        btn_cancel.pack(side=tk.RIGHT)
+
+    def _launch_selected_game(self):
+        """Inicia el juego seleccionado inyectando las variables de entorno configuradas."""
+        sel = self.games_tree.selection()
+        if not sel:
+            messagebox.showinfo(self.t("tab_games"), self.t("select_game_first"))
+            return
+        idx = int(sel[0])
+        games_list = self.config.get("games", [])
+        if not (0 <= idx < len(games_list)):
+            return
+
+        game = games_list[idx]
+        exe_path = game.get("path", "").strip()
+
+        if not os.path.exists(exe_path):
+            messagebox.showerror("Error", self.t("game_not_found", path=exe_path))
+            return
+
+        # Construir entorno enriquecido
+        env = os.environ.copy()
+        for v_name, v_cfg in game.get("env_vars", {}).items():
+            if isinstance(v_cfg, dict) and v_cfg.get("enabled", False):
+                env[v_name] = str(v_cfg.get("value", "1"))
+
+        working_dir = game.get("working_dir") or os.path.dirname(exe_path)
+        if not os.path.exists(working_dir):
+            working_dir = os.path.dirname(exe_path)
+
+        cmd = [exe_path]
+        if game.get("args"):
+            import shlex
+            try:
+                cmd.extend(shlex.split(game["args"]))
+            except Exception:
+                cmd.extend(game["args"].split())
+
+        try:
+            subprocess.Popen(cmd, env=env, cwd=working_dir)
+            # Iniciar emulación automáticamente si estaba detenida
+            if not self.engine.is_running():
+                self._toggle_emulation()
+        except Exception as e:
+            messagebox.showerror("Error", self.t("game_launch_error", e=e))
 
     def _on_close(self):
         if self.engine.is_running():
