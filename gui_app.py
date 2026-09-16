@@ -1507,7 +1507,7 @@ class J360MoreApp:
         def on_accept():
             if dont_ask_var.get():
                 self.config["suppress_hidhide_warning"] = True
-                self.save_config()
+                self.save_config(silent=True)
             dlg.destroy()
 
         btn_box = ttk.Frame(frame)
@@ -1867,7 +1867,7 @@ class J360MoreApp:
             hidden_list = self.config.setdefault("hidden_devices", [])
             if inst_path not in hidden_list:
                 hidden_list.append(inst_path)
-                self.save_config()
+                self.save_config(silent=True)
 
             if self.engine.is_running():
                 self.driver_manager.hide_device(inst_path)
@@ -1905,7 +1905,7 @@ class J360MoreApp:
             hidden_list = self.config.setdefault("hidden_devices", [])
             if inst_path in hidden_list:
                 hidden_list.remove(inst_path)
-                self.save_config()
+                self.save_config(silent=True)
 
             self.driver_manager.unhide_device(inst_path)
             messagebox.showinfo(
