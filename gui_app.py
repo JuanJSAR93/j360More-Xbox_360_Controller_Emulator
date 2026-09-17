@@ -20,7 +20,10 @@ except ImportError:
 from driver_manager import DriverManager
 from input_devices import DeviceManager
 from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration
-from i18n import get_text, get_target_name, SUPPORTED_LANGUAGES
+from i18n import (
+    get_text, get_target_name, SUPPORTED_LANGUAGES,
+    ALL_NONE_LABELS, get_none_label, get_input_options, is_none_mapping
+)
 
 APP_VERSION = "1.2.0"
 
@@ -255,6 +258,16 @@ class J360MoreApp:
     def target_name(self, target: str) -> str:
         lang = self.config.get("language", "es")
         return get_target_name(lang, target)
+
+    @property
+    def current_lang(self) -> str:
+        return self.config.get("language", "es")
+
+    def get_none_label(self) -> str:
+        return get_none_label(self.current_lang)
+
+    def get_input_options(self) -> list:
+        return get_input_options(self.current_lang)
 
     def _toggle_language(self):
         codes = list(SUPPORTED_LANGUAGES.keys())
@@ -649,7 +662,7 @@ class J360MoreApp:
             row.pack(fill=tk.X, pady=1)
             lbl = ttk.Label(row, text=label_text, width=lbl_width, anchor=label_anchor, font=("Segoe UI", 8))
             lbl.pack(side=tk.LEFT)
-            cb = ttk.Combobox(row, values=INPUT_OPTIONS, width=11, font=("Segoe UI", 8))
+            cb = ttk.Combobox(row, values=self.get_input_options(), width=11, font=("Segoe UI", 8))
             cb.pack(side=tk.LEFT, padx=2)
             cb.bind("<<ComboboxSelected>>", lambda e, p=pad_id, t=target_name, c=cb: self._on_combo_changed(p, t, c))
             btn = ttk.Button(row, text="...", width=3, command=lambda: self._start_record(pad_id, target_name))
@@ -738,6 +751,8 @@ class J360MoreApp:
         saved_maps = cfg.get("mappings", {})
         for target, cb in widgets["combos"].items():
             val = saved_maps.get(target, DEFAULT_MAPPINGS.get(target, "-- Ninguno --"))
+            if is_none_mapping(val):
+                val = self.get_none_label()
             cb.set(val)
 
     def _find_target_at_pos(self, click_x: float, click_y: float) -> str:
@@ -1163,7 +1178,8 @@ class J360MoreApp:
 
             mappings = {}
             for target, cb in widgets["combos"].items():
-                mappings[target] = cb.get().strip()
+                raw_val = cb.get().strip()
+                mappings[target] = "-- Ninguno --" if is_none_mapping(raw_val) else raw_val
             self.config["controllers"][str_id]["mappings"] = mappings
 
             calib = {}
@@ -1249,7 +1265,7 @@ class J360MoreApp:
                         if pad_id in self.tab_widgets:
                             other_cb = self.tab_widgets[pad_id]["combos"].get(other_btn)
                             if other_cb:
-                                other_cb.set("-- Ninguno --")
+                                other_cb.set(self.get_none_label())
 
                 elif conflict_type == "other":
                     ans = messagebox.askyesnocancel(
@@ -1268,7 +1284,7 @@ class J360MoreApp:
                         if other_id in self.tab_widgets:
                             other_cb = self.tab_widgets[other_id]["combos"].get(other_btn)
                             if other_cb:
-                                other_cb.set("-- Ninguno --")
+                                other_cb.set(self.get_none_label())
 
         cb = combo or self.tab_widgets.get(pad_id, {}).get("combos", {}).get(target_name)
         if cb:
@@ -1427,7 +1443,10 @@ class J360MoreApp:
             return
 
         for target, cb in widgets["combos"].items():
-            cb.set(DEFAULT_MAPPINGS.get(target, "-- Ninguno --"))
+            val = DEFAULT_MAPPINGS.get(target, "-- Ninguno --")
+            if is_none_mapping(val):
+                val = self.get_none_label()
+            cb.set(val)
 
         c_w = widgets.get("calib", {})
         for k in ["left_trigger", "right_trigger"]:
@@ -1995,7 +2014,7 @@ class J360MoreApp:
                 populate_tree()
                 messagebox.showinfo(self.t("dev_dlg_title"), self.t("dev_assign_success", id=cur_pad_id))
             else:
-                messagebox.showwarning(self.t("dev_dlg_title"), "Selecciona una pestaña de control (Control 1 a 12) antes de asignar.")
+                messagebox.showwarning(self.t("dev_dlg_title"), self.t("dev_select_control_tab"))
 
         ttk.Button(bottom_box, text=self.t("dev_btn_assign"), command=assign_to_current_tab).pack(side=tk.LEFT, padx=4)
 
@@ -2070,7 +2089,10 @@ class J360MoreApp:
                 if tid in self.tab_widgets:
                     t_w = self.tab_widgets[tid]
                     for target, cb in t_w.get("combos", {}).items():
-                        cb.set(src_maps.get(target, "-- Ninguno --"))
+                        val = src_maps.get(target, "-- Ninguno --")
+                        if is_none_mapping(val):
+                            val = self.get_none_label()
+                        cb.set(val)
                     if inc_calib_var.get():
                         c_w = t_w.get("calib", {})
                         for k in ["left_trigger", "right_trigger"]:
@@ -2421,14 +2443,14 @@ class J360MoreApp:
             if is_keyboard:
                 for axis_key in ("LEFT_STICK_X", "LEFT_STICK_Y", "RIGHT_STICK_X", "RIGHT_STICK_Y"):
                     if axis_key not in staged_mappings:
-                        staged_mappings[axis_key] = "-- Ninguno --"
+                        staged_mappings[axis_key] = self.get_none_label()
 
             widgets = self.tab_widgets.get(pad_id)
             if widgets and "combos" in widgets:
                 combos = widgets["combos"]
                 for t, v in staged_mappings.items():
                     if t in combos:
-                        combos[t].set(v)
+                        combos[t].set(self.get_none_label() if is_none_mapping(v) else v)
 
             self._sync_ui_to_config()
             self.save_config(silent=True)
@@ -2807,7 +2829,7 @@ class J360MoreApp:
 
         games_list = self.config.get("games", [])
         for idx, g in enumerate(games_list):
-            title = g.get("title", f"Juego {idx + 1}")
+            title = g.get("title", self.t("default_game_title", idx=idx + 1))
             path = g.get("path", "")
             active_vars = []
             for v_name, v_cfg in g.get("env_vars", {}).items():
@@ -2819,7 +2841,7 @@ class J360MoreApp:
                         val = v_cfg.get("value", "1")
                         clean_n = v_name.replace("SDL_JOYSTICK_", "").replace("SDL_", "")
                         active_vars.append(f"{clean_n}={val}")
-            env_summary = ", ".join(active_vars) if active_vars else "Ninguna"
+            env_summary = ", ".join(active_vars) if active_vars else self.t("env_none")
             self.games_tree.insert("", tk.END, iid=str(idx), values=(title, path, env_summary))
 
     def _edit_selected_game(self):
@@ -2887,10 +2909,10 @@ class J360MoreApp:
             chosen = filedialog.askopenfilename(
                 title=self.t("btn_browse_game"),
                 filetypes=[
-                    ("Ejecutables y Scripts", "*.exe;*.cmd;*.bat"),
-                    ("Archivos Ejecutables (*.exe)", "*.exe"),
-                    ("Scripts de Comandos (*.cmd, *.bat)", "*.cmd;*.bat"),
-                    ("Todos los Archivos (*.*)", "*.*")
+                    (self.t("ft_exec_and_scripts"), "*.exe;*.cmd;*.bat"),
+                    (self.t("ft_executables"), "*.exe"),
+                    (self.t("ft_scripts"), "*.cmd;*.bat"),
+                    (self.t("ft_all_files"), "*.*")
                 ]
             )
             if chosen:
@@ -2921,13 +2943,13 @@ class J360MoreApp:
         # Definición de variables estándar
         default_max = str(self.config.get("max_controllers", 8))
         env_specs = [
-            ("FNA_GAMEPAD_NUM_GAMEPADS", True, default_max, f"Ajustado según mandos virtuales a emular ({default_max} mandos)"),
-            ("SDL_JOYSTICK_DIRECTINPUT", True, "1", "Habilita la enumeración mediante la API DirectInput de Windows"),
-            ("SDL_JOYSTICK_RAWINPUT", True, "1", "Habilita la lectura de hardware mediante RawInput de Windows"),
-            ("SDL_JOYSTICK_RAWINPUT_CORRELATE_XINPUT", True, "0", "Evita que SDL correlacione y bloquee mandos mediante el límite XInput"),
-            ("SDL_XINPUT_ENABLED", True, "0", "Desactiva el límite estricto de 4 mandos impuesto por Microsoft XInput"),
-            ("SDL_JOYSTICK_GAMEINPUT", True, "1", "Habilita el backend moderno de GameInput si está soportado"),
-            ("SDL_JOYSTICK_THREAD", True, "1", "Ejecuta el escaneo y procesamiento de joysticks en un hilo separado")
+            ("FNA_GAMEPAD_NUM_GAMEPADS", True, default_max, self.t("env_desc_fna", count=default_max)),
+            ("SDL_JOYSTICK_DIRECTINPUT", True, "1", self.t("env_directinput_desc")),
+            ("SDL_JOYSTICK_RAWINPUT", True, "1", self.t("env_rawinput_desc")),
+            ("SDL_JOYSTICK_RAWINPUT_CORRELATE_XINPUT", True, "0", self.t("env_correlate_xinput_desc")),
+            ("SDL_XINPUT_ENABLED", True, "0", self.t("env_xinput_enabled_desc")),
+            ("SDL_JOYSTICK_GAMEINPUT", True, "1", self.t("env_gameinput_desc")),
+            ("SDL_JOYSTICK_THREAD", True, "1", self.t("env_thread_desc"))
         ]
 
         # Contenedor con scroll para checkboxes si fuese necesario
@@ -2950,7 +2972,7 @@ class J360MoreApp:
             if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
                 lbl_val = ttk.Label(row, text=f'= "{default_max}"', font=("Segoe UI", 8, "bold"), foreground="#0066cc")
                 lbl_val.pack(side=tk.LEFT, padx=2)
-                lbl_auto = ttk.Label(row, text=f"({default_max} en Ajustes)", font=("Segoe UI", 7, "italic"), foreground="#008800")
+                lbl_auto = ttk.Label(row, text=self.t("env_fna_in_settings", count=default_max), font=("Segoe UI", 7, "italic"), foreground="#008800")
                 lbl_auto.pack(side=tk.LEFT, padx=2)
             else:
                 lbl_val = ttk.Label(row, text=f'= "{def_val}"', font=("Segoe UI", 8, "bold"), foreground="#0066cc")
@@ -2966,10 +2988,10 @@ class J360MoreApp:
         btn_bar.pack(fill=tk.X, side=tk.BOTTOM)
 
         def save_and_close():
-            t_str = title_var.get().strip() or "Juego Sin Título"
+            t_str = title_var.get().strip() or self.t("default_untitled_game")
             p_str = path_var.get().strip()
             if not p_str:
-                messagebox.showwarning(self.t("tab_games"), "Por favor indica la ruta del ejecutable.")
+                messagebox.showwarning(self.t("tab_games"), self.t("msg_specify_executable_path"))
                 return
 
             built_env = {}
@@ -3001,7 +3023,7 @@ class J360MoreApp:
         def create_bat_shortcut():
             p_str = path_var.get().strip()
             if not p_str:
-                messagebox.showwarning(self.t("tab_games"), "Indica primero la ruta del ejecutable.")
+                messagebox.showwarning(self.t("tab_games"), self.t("msg_specify_executable_path"))
                 return
 
             default_bat_name = f"Launch_{os.path.splitext(os.path.basename(p_str))[0]}_MultiPad.bat"
@@ -3011,7 +3033,7 @@ class J360MoreApp:
                 initialdir=desktop_dir if os.path.exists(desktop_dir) else os.path.dirname(p_str),
                 initialfile=default_bat_name,
                 defaultextension=".bat",
-                filetypes=[("Archivo por lotes (*.bat)", "*.bat"), ("Todos los archivos", "*.*")]
+                filetypes=[(self.t("ft_batch_file"), "*.bat"), (self.t("ft_all_files"), "*.*")]
             )
             if not chosen_bat:
                 return
@@ -3034,15 +3056,15 @@ class J360MoreApp:
                     f.write("\r\n".join(bat_lines) + "\r\n")
                 messagebox.showinfo(self.t("tab_games"), self.t("bat_created_success", path=chosen_bat))
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo guardar el archivo .bat: {e}")
+                messagebox.showerror("Error", self.t("msg_bat_save_error", e=e))
 
-        btn_save = ttk.Button(btn_bar, text="💾 Guardar", command=save_and_close)
+        btn_save = ttk.Button(btn_bar, text=self.t("btn_save"), command=save_and_close)
         btn_save.pack(side=tk.LEFT, padx=(0, 6))
 
         btn_bat = ttk.Button(btn_bar, text=self.t("btn_create_bat"), command=create_bat_shortcut)
         btn_bat.pack(side=tk.LEFT, padx=6)
 
-        btn_cancel = ttk.Button(btn_bar, text="Cancelar", command=dlg.destroy)
+        btn_cancel = ttk.Button(btn_bar, text=self.t("set_btn_cancel"), command=dlg.destroy)
         btn_cancel.pack(side=tk.RIGHT)
 
     def _launch_selected_game(self):

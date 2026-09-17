@@ -174,7 +174,7 @@ class EmulatorEngine:
                 self.pressed_keys.discard(key_name.lower())
 
     def _eval_mapping(self, mapping_str: str, joy_state: Dict[str, Any], dev_id: str = "") -> Tuple[bool, float]:
-        if not mapping_str or mapping_str == "-- Ninguno --":
+        if not mapping_str or mapping_str.startswith("--") or mapping_str.lower() in ("none", "ninguno", "нет", "aucun", "nenhum", "keiner", "nessuno"):
             return False, 0.0
 
         mapping_str = mapping_str.strip()

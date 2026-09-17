@@ -267,7 +267,27 @@ STRINGS = {
         "game_launched": "¡Juego iniciado correctamente con soporte para +4 mandos!",
         "game_launch_error": "Error al iniciar el juego: {e}",
         "select_game_first": "Por favor selecciona un juego de la lista primero.",
-        "new_version_available": "⚠️ ¡v{ver} disponible!"
+        "new_version_available": "⚠️ ¡v{ver} disponible!",
+        "dialog_add_game": "Agregar Juego a la Biblioteca",
+        "dialog_edit_game": "Editar Configuración del Juego",
+        "env_desc_fna": "Ajustado según mandos virtuales a emular ({count} mandos)",
+        "env_fna_in_settings": "({count} en Ajustes)",
+        "env_directinput_desc": "Habilita la enumeración mediante la API DirectInput de Windows",
+        "env_rawinput_desc": "Habilita la lectura de hardware mediante RawInput de Windows",
+        "env_correlate_xinput_desc": "Evita que SDL correlacione y bloquee mandos mediante el límite XInput",
+        "env_xinput_enabled_desc": "Desactiva el límite estricto de 4 mandos impuesto por Microsoft XInput",
+        "env_gameinput_desc": "Habilita el backend moderno de GameInput si está soportado",
+        "env_thread_desc": "Ejecuta el escaneo y procesamiento de joysticks en un hilo separado",
+        "env_none": "Ninguna",
+        "default_untitled_game": "Juego Sin Título",
+        "default_game_title": "Juego {idx}",
+        "msg_specify_executable_path": "Por favor indica la ruta del ejecutable.",
+        "msg_bat_save_error": "No se pudo guardar el archivo .bat: {e}",
+        "ft_exec_and_scripts": "Ejecutables y Scripts",
+        "ft_executables": "Archivos Ejecutables (*.exe)",
+        "ft_scripts": "Scripts de Comandos (*.cmd, *.bat)",
+        "ft_all_files": "Todos los Archivos (*.*)",
+        "ft_batch_file": "Archivo por lotes (*.bat)",
     },
     "en": {
         "app_title": "j360More - Multi-Gamepad (1 to 12 Controllers) - by JuanJSAR - ViGEmBus",
@@ -520,7 +540,27 @@ STRINGS = {
         "game_launched": "Game launched successfully with +4 gamepad support!",
         "game_launch_error": "Error launching game: {e}",
         "select_game_first": "Please select a game from the list first.",
-        "new_version_available": "⚠️ v{ver} available!"
+        "new_version_available": "⚠️ v{ver} available!",
+        "dialog_add_game": "Add Game to Library",
+        "dialog_edit_game": "Edit Game Settings",
+        "env_desc_fna": "Adjusted to match emulated virtual controllers ({count} gamepads)",
+        "env_fna_in_settings": "({count} in Settings)",
+        "env_directinput_desc": "Enables enumeration via Windows DirectInput API",
+        "env_rawinput_desc": "Enables hardware polling via Windows RawInput",
+        "env_correlate_xinput_desc": "Prevents SDL from correlating and locking controllers to XInput limit",
+        "env_xinput_enabled_desc": "Disables the strict 4-controller limit imposed by Microsoft XInput",
+        "env_gameinput_desc": "Enables modern GameInput backend if supported",
+        "env_thread_desc": "Runs joystick scanning and processing in a dedicated background thread",
+        "env_none": "None",
+        "default_untitled_game": "Untitled Game",
+        "default_game_title": "Game {idx}",
+        "msg_specify_executable_path": "Please specify the executable path.",
+        "msg_bat_save_error": "Could not save .bat file: {e}",
+        "ft_exec_and_scripts": "Executables and Scripts",
+        "ft_executables": "Executable Files (*.exe)",
+        "ft_scripts": "Command Scripts (*.cmd, *.bat)",
+        "ft_all_files": "All Files (*.*)",
+        "ft_batch_file": "Batch File (*.bat)",
     },
     "fr": {
         "app_title": "j360More - Multi-Gamepad (1 à 12 Manettes) - par JuanJSAR - ViGEmBus",
@@ -773,7 +813,27 @@ STRINGS = {
         "game_launched": "Jeu lancé avec succès avec le support +4 manettes !",
         "game_launch_error": "Erreur lors du lancement du jeu : {e}",
         "select_game_first": "Veuillez d'abord sélectionner un jeu dans la liste.",
-        "new_version_available": "⚠️ v{ver} disponible !"
+        "new_version_available": "⚠️ v{ver} disponible !",
+        "dialog_add_game": "Ajouter un jeu à la bibliothèque",
+        "dialog_edit_game": "Modifier les paramètres du jeu",
+        "env_desc_fna": "Ajusté selon les manettes virtuelles à émuler ({count} manettes)",
+        "env_fna_in_settings": "({count} dans Paramètres)",
+        "env_directinput_desc": "Active l'énumération via l'API Windows DirectInput",
+        "env_rawinput_desc": "Active la lecture matérielle via Windows RawInput",
+        "env_correlate_xinput_desc": "Empêche SDL de corréler et verrouiller les manettes à la limite XInput",
+        "env_xinput_enabled_desc": "Désactive la limite stricte de 4 manettes imposée par Microsoft XInput",
+        "env_gameinput_desc": "Active le backend moderne GameInput s'il est pris en charge",
+        "env_thread_desc": "Exécute l'analyse et le traitement des manettes dans un thread séparé",
+        "env_none": "Aucune",
+        "default_untitled_game": "Jeu sans titre",
+        "default_game_title": "Jeu {idx}",
+        "msg_specify_executable_path": "Veuillez indiquer le chemin de l'exécutable.",
+        "msg_bat_save_error": "Impossible d'enregistrer le fichier .bat : {e}",
+        "ft_exec_and_scripts": "Exécutables et scripts",
+        "ft_executables": "Fichiers exécutables (*.exe)",
+        "ft_scripts": "Scripts de commandes (*.cmd, *.bat)",
+        "ft_all_files": "Tous les fichiers (*.*)",
+        "ft_batch_file": "Fichier de commandes (*.bat)",
     },
     "pt_BR": {
         "app_title": "j360More - Multi-Gamepad (1 a 12 Controles) - por JuanJSAR - ViGEmBus",
@@ -1026,7 +1086,27 @@ STRINGS = {
         "game_launched": "Jogo iniciado com sucesso com suporte a +4 controles!",
         "game_launch_error": "Erro ao iniciar o jogo: {e}",
         "select_game_first": "Selecione um jogo da lista primeiro.",
-        "new_version_available": "⚠️ v{ver} disponível!"
+        "new_version_available": "⚠️ v{ver} disponível!",
+        "dialog_add_game": "Adicionar Jogo à Biblioteca",
+        "dialog_edit_game": "Editar Configurações do Jogo",
+        "env_desc_fna": "Ajustado conforme controles virtuais a emular ({count} controles)",
+        "env_fna_in_settings": "({count} em Ajustes)",
+        "env_directinput_desc": "Habilita a enumeração através da API DirectInput do Windows",
+        "env_rawinput_desc": "Habilita a leitura de hardware via Windows RawInput",
+        "env_correlate_xinput_desc": "Evita que o SDL correlacione e bloqueie controles pelo limite do XInput",
+        "env_xinput_enabled_desc": "Desativa o limite estrito de 4 controles imposto pelo Microsoft XInput",
+        "env_gameinput_desc": "Habilita o backend moderno do GameInput se for suportado",
+        "env_thread_desc": "Executa a verificação e processamento dos joysticks em uma thread separada",
+        "env_none": "Nenhuma",
+        "default_untitled_game": "Jogo Sem Título",
+        "default_game_title": "Jogo {idx}",
+        "msg_specify_executable_path": "Por favor, indique o caminho do executável.",
+        "msg_bat_save_error": "Não foi possível salvar o arquivo .bat: {e}",
+        "ft_exec_and_scripts": "Executáveis e Scripts",
+        "ft_executables": "Arquivos Executáveis (*.exe)",
+        "ft_scripts": "Scripts de Comandos (*.cmd, *.bat)",
+        "ft_all_files": "Todos os Arquivos (*.*)",
+        "ft_batch_file": "Arquivo em lote (*.bat)",
     },
     "de": {
         "app_title": "j360More - Multi-Gamepad (1 bis 12 Controller) - von JuanJSAR - ViGEmBus",
@@ -1279,7 +1359,27 @@ STRINGS = {
         "game_launched": "Spiel erfolgreich mit Unterstützung für +4 Controller gestartet!",
         "game_launch_error": "Fehler beim Starten des Spiels: {e}",
         "select_game_first": "Bitte wählen Sie zuerst ein Spiel aus der Liste aus.",
-        "new_version_available": "⚠️ v{ver} verfügbar!"
+        "new_version_available": "⚠️ v{ver} verfügbar!",
+        "dialog_add_game": "Spiel zur Bibliothek hinzufügen",
+        "dialog_edit_game": "Spieleinstellungen bearbeiten",
+        "env_desc_fna": "Angepasst an die Anzahl der emulierten Controller ({count} Controller)",
+        "env_fna_in_settings": "({count} in Einstellungen)",
+        "env_directinput_desc": "Aktiviert die Enumeration über die Windows-DirectInput-API",
+        "env_rawinput_desc": "Aktiviert das Auslesen der Hardware über Windows-RawInput",
+        "env_correlate_xinput_desc": "Verhindert, dass SDL Controller mit dem XInput-Limit korreliert und sperrt",
+        "env_xinput_enabled_desc": "Deaktiviert das strikte Limit von 4 Controllern durch Microsoft XInput",
+        "env_gameinput_desc": "Aktiviert das moderne GameInput-Backend, falls unterstützt",
+        "env_thread_desc": "Führt das Scannen und Verarbeiten von Joysticks in einem separaten Thread aus",
+        "env_none": "Keine",
+        "default_untitled_game": "Unbenanntes Spiel",
+        "default_game_title": "Spiel {idx}",
+        "msg_specify_executable_path": "Bitte gib den Pfad zur ausführbaren Datei an.",
+        "msg_bat_save_error": "Die .bat-Datei konnte nicht gespeichert werden: {e}",
+        "ft_exec_and_scripts": "Ausführbare Dateien und Skripte",
+        "ft_executables": "Ausführbare Dateien (*.exe)",
+        "ft_scripts": "Befehlsskripte (*.cmd, *.bat)",
+        "ft_all_files": "Alle Dateien (*.*)",
+        "ft_batch_file": "Batchdatei (*.bat)",
     },
     "it": {
         "app_title": "j360More - Multi-Gamepad (da 1 a 12 Controller) - di JuanJSAR - ViGEmBus",
@@ -1532,7 +1632,27 @@ STRINGS = {
         "game_launched": "Gioco avviato con successo con supporto +4 controller!",
         "game_launch_error": "Errore durante l'avvio del gioco: {e}",
         "select_game_first": "Seleziona prima un gioco dall'elenco.",
-        "new_version_available": "⚠️ v{ver} disponibile!"
+        "new_version_available": "⚠️ v{ver} disponibile!",
+        "dialog_add_game": "Aggiungi gioco alla libreria",
+        "dialog_edit_game": "Modifica impostazioni di gioco",
+        "env_desc_fna": "Adattato in base ai controller virtuali da emulare ({count} controller)",
+        "env_fna_in_settings": "({count} in Impostazioni)",
+        "env_directinput_desc": "Abilita l'enumerazione tramite l'API Windows DirectInput",
+        "env_rawinput_desc": "Abilita la lettura hardware tramite Windows RawInput",
+        "env_correlate_xinput_desc": "Impedisce a SDL di correlare e bloccare i controller al limite XInput",
+        "env_xinput_enabled_desc": "Disattiva il limite rigido di 4 controller imposto da Microsoft XInput",
+        "env_gameinput_desc": "Abilita il moderno backend GameInput se supportato",
+        "env_thread_desc": "Esegue la scansione e l'elaborazione dei joystick in un thread separato",
+        "env_none": "Nessuna",
+        "default_untitled_game": "Gioco senza titolo",
+        "default_game_title": "Gioco {idx}",
+        "msg_specify_executable_path": "Si prega di indicare il percorso dell'eseguibile.",
+        "msg_bat_save_error": "Impossibile salvare il file .bat: {e}",
+        "ft_exec_and_scripts": "Eseguibili e script",
+        "ft_executables": "File eseguibili (*.exe)",
+        "ft_scripts": "Script di comandi (*.cmd, *.bat)",
+        "ft_all_files": "Tutti i file (*.*)",
+        "ft_batch_file": "File batch (*.bat)",
     },
     "ru": {
         "app_title": "j360More - Мульти-геймпад (от 1 до 12 контроллеров) - автор JuanJSAR - ViGEmBus",
@@ -1785,7 +1905,27 @@ STRINGS = {
         "game_launched": "Игра успешно запущена с поддержкой +4 геймпадов!",
         "game_launch_error": "Ошибка при запуске игры: {e}",
         "select_game_first": "Сначала выберите игру из списка.",
-        "new_version_available": "⚠️ Доступна v{ver}!"
+        "new_version_available": "⚠️ Доступна v{ver}!",
+        "dialog_add_game": "Добавить игру в библиотеку",
+        "dialog_edit_game": "Редактировать настройки игры",
+        "env_desc_fna": "Скорректировано по кол-ву эмулируемых геймпадов ({count} шт.)",
+        "env_fna_in_settings": "({count} в Настройках)",
+        "env_directinput_desc": "Включает перечисление через Windows DirectInput API",
+        "env_rawinput_desc": "Включает опрос оборудования через Windows RawInput",
+        "env_correlate_xinput_desc": "Предотвращает корреляцию и блокировку геймпадов лимитом XInput в SDL",
+        "env_xinput_enabled_desc": "Отключает жесткое ограничение в 4 геймпада, налагаемое Microsoft XInput",
+        "env_gameinput_desc": "Включает современный бэкенд GameInput, если поддерживается",
+        "env_thread_desc": "Выполняет сканирование и обработку джойстиков в отдельном потоке",
+        "env_none": "Нет",
+        "default_untitled_game": "Игра без названия",
+        "default_game_title": "Игра {idx}",
+        "msg_specify_executable_path": "Пожалуйста, укажите путь к исполняемому файлу.",
+        "msg_bat_save_error": "Не удалось сохранить файл .bat: {e}",
+        "ft_exec_and_scripts": "Исполняемые файлы и скрипты",
+        "ft_executables": "Исполняемые файлы (*.exe)",
+        "ft_scripts": "Командные скрипты (*.cmd, *.bat)",
+        "ft_all_files": "Все файлы (*.*)",
+        "ft_batch_file": "Пакетный файл (*.bat)",
     }
 }
 
@@ -1801,17 +1941,31 @@ def get_target_name(lang: str, target: str) -> str:
     targets = STRINGS[lang].get("target_names", {})
     return targets.get(target, STRINGS["es"]["target_names"].get(target, target))
 
+NONE_LABELS = {
+    "es": "-- Ninguno --",
+    "en": "-- None --",
+    "fr": "-- Aucun --",
+    "pt_BR": "-- Nenhum --",
+    "de": "-- Keiner --",
+    "it": "-- Nessuno --",
+    "ru": "-- Нет --"
+}
+
+ALL_NONE_LABELS = set(NONE_LABELS.values()) | {
+    "--", "Ninguno", "None", "Aucun", "Nenhum", "Keiner", "Nessuno", "Нет", "-- Ninguno --"
+}
+
+def get_none_label(lang: str = "es") -> str:
+    return NONE_LABELS.get(lang, "-- Ninguno --")
+
+def is_none_mapping(val: str) -> bool:
+    if not val:
+        return True
+    s = val.strip()
+    return s.startswith("--") or s in ALL_NONE_LABELS
+
 def get_input_options(lang: str = "es") -> list:
-    none_labels = {
-        "es": "-- Ninguno --",
-        "en": "-- None --",
-        "fr": "-- Aucun --",
-        "pt_BR": "-- Nenhum --",
-        "de": "-- Keiner --",
-        "it": "-- Nessuno --",
-        "ru": "-- Нет --"
-    }
-    none_lbl = none_labels.get(lang, "-- Ninguno --")
+    none_lbl = get_none_label(lang)
     options = [none_lbl]
     for b in range(1, 17):
         options.append(f"Button {b}")
@@ -1819,4 +1973,6 @@ def get_input_options(lang: str = "es") -> list:
         options.extend([f"Axis {a}", f"IAxis {a}"])
     for p in ["POV 1 Up", "POV 1 Down", "POV 1 Left", "POV 1 Right"]:
         options.append(p)
+    for k in ["w", "s", "a", "d", "j", "k", "u", "i", "q", "e", "space", "enter", "up", "down", "left", "right"]:
+        options.append(f"Tecla: {k}")
     return options
