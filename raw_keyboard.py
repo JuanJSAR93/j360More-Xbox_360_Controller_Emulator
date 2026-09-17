@@ -631,18 +631,20 @@ class RawKeyboardManager:
                 if dev_id in self._key_states and key_name in self._key_states[dev_id]:
                     self._key_states[dev_id].remove(key_name)
             else:
+                was_already_pressed = key_name in self._key_states.get(dev_id, set())
                 if dev_id not in self._key_states:
                     self._key_states[dev_id] = set()
                 self._key_states[dev_id].add(key_name)
 
                 if self._capture_callback and (self._capture_target_dev == dev_id or self._capture_target_dev is None):
-                    cb = self._capture_callback
-                    self._capture_target_dev = None
-                    self._capture_callback = None
-                    try:
-                        cb(key_name)
-                    except Exception as e:
-                        logger.error(f"Error en callback de captura: {e}")
+                    if not was_already_pressed:
+                        cb = self._capture_callback
+                        self._capture_target_dev = None
+                        self._capture_callback = None
+                        try:
+                            cb(key_name)
+                        except Exception as e:
+                            logger.error(f"Error en callback de captura: {e}")
 
     def _wnd_proc(self, hwnd: int, msg: int, wparam: int, lparam: int) -> int:
         if msg == WM_INPUT:

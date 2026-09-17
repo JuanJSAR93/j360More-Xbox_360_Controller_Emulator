@@ -2123,8 +2123,24 @@ class J360MoreApp:
         RIGHT_STICK_DISCRETE = ["RIGHT_STICK_UP", "RIGHT_STICK_DOWN", "RIGHT_STICK_LEFT", "RIGHT_STICK_RIGHT"]
 
         staged_mappings = {}
-        skipped_targets = set()
-        steps_queue = list(BASE_SEQUENCE)
+        is_keyboard = dev_id.startswith("kbd_") or dev_id == "keyboard"
+        if is_keyboard:
+            steps_queue = [
+                # Cruceta / D-Pad
+                "DPAD_UP", "DPAD_DOWN", "DPAD_LEFT", "DPAD_RIGHT",
+                # Botones Principales
+                "A", "B", "X", "Y",
+                # Botones Centrales / Menú
+                "START", "BACK", "GUIDE",
+                # Bumpers y Gatillos
+                "LEFT_SHOULDER", "RIGHT_SHOULDER", "LEFT_TRIGGER", "RIGHT_TRIGGER",
+                # Stick Izquierdo (Discreto para teclado)
+                "LEFT_THUMB", "LEFT_STICK_UP", "LEFT_STICK_DOWN", "LEFT_STICK_LEFT", "LEFT_STICK_RIGHT",
+                # Stick Derecho (Discreto para teclado)
+                "RIGHT_THUMB", "RIGHT_STICK_UP", "RIGHT_STICK_DOWN", "RIGHT_STICK_LEFT", "RIGHT_STICK_RIGHT"
+            ]
+        else:
+            steps_queue = list(BASE_SEQUENCE)
         current_step_idx = 0
 
         dlg = tk.Toplevel(self.root)
@@ -2305,16 +2321,17 @@ class J360MoreApp:
             nonlocal current_step_idx
             cur_tgt = worker_state["current_target"]
 
-            if cur_tgt == "LEFT_STICK_Y":
-                if "LEFT_STICK_X" not in staged_mappings or "LEFT_STICK_Y" not in staged_mappings:
-                    if not any(t in steps_queue for t in LEFT_STICK_DISCRETE):
-                        for off, t in enumerate(LEFT_STICK_DISCRETE):
-                            steps_queue.insert(current_step_idx + 1 + off, t)
-            elif cur_tgt == "RIGHT_STICK_Y":
-                if "RIGHT_STICK_X" not in staged_mappings or "RIGHT_STICK_Y" not in staged_mappings:
-                    if not any(t in steps_queue for t in RIGHT_STICK_DISCRETE):
-                        for off, t in enumerate(RIGHT_STICK_DISCRETE):
-                            steps_queue.insert(current_step_idx + 1 + off, t)
+            if not is_keyboard:
+                if cur_tgt == "LEFT_STICK_Y":
+                    if "LEFT_STICK_X" not in staged_mappings or "LEFT_STICK_Y" not in staged_mappings:
+                        if not any(t in steps_queue for t in LEFT_STICK_DISCRETE):
+                            for off, t in enumerate(LEFT_STICK_DISCRETE):
+                                steps_queue.insert(current_step_idx + 1 + off, t)
+                elif cur_tgt == "RIGHT_STICK_Y":
+                    if "RIGHT_STICK_X" not in staged_mappings or "RIGHT_STICK_Y" not in staged_mappings:
+                        if not any(t in steps_queue for t in RIGHT_STICK_DISCRETE):
+                            for off, t in enumerate(RIGHT_STICK_DISCRETE):
+                                steps_queue.insert(current_step_idx + 1 + off, t)
 
             current_step_idx += 1
             if current_step_idx < len(steps_queue):
@@ -2356,19 +2373,20 @@ class J360MoreApp:
                 prev_tgt = steps_queue[current_step_idx]
 
                 # Si retrocedemos a un paso de stick analógico tras haber insertado discretos
-                if prev_tgt == "LEFT_STICK_Y":
-                    # Si estaban los discretos insertados a continuación, retirarlos para reevaluar
-                    for t in LEFT_STICK_DISCRETE:
-                        if t in steps_queue:
-                            steps_queue.remove(t)
-                            staged_mappings.pop(t, None)
-                            skipped_targets.discard(t)
-                elif prev_tgt == "RIGHT_STICK_Y":
-                    for t in RIGHT_STICK_DISCRETE:
-                        if t in steps_queue:
-                            steps_queue.remove(t)
-                            staged_mappings.pop(t, None)
-                            skipped_targets.discard(t)
+                if not is_keyboard:
+                    if prev_tgt == "LEFT_STICK_Y":
+                        # Si estaban los discretos insertados a continuación, retirarlos para reevaluar
+                        for t in LEFT_STICK_DISCRETE:
+                            if t in steps_queue:
+                                steps_queue.remove(t)
+                                staged_mappings.pop(t, None)
+                                skipped_targets.discard(t)
+                    elif prev_tgt == "RIGHT_STICK_Y":
+                        for t in RIGHT_STICK_DISCRETE:
+                            if t in steps_queue:
+                                steps_queue.remove(t)
+                                staged_mappings.pop(t, None)
+                                skipped_targets.discard(t)
 
                 # También permitimos sobreescribir el paso anterior
                 staged_mappings.pop(prev_tgt, None)
@@ -2391,6 +2409,11 @@ class J360MoreApp:
             worker_state["active"] = False
             worker_state["listening"] = False
             self.device_manager.cancel_capture()
+
+            if is_keyboard:
+                for axis_key in ("LEFT_STICK_X", "LEFT_STICK_Y", "RIGHT_STICK_X", "RIGHT_STICK_Y"):
+                    if axis_key not in staged_mappings:
+                        staged_mappings[axis_key] = "-- Ninguno --"
 
             widgets = self.tab_widgets.get(pad_id)
             if widgets and "combos" in widgets:
@@ -2432,8 +2455,9 @@ class J360MoreApp:
         btn_finish.pack(side=tk.RIGHT, padx=4)
 
         dlg.protocol("WM_DELETE_WINDOW", on_cancel)
+        dlg.bind("<Escape>", lambda e: on_cancel())
 
-        if dev_id == "keyboard":
+        if is_keyboard and not getattr(self.device_manager, "keyboard_manager", None):
             def on_key_event(event):
                 if not worker_state["active"] or not worker_state["listening"]:
                     return
@@ -2444,18 +2468,20 @@ class J360MoreApp:
                 on_detected(f"Tecla: {k_name}")
 
             dlg.bind("<KeyPress>", on_key_event)
-        else:
-            dlg.bind("<Escape>", lambda e: on_cancel())
 
         def capture_thread_func():
             time.sleep(0.1)
             while worker_state["active"]:
-                if worker_state["listening"] and dev_id.startswith("joy_"):
+                if worker_state["listening"]:
                     cur_tgt = worker_state.get("current_target", "")
-                    det = self.device_manager.capture_input(dev_id, timeout=0.08, target_name=cur_tgt)
+                    timeout_val = 0.08 if dev_id.startswith("joy_") else 0.15
+                    det = self.device_manager.capture_input(dev_id, timeout=timeout_val, target_name=cur_tgt)
                     if det and worker_state["active"] and worker_state["listening"]:
+                        if is_keyboard and det in ("Key: Escape", "Tecla: escape", "Tecla: esc"):
+                            dlg.after(0, on_cancel)
+                            break
                         dlg.after(0, lambda d=det: on_detected(d))
-                        time.sleep(0.2)
+                        time.sleep(0.25)
                 time.sleep(0.01)
 
         threading.Thread(target=capture_thread_func, daemon=True).start()
