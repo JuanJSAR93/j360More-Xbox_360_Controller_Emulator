@@ -15,8 +15,8 @@
   <link rel="alternate" hreflang="x-default" href="https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/">
 
   <!-- Meta SEO & Indexation -->
-  <meta name="description" content="Emula hasta 12 mandos virtuales de Xbox 360 en Windows a 120Hz con baja latencia. Creado por JuanJSAR. Compatible con DirectInput, palancas arcade y teclado.">
-  <meta name="keywords" content="Xbox 360 emulator, JuanJSAR, ViGEmBus, HidHide, Gamepad emulator, XInput, DirectInput to XInput, 12 players PC gaming, j360More, emulador mandos xbox, emulador pc multijugador">
+  <meta name="description" content="Emula hasta 12 mandos virtuales de Xbox 360 en Windows a 120Hz con baja latencia. Soporte para múltiples teclados independientes (Windows Raw Input), DirectInput, palancas arcade y filtro HidHide. Creado por JuanJSAR.">
+  <meta name="keywords" content="Xbox 360 emulator, JuanJSAR, ViGEmBus, HidHide, Gamepad emulator, XInput, DirectInput to XInput, multi keyboard to xbox controller, multiples teclados pc, raw input keyboard, 12 players PC gaming, j360More, emulador mandos xbox, emulador pc multijugador">
   <meta name="author" content="JuanJSAR">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 
@@ -25,7 +25,7 @@
   <meta property="og:site_name" content="j360More - by JuanJSAR">
   <meta property="og:url" content="https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/">
   <meta property="og:title" content="j360More | Multi-Gamepad Xbox 360 Emulator by JuanJSAR">
-  <meta property="og:description" content="Transforma cualquier mando o teclado en mandos oficiales de Xbox 360. De 1 a 12 jugadores simultáneos con ViGEmBus y filtro Nefarius HidHide.">
+  <meta property="og:description" content="Transforma cualquier mando o múltiples teclados independientes en mandos oficiales de Xbox 360. De 1 a 12 jugadores simultáneos con ViGEmBus, Windows Raw Input y filtro HidHide.">
   <meta property="og:image" content="https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/assets/screenshot_main.png">
   <meta property="og:image:alt" content="j360More Interfaz de Emulación Multimando Xbox 360">
   <meta property="og:locale" content="es_ES">
@@ -34,7 +34,7 @@
   <!-- Twitter / X Cards -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="j360More | Multi-Gamepad Xbox 360 Emulator by JuanJSAR">
-  <meta name="twitter:description" content="Emula hasta 12 mandos virtuales de Xbox 360 en Windows a 120Hz con baja latencia y soporte HidHide. Desarrollado por JuanJSAR.">
+  <meta name="twitter:description" content="Emula hasta 12 mandos virtuales de Xbox 360 en Windows a 120Hz con baja latencia, soporte multi-teclado independiente y filtro HidHide. Desarrollado por JuanJSAR.">
   <meta name="twitter:image" content="https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/assets/screenshot_main.png">
   <meta name="twitter:creator" content="@JuanJSAR">
 
@@ -51,7 +51,7 @@
     "operatingSystem": "Windows 10, Windows 11 (64-bit)",
     "applicationCategory": "UtilitiesApplication",
     "gamePlatform": "PC",
-    "description": "Virtual Xbox 360 Multi-Controller Emulator for Windows (1-12 Gamepads) with ViGEmBus kernel driver, HidHide cloaking & DirectInput mapping.",
+    "description": "Virtual Xbox 360 Multi-Controller Emulator for Windows (1-12 Gamepads) with ViGEmBus kernel driver, independent multi-keyboard (Windows Raw Input), HidHide cloaking & DirectInput mapping.",
     "author": {
       "@type": "Person",
       "name": "JuanJSAR",
@@ -60,7 +60,7 @@
     "url": "https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/",
     "downloadUrl": "https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases",
     "codeRepository": "https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator",
-    "softwareVersion": "1.0.0",
+    "softwareVersion": "1.2.0",
     "softwareRequirements": "ViGEmBus driver",
     "offers": {
       "@type": "Offer",
@@ -131,6 +131,7 @@
       <div class="badge-wrapper">
         <span class="badge badge-primary" data-i18n="hero_badge_players">🎮 Hasta 12 Mandos Simultáneos</span>
         <span class="badge badge-secondary" data-i18n="hero_badge_hz">⚡ Ultra Baja Latencia 120Hz</span>
+        <span class="badge badge-rawkb" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;" data-i18n="hero_badge_rawkb">⌨️ Multi-Teclado Raw Input</span>
         <span class="badge badge-author" style="background: rgba(188,140,255,0.15); border: 1px solid rgba(188,140,255,0.4); color: #bc8cff;" data-i18n="hero_badge_author">👨‍💻 Creado por JuanJSAR</span>
       </div>
 
@@ -140,7 +141,7 @@
       </h1>
 
       <p class="hero-subtitle" data-i18n="hero_subtitle">
-        Convierte cualquier control genérico USB, mando de PlayStation, palanca arcade o teclado en mandos oficiales de Xbox 360 (XInput) con precisión milimétrica y compatibilidad total en PC. Desarrollado por JuanJSAR.
+        Convierte cualquier control genérico USB, mando de PlayStation, palanca arcade o múltiples teclados independientes en mandos oficiales de Xbox 360 (XInput) con precisión milimétrica y compatibilidad total en PC. Desarrollado por JuanJSAR.
       </p>
 
       <div class="hero-actions">
@@ -164,7 +165,7 @@
             <span class="window-dot yellow"></span>
             <span class="window-dot green"></span>
           </div>
-          <span class="window-title">j360More v1.0.0 - by JuanJSAR</span>
+          <span class="window-title">j360More v1.2.0 - by JuanJSAR</span>
         </div>
         <div class="screenshot-img-wrapper">
           <img src="assets/screenshot_main.png" alt="j360More Interfaz Principal" class="screenshot-zoomable" style="max-width: 100%; height: auto; animation: none;">
@@ -267,6 +268,24 @@
         <h3 data-i18n="f6_title">Guardado Persistente en JSON</h3>
         <p data-i18n="f6_desc">
           Todas tus asignaciones de botones, dispositivos y calibraciones se guardan de forma limpia en <code>config_mapping.json</code> para transferir o respaldar en cualquier equipo.
+        </p>
+      </div>
+
+      <!-- Feature 7 -->
+      <div class="feature-card">
+        <div class="feature-icon">⌨️</div>
+        <h3 data-i18n="f7_title">Soporte Multi-Teclado Independiente</h3>
+        <p data-i18n="f7_desc">
+          Conecta 2 o más teclados físicos (USB, Bluetooth o laptop) y asígnalos a mandos virtuales de Xbox separados. Desarrollado sobre Windows Raw Input para garantizar cero interferencias cruzadas (Zero Cross-Talk).
+        </p>
+      </div>
+
+      <!-- Feature 8 -->
+      <div class="feature-card">
+        <div class="feature-icon">🚀</div>
+        <h3 data-i18n="f8_title">Lanzador 'Juegos' (+4 Mandos)</h3>
+        <p data-i18n="f8_desc">
+          Pestaña dedicada para lanzar juegos multijugador con inyección automática de variables de entorno (FNA_GAMEPAD_NUM_GAMEPADS, etc.) escaladas en tiempo real para soportar hasta 12 mandos.
         </p>
       </div>
     </div>
@@ -515,8 +534,8 @@
               </tr>
               <tr>
                 <td class="req-comp" data-i18n="req_row_inputs">Periféricos de Entrada</td>
-                <td data-label="Mínimo" data-i18n="req_row_inputs_val1">Cualquier Gamepad USB / Bluetooth / Teclado</td>
-                <td data-label="Recomendado" data-i18n="req_row_inputs_val2">Gamepads compatibles con DirectInput o estándar</td>
+                <td data-label="Mínimo" data-i18n="req_row_inputs_val1">Cualquier Gamepad USB / Bluetooth o Multi-Teclado Raw Input</td>
+                <td data-label="Recomendado" data-i18n="req_row_inputs_val2">Múltiples teclados independientes, DirectInput o mandos estándar</td>
               </tr>
               <tr>
                 <td class="req-comp" data-i18n="req_row_runtime">Formato del Programa</td>
@@ -598,9 +617,9 @@
       </div>
 
       <div class="faq-item">
-        <div class="faq-question" data-i18n="faq_q3">¿Puedo usar teclado para jugar como un mando de Xbox?</div>
+        <div class="faq-question" data-i18n="faq_q3">¿Puedo usar múltiples teclados para jugar con amigos como mandos independientes?</div>
         <div class="faq-answer" data-i18n="faq_a3">
-          Sí. En la asignación de dispositivo puedes seleccionar "Teclado" y mapear las teclas que prefieras (WASD para sticks, teclas para botones A/B/X/Y, etc.).
+          ¡Sí! Gracias a la integración nativa con Windows Raw Input, j360More detecta individualmente cada teclado físico conectado (USB, Bluetooth o teclado integrado de laptop). Puedes conectar 2, 3 o más teclados y asignarlos a mandos virtuales separados (Mando 1, Mando 2, etc.) sin interferencia cruzada (Zero Cross-Talk): presionar teclas en el Teclado 1 jamás afectará los controles del Teclado 2.
         </div>
       </div>
 
