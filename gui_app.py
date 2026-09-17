@@ -22,7 +22,7 @@ from input_devices import DeviceManager
 from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration
 from i18n import get_text, get_target_name, SUPPORTED_LANGUAGES
 
-APP_VERSION = "1.1.2"
+APP_VERSION = "1.2.0"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
