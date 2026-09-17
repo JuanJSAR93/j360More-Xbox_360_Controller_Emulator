@@ -1,11 +1,11 @@
 import os
 import time
 import ctypes
-import threading
 from typing import Dict, List, Optional, Tuple, Any, Set
 
 # Permitir ejecucion de pygame sin crear ventana grafica propia
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+import threading
 import pygame
 from driver_manager import DriverManager
 from raw_keyboard import RawKeyboardManager
@@ -115,8 +115,7 @@ class DeviceManager:
     def refresh_devices(self) -> List[Dict[str, Any]]:
         """Re-escanea los joysticks fisicos conectados por USB o Bluetooth, excluyendo virtuales."""
         try:
-            pygame.joystick.quit()
-            pygame.joystick.init()
+            pygame.event.pump()
         except Exception:
             pass
 
@@ -157,7 +156,7 @@ class DeviceManager:
                     "product_name": k.get("product_name", "Teclado"),
                     "instance_id": k.get("instance_id", "KBD"),
                     "conn_type": k.get("conn_type", "USB"),
-                    "instance_path": k.get("path", "")
+                    "instance_path": k.get("pnp_path") or k.get("path", "")
                 })
 
         device_list.append({
@@ -434,7 +433,7 @@ class DeviceManager:
     def capture_input(self, dev_id: str, timeout: float = 4.0, target_name: str = "") -> Optional[str]:
         """
         Escucha el proximo movimiento de boton, eje o cruceta en el dispositivo fisico indicado.
-        Retorna la etiqueta del mapeo detectado (ej: 'Button 1', 'Axis 1+', 'POV 1 Up', etc.).
+        Retorna la etiqueta del mapeo detectado (ej: 'Button 1', 'Axis 1', 'POV 1 Up', etc.).
         """
         if dev_id == "none":
             return None
@@ -528,13 +527,13 @@ class DeviceManager:
                             # 3.1 Si el objetivo es un Gatillo (TRIGGER) y reposa en un extremo
                             if "TRIGGER" in target_name:
                                 if prev < -0.6 and curr > -0.2:
-                                    return f"Axis {a + 1}+"
+                                    return f"Axis {a + 1}"
                                 elif prev > 0.6 and curr < 0.2:
-                                    return f"Axis {a + 1}-"
+                                    return f"IAxis {a + 1}"
                                 elif diff > 0:
-                                    return f"Axis {a + 1}+"
+                                    return f"Axis {a + 1}"
                                 else:
-                                    return f"Axis {a + 1}-"
+                                    return f"IAxis {a + 1}"
                             
                             # 3.2 Si el objetivo es un eje completo analógico de stick (STICK_X / STICK_Y)
                             if target_name.endswith("_X") or target_name.endswith("_Y"):
@@ -555,11 +554,7 @@ class DeviceManager:
                                 return f"Axis {a + 1}" if diff > 0 else f"IAxis {a + 1}"
 
                             # 3.4 Fallback general (para triggers u otros controles)
-                            if prev < -0.6 and curr > -0.2:
-                                return f"Axis {a + 1}+"
-                            elif prev > 0.6 and curr < 0.2:
-                                return f"Axis {a + 1}-"
-                            elif diff > 0:
+                            if diff > 0:
                                 return f"Axis {a + 1}"
                             else:
                                 return f"IAxis {a + 1}"

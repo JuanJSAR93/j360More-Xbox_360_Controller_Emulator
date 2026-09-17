@@ -3,8 +3,9 @@ raw_keyboard.py - Gestor de múltiples teclados independientes para Windows
 utilizando la API nativa Windows Raw Input (user32.dll).
 
 Permite detectar teclados USB, Bluetooth e integrados por separado,
-identificarlos de forma persistente y leer pulsaciones de forma aislada
-sin interferencias entre jugadores.
+agrupa las sub-interfaces compuestas de un mismo teclado físico,
+filtra ratones con endpoints auxiliares de macros, e identifica
+pulsaciones de forma aislada sin interferencias entre jugadores.
 """
 
 import ctypes
@@ -12,6 +13,7 @@ from ctypes import wintypes
 import hashlib
 import logging
 import os
+import re
 import threading
 import time
 from typing import Callable, Dict, List, Optional, Set, Tuple
@@ -21,6 +23,13 @@ logger = logging.getLogger("j360More.RawKeyboard")
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
+hid = ctypes.windll.hid
+
+hid.HidD_GetProductString.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.ULONG]
+hid.HidD_GetProductString.restype = wintypes.BOOLEAN
+
+hid.HidD_GetManufacturerString.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.ULONG]
+hid.HidD_GetManufacturerString.restype = wintypes.BOOLEAN
 
 LRESULT = ctypes.c_ssize_t
 user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
@@ -79,11 +88,13 @@ class RAWKEYBOARD(ctypes.Structure):
 
 class RAWINPUT(ctypes.Structure):
     class _U(ctypes.Union):
-        _fields_ = [("keyboard", RAWKEYBOARD)]
-    _anonymous_ = ("_u",)
+        _fields_ = [
+            ("keyboard", RAWKEYBOARD),
+            ("dummy", ctypes.c_byte * 64)
+        ]
     _fields_ = [
         ("header", RAWINPUTHEADER),
-        ("_u", _U),
+        ("data", _U),
     ]
 
 # Configuración de llamadas Win32
@@ -211,6 +222,126 @@ def vk_to_friendly_name(vkey: int, flags: int) -> str:
         name = VK_MAP.get(vkey, f"VK_{vkey:02X}")
     return f"Key: {name}"
 
+def get_container_id(device_path: str) -> Optional[str]:
+    parts = device_path.split("#")
+    if len(parts) >= 3:
+        enum_name = parts[0].replace(r"\??\\", "").replace(r"\\?\\", "").replace(r"\??", "").replace(r"\\?", "").strip("\\")
+        dev_id = parts[1]
+        inst_id = parts[2]
+        reg_path = f"SYSTEM\\CurrentControlSet\\Enum\\{enum_name}\\{dev_id}\\{inst_id}"
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as k:
+                cid = winreg.QueryValueEx(k, "ContainerID")[0]
+                if cid and cid != "{00000000-0000-0000-ffff-ffffffffffff}":
+                    return cid.lower()
+        except Exception:
+            pass
+    return None
+
+_container_paths_cache: Dict[str, List[str]] = {}
+
+def get_all_container_paths(container_id: str) -> List[str]:
+    """Obtiene todas las rutas de instancia PnP (HID y USB raíz) asociadas al mismo ContainerID con caché."""
+    if not container_id:
+        return []
+    cid_lower = container_id.lower()
+    if cid_lower in _container_paths_cache:
+        return _container_paths_cache[cid_lower]
+
+    found_paths = set()
+    for base in [r"SYSTEM\CurrentControlSet\Enum\HID", r"SYSTEM\CurrentControlSet\Enum\USB"]:
+        prefix = "HID" if "HID" in base else "USB"
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, base) as bk:
+                for i in range(winreg.QueryInfoKey(bk)[0]):
+                    dev = winreg.EnumKey(bk, i)
+                    with winreg.OpenKey(bk, dev) as dk:
+                        for j in range(winreg.QueryInfoKey(dk)[0]):
+                            inst = winreg.EnumKey(dk, j)
+                            with winreg.OpenKey(dk, inst) as ik:
+                                try:
+                                    c = winreg.QueryValueEx(ik, "ContainerID")[0]
+                                    if c.lower() == cid_lower:
+                                        pnp = f"{prefix}\\{dev}\\{inst}"
+                                        found_paths.add(pnp)
+                                except Exception:
+                                    pass
+        except Exception:
+            pass
+    res = sorted(found_paths)
+    _container_paths_cache[cid_lower] = res
+    return res
+
+
+
+def is_mouse_device(device_path: str, container_id: Optional[str]) -> bool:
+    if not container_id:
+        return False
+    # Detecta si este contenedor corresponde primariamente a un ratón con interfaz de macros
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Enum\HID") as hk:
+            for i in range(winreg.QueryInfoKey(hk)[0]):
+                sub = winreg.EnumKey(hk, i)
+                with winreg.OpenKey(hk, sub) as sk:
+                    for j in range(winreg.QueryInfoKey(sk)[0]):
+                        sinst = winreg.EnumKey(sk, j)
+                        with winreg.OpenKey(sk, sinst) as ik:
+                            try:
+                                if winreg.QueryValueEx(ik, "ContainerID")[0].lower() == container_id:
+                                    service = ""
+                                    try: service = winreg.QueryValueEx(ik, "Service")[0]
+                                    except: pass
+                                    desc = winreg.QueryValueEx(ik, "DeviceDesc")[0]
+                                    if ("mouhid" in service.lower() or "mouse" in desc.lower()) and "&MI_00" in sub:
+                                        return True
+                            except: pass
+    except Exception:
+        pass
+    return False
+
+def dev_path_to_pnp_path(device_path: str) -> str:
+    parts = device_path.split("#")
+    if len(parts) >= 3:
+        enum_name = parts[0].replace(r"\??\\", "").replace(r"\\?\\", "").replace(r"\??", "").replace(r"\\?", "").strip("\\")
+        return f"{enum_name}\\{parts[1]}\\{parts[2]}"
+    return device_path
+
+def get_hid_device_strings(device_path: str) -> Tuple[str, str]:
+    mfg = ""
+    prod = ""
+    try:
+        # Abrir handle de consulta de metadatos sin requerir permisos de lectura/escritura
+        h = kernel32.CreateFileW(
+            device_path,
+            0,
+            1 | 2,  # FILE_SHARE_READ | FILE_SHARE_WRITE
+            None,
+            3,      # OPEN_EXISTING
+            0,
+            None
+        )
+        if not h or h == -1:
+            h = kernel32.CreateFileW(
+                device_path,
+                0x80000000, # GENERIC_READ
+                1 | 2,
+                None,
+                3,
+                0,
+                None
+            )
+        if h and h != -1:
+            buf_p = ctypes.create_unicode_buffer(256)
+            buf_m = ctypes.create_unicode_buffer(256)
+            if hid.HidD_GetProductString(h, buf_p, ctypes.sizeof(buf_p)):
+                prod = buf_p.value.strip()
+            if hid.HidD_GetManufacturerString(h, buf_m, ctypes.sizeof(buf_m)):
+                mfg = buf_m.value.strip()
+            kernel32.CloseHandle(h)
+    except Exception:
+        pass
+    return mfg, prod
+
 def get_device_friendly_name(device_path: str) -> Tuple[str, str, str]:
     p = device_path.upper()
     conn_type = "USB"
@@ -221,11 +352,27 @@ def get_device_friendly_name(device_path: str) -> Tuple[str, str, str]:
         conn_type = "INT"
         friendly_name = "Teclado Interno de Laptop"
         vendor = "Sistema"
+        return friendly_name, vendor, conn_type
     elif "BTH" in p or "BLUETOOTH" in p:
         conn_type = "BTH"
         friendly_name = "Teclado Bluetooth"
         vendor = "Bluetooth"
 
+    # 1. Consultar descriptores de producto y fabricante directamente vía hid.dll (igual que HidHide)
+    mfg, prod = get_hid_device_strings(device_path)
+    if prod:
+        if mfg and not prod.lower().startswith(mfg.lower()):
+            friendly_name = f"{mfg} {prod}"
+        else:
+            friendly_name = prod
+        vendor = mfg if mfg else "USB"
+        return friendly_name, vendor, conn_type
+    elif mfg:
+        friendly_name = f"{mfg} Keyboard"
+        vendor = mfg
+        return friendly_name, vendor, conn_type
+
+    # 2. Respaldo por Registro de Windows
     parts = device_path.split("#")
     if len(parts) >= 3:
         dev_id_str = parts[1]
@@ -239,17 +386,17 @@ def get_device_friendly_name(device_path: str) -> Tuple[str, str, str]:
                             val = winreg.QueryValueEx(k, val_name)[0]
                             if ";" in val:
                                 val = val.split(";")[-1]
-                            if val:
+                            if val and not val.startswith("@"):
                                 friendly_name = val.strip()
                                 break
                         except Exception:
                             pass
                     try:
-                        mfg = winreg.QueryValueEx(k, "Mfg")[0]
-                        if ";" in mfg:
-                            mfg = mfg.split(";")[-1]
-                        if mfg and not mfg.startswith("@"):
-                            vendor = mfg.strip()
+                        mfg_val = winreg.QueryValueEx(k, "Mfg")[0]
+                        if ";" in mfg_val:
+                            mfg_val = mfg_val.split(";")[-1]
+                        if mfg_val and not mfg_val.startswith("@"):
+                            vendor = mfg_val.strip()
                     except Exception:
                         pass
             except Exception:
@@ -316,6 +463,7 @@ class RawKeyboardManager:
 
         found_devices = []
         seen_paths = set()
+        group_to_device = {}
 
         with self._devices_lock:
             for d in dev_list:
@@ -331,30 +479,74 @@ class RawKeyboardManager:
                         if "MICROSOFT KEYBOARD RID" in dev_path.upper():
                             continue
 
+                        cid = get_container_id(dev_path)
+                        # Filtrar ratones con endpoints secundarios de teclado
+                        if is_mouse_device(dev_path, cid):
+                            continue
+
                         seen_paths.add(dev_path)
-                        stable_hash = hashlib.md5(dev_path.upper().encode("utf-8")).hexdigest()[:8]
-                        dev_id = f"kbd_{stable_hash}"
 
-                        friendly_name, vendor, conn_type = get_device_friendly_name(dev_path)
+                        # Clave de agrupamiento para dispositivos físicos compuestos (MI_00, MI_01, etc.)
+                        parts = dev_path.split("#")
+                        if cid:
+                            group_key = "cid_" + cid
+                        else:
+                            group_key = "dev_" + (parts[1].upper() if len(parts) >= 2 else dev_path.upper())
 
-                        dev_info = {
-                            "id": dev_id,
-                            "hDevice": d.hDevice,
-                            "path": dev_path,
-                            "name": friendly_name,
-                            "vendor_name": vendor,
-                            "product_name": friendly_name,
-                            "instance_id": stable_hash,
-                            "conn_type": conn_type,
-                            "type": "keyboard"
-                        }
+                        pnp_path = dev_path_to_pnp_path(dev_path)
+                        pnp_paths = [pnp_path] if pnp_path else []
+                        if cid:
+                            cont_paths = get_all_container_paths(cid)
+                            for cp in cont_paths:
+                                if cp not in pnp_paths:
+                                    pnp_paths.append(cp)
 
-                        self._handle_to_id[d.hDevice] = dev_id
-                        self._id_to_device[dev_id] = dev_info
-                        if dev_id not in self._key_states:
-                            self._key_states[dev_id] = set()
+                        # HidHide asocia los contenedores con la raíz USB (sin &MI_) o el nodo HID
+                        base_pnp_path = next((cp for cp in pnp_paths if cp.startswith("USB\\") and "&MI_" not in cp), pnp_path)
 
-                        found_devices.append(dev_info)
+                        m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', pnp_path, re.IGNORECASE)
+                        m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', pnp_path, re.IGNORECASE)
+                        vid = m_vid.group(1).upper() if m_vid else "0000"
+                        pid = m_pid.group(1).upper() if m_pid else "0000"
+
+                        if group_key in group_to_device:
+                            # Teclado físico ya descubierto; asociar este nuevo hDevice
+                            existing_dev = group_to_device[group_key]
+                            existing_dev["handles"].append(d.hDevice)
+                            for cp in pnp_paths:
+                                if cp not in existing_dev.get("pnp_paths", []):
+                                    existing_dev.setdefault("pnp_paths", []).append(cp)
+                            self._handle_to_id[d.hDevice] = existing_dev["id"]
+                        else:
+                            # Nuevo teclado físico único
+                            stable_hash = hashlib.md5(group_key.encode("utf-8")).hexdigest()[:8]
+                            dev_id = f"kbd_{stable_hash}"
+                            friendly_name, vendor, conn_type = get_device_friendly_name(dev_path)
+
+                            dev_info = {
+                                "id": dev_id,
+                                "hDevice": d.hDevice,
+                                "handles": [d.hDevice],
+                                "path": dev_path,
+                                "pnp_path": base_pnp_path or pnp_path,
+                                "pnp_paths": pnp_paths,
+                                "vid": vid,
+                                "pid": pid,
+                                "name": friendly_name,
+                                "vendor_name": vendor,
+                                "product_name": friendly_name,
+                                "instance_id": stable_hash,
+                                "conn_type": conn_type,
+                                "type": "keyboard"
+                            }
+
+                            group_to_device[group_key] = dev_info
+                            self._handle_to_id[d.hDevice] = dev_id
+                            self._id_to_device[dev_id] = dev_info
+                            if dev_id not in self._key_states:
+                                self._key_states[dev_id] = set()
+
+                            found_devices.append(dev_info)
 
         return found_devices
 
@@ -387,13 +579,28 @@ class RawKeyboardManager:
             user32.GetRawInputDeviceInfoW(wintypes.HANDLE(h_device), RIDI_DEVICENAME, buf, ctypes.byref(size))
             dev_path = buf.value
             if dev_path and "MICROSOFT KEYBOARD RID" not in dev_path.upper():
-                stable_hash = hashlib.md5(dev_path.upper().encode("utf-8")).hexdigest()[:8]
+                cid = get_container_id(dev_path)
+                if is_mouse_device(dev_path, cid):
+                    return None
+                parts = dev_path.split("#")
+                group_key = ("cid_" + cid) if cid else ("dev_" + (parts[1].upper() if len(parts) >= 2 else dev_path.upper()))
+                stable_hash = hashlib.md5(group_key.encode("utf-8")).hexdigest()[:8]
                 dev_id = f"kbd_{stable_hash}"
+                pnp_path = dev_path_to_pnp_path(dev_path)
+                m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', pnp_path, re.IGNORECASE)
+                m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', pnp_path, re.IGNORECASE)
+                vid = m_vid.group(1).upper() if m_vid else "0000"
+                pid = m_pid.group(1).upper() if m_pid else "0000"
                 friendly_name, vendor, conn_type = get_device_friendly_name(dev_path)
                 dev_info = {
                     "id": dev_id,
                     "hDevice": h_device,
+                    "handles": [h_device],
                     "path": dev_path,
+                    "pnp_path": pnp_path,
+                    "pnp_paths": [pnp_path] if pnp_path else [],
+                    "vid": vid,
+                    "pid": pid,
                     "name": friendly_name,
                     "vendor_name": vendor,
                     "product_name": friendly_name,
@@ -439,18 +646,21 @@ class RawKeyboardManager:
 
     def _wnd_proc(self, hwnd: int, msg: int, wparam: int, lparam: int) -> int:
         if msg == WM_INPUT:
-            raw = RAWINPUT()
-            size = wintypes.UINT(ctypes.sizeof(RAWINPUT))
-            ret = user32.GetRawInputData(
-                wintypes.HANDLE(lparam),
-                RID_INPUT,
-                ctypes.byref(raw),
-                ctypes.byref(size),
-                ctypes.sizeof(RAWINPUTHEADER)
-            )
-            if ret != 0xFFFFFFFF and raw.header.dwType == RIM_TYPEKEYBOARD:
-                kb = raw.data.keyboard
-                self._on_raw_key_event(raw.header.hDevice, kb.VKey, kb.Flags)
+            try:
+                raw = RAWINPUT()
+                size = wintypes.UINT(ctypes.sizeof(RAWINPUT))
+                ret = user32.GetRawInputData(
+                    wintypes.HANDLE(lparam),
+                    RID_INPUT,
+                    ctypes.byref(raw),
+                    ctypes.byref(size),
+                    ctypes.sizeof(RAWINPUTHEADER)
+                )
+                if ret != 0xFFFFFFFF and raw.header.dwType == RIM_TYPEKEYBOARD:
+                    kb = raw.data.keyboard
+                    self._on_raw_key_event(raw.header.hDevice, kb.VKey, kb.Flags)
+            except Exception as e:
+                logger.error(f"Error procesando WM_INPUT: {e}")
             return 0
 
         elif msg == WM_INPUT_DEVICE_CHANGE:

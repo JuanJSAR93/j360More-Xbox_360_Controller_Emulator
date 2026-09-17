@@ -173,7 +173,7 @@ class EmulatorEngine:
             else:
                 self.pressed_keys.discard(key_name.lower())
 
-    def _eval_mapping(self, mapping_str: str, joy_state: Dict[str, Any]) -> Tuple[bool, float]:
+    def _eval_mapping(self, mapping_str: str, joy_state: Dict[str, Any], dev_id: str = "") -> Tuple[bool, float]:
         if not mapping_str or mapping_str == "-- Ninguno --":
             return False, 0.0
 
@@ -187,7 +187,7 @@ class EmulatorEngine:
                 k == pk.split(":", 1)[1].strip().lower() if ":" in pk else k == pk.lower()
                 for pk in kbd_keys
             )
-            if not pressed and hasattr(self, "pressed_keys"):
+            if not pressed and not dev_id.startswith("kbd_") and hasattr(self, "pressed_keys"):
                 pressed = k in self.pressed_keys
             return pressed, (1.0 if pressed else 0.0)
 
@@ -276,7 +276,7 @@ class EmulatorEngine:
                 # 1. Botones Digitales
                 for btn_name, vg_code in BUTTON_VG_MAP.items():
                     map_str = mappings.get(btn_name, "")
-                    is_pressed, _ = self._eval_mapping(map_str, joy_state)
+                    is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
                     if is_pressed:
                         pressed_buttons.add(btn_name)
                         pad.press_button(button=vg_code)
@@ -285,7 +285,7 @@ class EmulatorEngine:
 
                 # 2. Gatillo Izquierdo (LT)
                 lt_map = mappings.get("LEFT_TRIGGER", "")
-                is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state)
+                is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state, dev_id)
                 if is_lt_pressed and lt_raw == 1.0 and "Axis" not in lt_map:
                     lt_norm = 1.0
                 else:
@@ -303,7 +303,7 @@ class EmulatorEngine:
 
                 # Gatillo Derecho (RT)
                 rt_map = mappings.get("RIGHT_TRIGGER", "")
-                is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state)
+                is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state, dev_id)
                 if is_rt_pressed and rt_raw == 1.0 and "Axis" not in rt_map:
                     rt_norm = 1.0
                 else:
@@ -320,13 +320,13 @@ class EmulatorEngine:
                 pad.right_trigger(value=rt_byte)
 
                 # 3. Stick Izquierdo (LS) - Soporta tanto ejes analogicos como teclas/botones por direccion
-                _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state)
-                _, ly_axis = self._eval_mapping(mappings.get("LEFT_STICK_Y", ""), joy_state)
+                _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state, dev_id)
+                _, ly_axis = self._eval_mapping(mappings.get("LEFT_STICK_Y", ""), joy_state, dev_id)
 
-                is_l_up, _ = self._eval_mapping(mappings.get("LEFT_STICK_UP", ""), joy_state)
-                is_l_down, _ = self._eval_mapping(mappings.get("LEFT_STICK_DOWN", ""), joy_state)
-                is_l_left, _ = self._eval_mapping(mappings.get("LEFT_STICK_LEFT", ""), joy_state)
-                is_l_right, _ = self._eval_mapping(mappings.get("LEFT_STICK_RIGHT", ""), joy_state)
+                is_l_up, _ = self._eval_mapping(mappings.get("LEFT_STICK_UP", ""), joy_state, dev_id)
+                is_l_down, _ = self._eval_mapping(mappings.get("LEFT_STICK_DOWN", ""), joy_state, dev_id)
+                is_l_left, _ = self._eval_mapping(mappings.get("LEFT_STICK_LEFT", ""), joy_state, dev_id)
+                is_l_right, _ = self._eval_mapping(mappings.get("LEFT_STICK_RIGHT", ""), joy_state, dev_id)
 
                 if is_l_up: pressed_buttons.add("LEFT_STICK_UP")
                 if is_l_down: pressed_buttons.add("LEFT_STICK_DOWN")
@@ -359,13 +359,13 @@ class EmulatorEngine:
                 pad.left_joystick(x_value=lx_int, y_value=ly_int)
 
                 # 4. Stick Derecho (RS) - Soporta tanto ejes analogicos como teclas/botones por direccion
-                _, rx_axis = self._eval_mapping(mappings.get("RIGHT_STICK_X", ""), joy_state)
-                _, ry_axis = self._eval_mapping(mappings.get("RIGHT_STICK_Y", ""), joy_state)
+                _, rx_axis = self._eval_mapping(mappings.get("RIGHT_STICK_X", ""), joy_state, dev_id)
+                _, ry_axis = self._eval_mapping(mappings.get("RIGHT_STICK_Y", ""), joy_state, dev_id)
 
-                is_r_up, _ = self._eval_mapping(mappings.get("RIGHT_STICK_UP", ""), joy_state)
-                is_r_down, _ = self._eval_mapping(mappings.get("RIGHT_STICK_DOWN", ""), joy_state)
-                is_r_left, _ = self._eval_mapping(mappings.get("RIGHT_STICK_LEFT", ""), joy_state)
-                is_r_right, _ = self._eval_mapping(mappings.get("RIGHT_STICK_RIGHT", ""), joy_state)
+                is_r_up, _ = self._eval_mapping(mappings.get("RIGHT_STICK_UP", ""), joy_state, dev_id)
+                is_r_down, _ = self._eval_mapping(mappings.get("RIGHT_STICK_DOWN", ""), joy_state, dev_id)
+                is_r_left, _ = self._eval_mapping(mappings.get("RIGHT_STICK_LEFT", ""), joy_state, dev_id)
+                is_r_right, _ = self._eval_mapping(mappings.get("RIGHT_STICK_RIGHT", ""), joy_state, dev_id)
 
                 if is_r_up: pressed_buttons.add("RIGHT_STICK_UP")
                 if is_r_down: pressed_buttons.add("RIGHT_STICK_DOWN")
@@ -435,7 +435,7 @@ class EmulatorEngine:
 
         for btn_name in BUTTON_VG_MAP.keys():
             map_str = mappings.get(btn_name, "")
-            is_pressed, _ = self._eval_mapping(map_str, joy_state)
+            is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
             if is_pressed:
                 pressed_buttons.add(btn_name)
 
@@ -445,7 +445,7 @@ class EmulatorEngine:
         c_rs = calib.get("right_stick", {})
 
         lt_map = mappings.get("LEFT_TRIGGER", "")
-        is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state)
+        is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state, dev_id)
         if is_lt_pressed and lt_raw == 1.0 and "Axis" not in lt_map:
             lt_norm = 1.0
         else:
@@ -454,7 +454,7 @@ class EmulatorEngine:
         lt_byte = int(lt_calib * 255)
 
         rt_map = mappings.get("RIGHT_TRIGGER", "")
-        is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state)
+        is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state, dev_id)
         if is_rt_pressed and rt_raw == 1.0 and "Axis" not in rt_map:
             rt_norm = 1.0
         else:
@@ -462,13 +462,13 @@ class EmulatorEngine:
         rt_calib = apply_trigger_calibration(rt_norm, c_rt.get("deadzone", 0), c_rt.get("anti_deadzone", 0), c_rt.get("sensitivity", 0), c_rt.get("invert", False))
         rt_byte = int(rt_calib * 255)
 
-        _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state)
-        _, ly_axis = self._eval_mapping(mappings.get("LEFT_STICK_Y", ""), joy_state)
+        _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state, dev_id)
+        _, ly_axis = self._eval_mapping(mappings.get("LEFT_STICK_Y", ""), joy_state, dev_id)
 
-        is_l_up, _ = self._eval_mapping(mappings.get("LEFT_STICK_UP", ""), joy_state)
-        is_l_down, _ = self._eval_mapping(mappings.get("LEFT_STICK_DOWN", ""), joy_state)
-        is_l_left, _ = self._eval_mapping(mappings.get("LEFT_STICK_LEFT", ""), joy_state)
-        is_l_right, _ = self._eval_mapping(mappings.get("LEFT_STICK_RIGHT", ""), joy_state)
+        is_l_up, _ = self._eval_mapping(mappings.get("LEFT_STICK_UP", ""), joy_state, dev_id)
+        is_l_down, _ = self._eval_mapping(mappings.get("LEFT_STICK_DOWN", ""), joy_state, dev_id)
+        is_l_left, _ = self._eval_mapping(mappings.get("LEFT_STICK_LEFT", ""), joy_state, dev_id)
+        is_l_right, _ = self._eval_mapping(mappings.get("LEFT_STICK_RIGHT", ""), joy_state, dev_id)
 
         if is_l_up: pressed_buttons.add("LEFT_STICK_UP")
         if is_l_down: pressed_buttons.add("LEFT_STICK_DOWN")

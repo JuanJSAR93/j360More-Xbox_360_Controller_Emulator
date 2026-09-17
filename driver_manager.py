@@ -190,6 +190,8 @@ class DriverManager:
 
         try:
             p = self._run_cli(["--dev-gaming"])
+            if not p.stdout or not p.stdout.strip():
+                return []
             data = json.loads(p.stdout)
             devices = []
             for container in data:
