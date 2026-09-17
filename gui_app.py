@@ -1731,7 +1731,13 @@ class J360MoreApp:
             dev_id = tags[0] if tags else ""
             dev = next((d for d in self.available_devices if d["id"] == dev_id), None)
 
-            if dev and dev.get("instance_path"):
+            # Los teclados y ratones no se pueden ocultar con HidHide
+            if not dev or dev.get("type") != "joystick" or dev["id"].startswith("kbd_") or dev["id"] in ("keyboard", "mouse"):
+                btn_hide.config(state=tk.DISABLED)
+                btn_unhide.config(state=tk.DISABLED)
+                return
+
+            if dev.get("instance_path"):
                 inst_path = dev.get("instance_path")
                 is_marked = inst_path in self.config.get("hidden_devices", [])
                 if is_marked or dev.get("is_hidden"):
@@ -1773,7 +1779,7 @@ class J360MoreApp:
 
                 if not has_hidhide:
                     hidhide_str = self.t("dev_not_available")
-                elif dev.get("type") != "joystick" or not inst_path:
+                elif dev.get("type") != "joystick" or dev["id"].startswith("kbd_") or dev["id"] in ("keyboard", "mouse") or not inst_path:
                     hidhide_str = "N/A"
                 elif is_marked:
                     if self.engine.is_running():
@@ -1819,6 +1825,8 @@ class J360MoreApp:
 
             if not has_hidhide:
                 hidhide_state = self.t("dev_not_available")
+            elif dev.get("type") != "joystick" or dev["id"].startswith("kbd_") or dev["id"] in ("keyboard", "mouse"):
+                hidhide_state = "N/A"
             elif is_marked and self.engine.is_running():
                 hidhide_state = self.t("dev_hidden_emulating")
             elif is_marked:
@@ -1857,6 +1865,10 @@ class J360MoreApp:
             dev_id = tags[0] if tags else ""
             dev = next((d for d in self.available_devices if d["id"] == dev_id), None)
             if not dev:
+                return
+
+            # No permitir ocultar teclados ni ratones
+            if dev.get("type") != "joystick" or dev["id"].startswith("kbd_") or dev["id"] in ("keyboard", "mouse"):
                 return
 
             inst_path = dev.get("instance_path")
