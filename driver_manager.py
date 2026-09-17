@@ -80,6 +80,47 @@ class DriverManager:
 
         return None
 
+    def get_hidhide_client_path(self) -> Optional[str]:
+        """Obtiene la ruta hacia HidHideClient.exe (interfaz gráfica oficial de configuración de HidHide)."""
+        if getattr(self, "_cached_client_path", None) and os.path.isfile(self._cached_client_path):
+            return self._cached_client_path
+
+        # 1. Comprobar directorio junto al CLI si está detectado
+        cli_path = self.get_hidhide_cli_path()
+        if cli_path:
+            dir_cli = os.path.dirname(cli_path)
+            candidate_same = os.path.join(dir_cli, "HidHideClient.exe")
+            if os.path.isfile(candidate_same):
+                self._cached_client_path = candidate_same
+                return candidate_same
+            candidate_parent = os.path.join(os.path.dirname(dir_cli), "HidHideClient.exe")
+            if os.path.isfile(candidate_parent):
+                self._cached_client_path = candidate_parent
+                return candidate_parent
+
+        # 2. Rutas estándar en Program Files
+        prog_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+        prog_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+        candidates = [
+            os.path.join(prog_files, "Nefarius Software Solutions", "HidHide", "x64", "HidHideClient.exe"),
+            os.path.join(prog_files, "Nefarius Software Solutions", "HidHide", "HidHideClient.exe"),
+            os.path.join(prog_files_x86, "Nefarius Software Solutions", "HidHide", "x64", "HidHideClient.exe"),
+            os.path.join(prog_files_x86, "Nefarius Software Solutions", "HidHide", "HidHideClient.exe"),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                self._cached_client_path = c
+                return c
+
+        # 3. Buscar en PATH
+        import shutil
+        which_client = shutil.which("HidHideClient.exe") or shutil.which("HidHideClient")
+        if which_client and os.path.isfile(which_client):
+            self._cached_client_path = which_client
+            return which_client
+
+        return None
+
     def is_hidhide_installed(self) -> bool:
         """Comprueba si HidHide está instalado en el sistema de forma instantánea y sin abrir consolas."""
         if self._hidhide_available is not None:

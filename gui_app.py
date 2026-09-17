@@ -289,6 +289,8 @@ class J360MoreApp:
             self.btn_settings.config(text=self.t("btn_settings"))
         if hasattr(self, "btn_joy_cpl"):
             self.btn_joy_cpl.config(text=self.t("btn_joy_cpl"))
+        if hasattr(self, "btn_hidhide"):
+            self.btn_hidhide.config(text=self.t("btn_hidhide_client"))
         if hasattr(self, "btn_save"):
             self.btn_save.config(text=self.t("btn_save"))
         if hasattr(self, "btn_reset"):
@@ -511,6 +513,9 @@ class J360MoreApp:
 
         self.btn_joy_cpl = ttk.Button(bottom_frame, text=self.t("btn_joy_cpl"), command=self._open_joy_cpl)
         self.btn_joy_cpl.pack(side=tk.LEFT, padx=4)
+
+        self.btn_hidhide = ttk.Button(bottom_frame, text=self.t("btn_hidhide_client"), command=self._open_hidhide_client)
+        self.btn_hidhide.pack(side=tk.LEFT, padx=4)
 
         self.btn_save = ttk.Button(bottom_frame, text=self.t("btn_save"), command=self.save_config)
         self.btn_save.pack(side=tk.RIGHT, padx=4)
@@ -2505,6 +2510,23 @@ class J360MoreApp:
             subprocess.Popen(["joy.cpl"], shell=True, creationflags=flags)
         except Exception as e:
             messagebox.showerror("Error", self.t("joy_cpl_error", e=e))
+
+    def _open_hidhide_client(self):
+        try:
+            client_path = self.driver_manager.get_hidhide_client_path()
+            if client_path and os.path.isfile(client_path):
+                try:
+                    os.startfile(client_path)
+                except Exception:
+                    flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+                    subprocess.Popen([client_path], shell=True, creationflags=flags)
+            else:
+                messagebox.showwarning(
+                    self.t("hidhide_client_not_found_title"),
+                    self.t("hidhide_client_not_found_msg")
+                )
+        except Exception as e:
+            messagebox.showerror("Error", self.t("hidhide_client_error", e=e))
 
     def _draw_trigger_graph(self, cv: tk.Canvas, dz: int, adz: int, sens: int, inv: bool, raw_val: float, out_byte: int):
         cv.delete("all")
