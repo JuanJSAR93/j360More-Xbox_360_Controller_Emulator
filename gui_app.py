@@ -2123,6 +2123,7 @@ class J360MoreApp:
         RIGHT_STICK_DISCRETE = ["RIGHT_STICK_UP", "RIGHT_STICK_DOWN", "RIGHT_STICK_LEFT", "RIGHT_STICK_RIGHT"]
 
         staged_mappings = {}
+        skipped_targets = set()
         is_keyboard = dev_id.startswith("kbd_") or dev_id == "keyboard"
         if is_keyboard:
             steps_queue = [
@@ -2361,6 +2362,7 @@ class J360MoreApp:
                 return
             cancel_advance_timer()
             worker_state["listening"] = False
+            self.device_manager.cancel_capture()
 
             nonlocal current_step_idx
             if current_step_idx > 0:
@@ -2400,6 +2402,7 @@ class J360MoreApp:
                 return
             cancel_advance_timer()
             worker_state["listening"] = False
+            self.device_manager.cancel_capture()
             tgt = worker_state["current_target"]
             skipped_targets.add(tgt)
             advance()
@@ -2478,9 +2481,15 @@ class J360MoreApp:
                     det = self.device_manager.capture_input(dev_id, timeout=timeout_val, target_name=cur_tgt)
                     if det and worker_state["active"] and worker_state["listening"]:
                         if is_keyboard and det in ("Key: Escape", "Tecla: escape", "Tecla: esc"):
-                            dlg.after(0, on_cancel)
+                            try:
+                                dlg.after(0, on_cancel)
+                            except Exception:
+                                pass
                             break
-                        dlg.after(0, lambda d=det: on_detected(d))
+                        try:
+                            dlg.after(0, lambda d=det: on_detected(d))
+                        except Exception:
+                            pass
                         time.sleep(0.25)
                 time.sleep(0.01)
 
