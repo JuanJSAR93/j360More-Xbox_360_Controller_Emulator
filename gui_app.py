@@ -264,11 +264,25 @@ class J360MoreApp:
         self.save_config(silent=True)
         self._update_ui_texts()
 
+    def _update_header_title(self, count: int = None):
+        if count is None:
+            count = self.config.get("max_controllers", 8)
+        if hasattr(self, "title_lbl"):
+            full_title = self.t("header_title", count=count)
+            if "JuanJSAR" in full_title:
+                prefix = full_title.split("JuanJSAR")[0]
+                self.title_lbl.config(text=prefix)
+                if hasattr(self, "lbl_author"):
+                    self.lbl_author.config(text="JuanJSAR")
+            else:
+                self.title_lbl.config(text=full_title)
+                if hasattr(self, "lbl_author"):
+                    self.lbl_author.config(text="")
+
     def _update_ui_texts(self):
         max_ctrls = self.config.get("max_controllers", 8)
         self.root.title(self.t("app_title"))
-        if hasattr(self, "title_lbl"):
-            self.title_lbl.config(text=self.t("header_title", count=max_ctrls))
+        self._update_header_title(max_ctrls)
         if hasattr(self, "btn_devices"):
             self.btn_devices.config(text=self.t("btn_devices"))
         if hasattr(self, "btn_settings"):
@@ -451,8 +465,26 @@ class J360MoreApp:
         header_frame.pack(fill=tk.X)
 
         max_ctrls = self.config.get("max_controllers", 8)
-        self.title_lbl = ttk.Label(header_frame, text=self.t("header_title", count=max_ctrls), font=("Segoe UI", 10, "bold"))
+        title_box = ttk.Frame(header_frame)
+        title_box.pack(side=tk.LEFT)
+
+        full_title = self.t("header_title", count=max_ctrls)
+        prefix = full_title.split("JuanJSAR")[0] if "JuanJSAR" in full_title else full_title
+
+        self.title_lbl = ttk.Label(title_box, text=prefix, font=("Segoe UI", 10, "bold"))
         self.title_lbl.pack(side=tk.LEFT)
+
+        self.lbl_author = ttk.Label(
+            title_box,
+            text="JuanJSAR" if "JuanJSAR" in full_title else "",
+            font=("Segoe UI", 10, "bold"),
+            foreground="#0284c7",
+            cursor="hand2"
+        )
+        self.lbl_author.pack(side=tk.LEFT)
+        self.lbl_author.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/JuanJSAR93"))
+        self.lbl_author.bind("<Enter>", lambda e: self.lbl_author.config(foreground="#0369a1", font=("Segoe UI", 10, "bold underline")))
+        self.lbl_author.bind("<Leave>", lambda e: self.lbl_author.config(foreground="#0284c7", font=("Segoe UI", 10, "bold")))
 
         self.btn_devices = ttk.Button(header_frame, text=self.t("btn_devices"), command=self._open_devices_dialog)
         self.btn_devices.pack(side=tk.LEFT, padx=(12, 4))
@@ -537,8 +569,7 @@ class J360MoreApp:
             target_idx = min(cur_idx, count)  # permitir seleccionar pestaña de juegos si estaba activa
             self.notebook.select(target_idx)
 
-        if hasattr(self, "title_lbl"):
-            self.title_lbl.config(text=self.t("header_title", count=count))
+        self._update_header_title(count)
 
         self._refresh_all_devices()
 
@@ -1448,23 +1479,26 @@ class J360MoreApp:
                     if tag_name and parse_version(tag_name) > parse_version(APP_VERSION):
                         clean_tag = tag_name.lstrip("vV")
                         self._available_update_version = clean_tag
-                        self.root.after(0, lambda t=clean_tag: self._on_update_detected(t))
+                        release_url = f"https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases/tag/{tag_name}"
+                        self.root.after(0, lambda t=clean_tag, u=release_url: self._on_update_detected(t, u))
         except Exception:
             # En caso de falta de conexion o timeout, se omite silenciosamente sin interrumpir
             pass
 
-    def _on_update_detected(self, latest_ver: str):
+    def _on_update_detected(self, latest_ver: str, release_url: str = None):
         """Actualiza el indicador de version en la barra inferior haciendolo interactivo."""
         if not hasattr(self, "lbl_version"):
             return
+        target_url = release_url or f"https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases/tag/{latest_ver}"
+        self._update_release_url = target_url
+
         alert_text = self.t("new_version_available", ver=latest_ver)
         self.lbl_version.config(
             text=f"v{APP_VERSION}  {alert_text}",
             foreground="#b45309",
             cursor="hand2"
         )
-        releases_url = "https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases"
-        self.lbl_version.bind("<Button-1>", lambda e: webbrowser.open(releases_url))
+        self.lbl_version.bind("<Button-1>", lambda e: webbrowser.open(self._update_release_url))
 
         def on_enter(e):
             self.lbl_version.config(foreground="#d97706", font=("Segoe UI", 9, "bold underline"))
