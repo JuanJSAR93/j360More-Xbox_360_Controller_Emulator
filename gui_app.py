@@ -166,7 +166,7 @@ class J360MoreApp:
         self._setup_app_icon()
 
         # Tamaño balanceado donde todo es visible cómodamente sin cortes
-        self.root.geometry("1020x620")
+        self.root.geometry("900x600")
         self.root.resizable(False, False)
 
         self.driver_manager = DriverManager(self.config)
@@ -202,7 +202,70 @@ class J360MoreApp:
         self.root.bind("<KeyRelease>", self._on_key_release)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
+        # Manejo de modales para evitar bloqueo al minimizar con Win+D
+        self._active_dialog = None
+        self._modal_needs_regrab = False
+        self.root.bind("<Unmap>", self._on_root_unmap, add="+")
+        self.root.bind("<Map>", self._on_root_map, add="+")
+
         self.root.after(30, self._update_loop)
+
+    def _setup_modal_dialog(self, dlg: tk.Toplevel):
+        """Configura un diálogo modal protegido contra bloqueos de minimizado con Win+D en Windows."""
+        dlg.transient(self.root)
+        try:
+            dlg.grab_set()
+        except Exception:
+            pass
+        self._active_dialog = dlg
+        self._modal_needs_regrab = False
+
+        orig_destroy = dlg.destroy
+        def on_close():
+            if getattr(self, "_active_dialog", None) == dlg:
+                self._active_dialog = None
+                self._modal_needs_regrab = False
+            try:
+                dlg.grab_release()
+            except Exception:
+                pass
+            try:
+                orig_destroy()
+            except Exception:
+                pass
+            try:
+                self.root.focus_force()
+            except Exception:
+                pass
+
+        dlg.destroy = on_close
+
+    def _on_root_unmap(self, event):
+        if event.widget == self.root:
+            if getattr(self, "_active_dialog", None):
+                dlg = self._active_dialog
+                if dlg.winfo_exists():
+                    try:
+                        dlg.grab_release()
+                        self._modal_needs_regrab = True
+                    except Exception:
+                        pass
+
+    def _on_root_map(self, event):
+        if event.widget == self.root:
+            def restore_modal():
+                if getattr(self, "_active_dialog", None):
+                    dlg = self._active_dialog
+                    if dlg.winfo_exists() and self.root.wm_state() != "iconic":
+                        try:
+                            self._modal_needs_regrab = False
+                            dlg.deiconify()
+                            dlg.lift()
+                            dlg.focus_force()
+                            dlg.grab_set()
+                        except Exception:
+                            pass
+            self.root.after(50, restore_modal)
 
     def t(self, key: str, **kwargs) -> str:
         lang = self.config.get("language", "es")
@@ -1514,8 +1577,7 @@ class J360MoreApp:
         dlg.title(self.t("hidhide_warn_title"))
         dlg.geometry("450x240")
         dlg.resizable(False, False)
-        dlg.transient(self.root)
-        dlg.grab_set()
+        self._setup_modal_dialog(dlg)
 
         x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 225)
         y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 120)
@@ -1553,8 +1615,7 @@ class J360MoreApp:
         dlg.title(self.t("set_dlg_title"))
         dlg.geometry("520x430")
         dlg.resizable(False, False)
-        dlg.transient(self.root)
-        dlg.grab_set()
+        self._setup_modal_dialog(dlg)
 
         x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 260)
         y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 215)
@@ -1687,8 +1748,7 @@ class J360MoreApp:
         dlg.title(self.t("dev_dlg_title"))
         dlg.geometry("860x440")
         dlg.resizable(True, True)
-        dlg.transient(self.root)
-        dlg.grab_set()
+        self._setup_modal_dialog(dlg)
 
         x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 430)
         y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 220)
@@ -2016,8 +2076,7 @@ class J360MoreApp:
         dlg.title(self.t("copy_dlg_title"))
         dlg.geometry("400x240")
         dlg.resizable(False, False)
-        dlg.transient(self.root)
-        dlg.grab_set()
+        self._setup_modal_dialog(dlg)
 
         x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 200)
         y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 120)
@@ -2152,7 +2211,6 @@ class J360MoreApp:
         dlg.title(self.t("wizard_title", id=pad_id))
         dlg.geometry("670x505")
         dlg.resizable(False, False)
-        dlg.transient(self.root)
 
         dlg.update_idletasks()
         pw = self.root.winfo_width()
@@ -2164,9 +2222,9 @@ class J360MoreApp:
         pos_y = max(0, py + (ph - dh) // 2)
         dlg.geometry(f"{dw}x{dh}+{pos_x}+{pos_y}")
 
+        self._setup_modal_dialog(dlg)
         dlg.lift()
         dlg.focus_force()
-        dlg.grab_set()
 
         header_frame = ttk.Frame(dlg, padding="10 6 10 2")
         header_frame.pack(fill=tk.X)
@@ -2622,6 +2680,31 @@ class J360MoreApp:
 
     def _update_loop(self):
         try:
+            # Sincronización de modales ante eventos globales como Win+D
+            if getattr(self, "_active_dialog", None):
+                dlg = self._active_dialog
+                if dlg.winfo_exists():
+                    r_state = self.root.wm_state()
+                    if r_state == "iconic":
+                        try:
+                            if dlg.grab_status() is not None:
+                                dlg.grab_release()
+                                self._modal_needs_regrab = True
+                        except Exception:
+                            pass
+                    elif r_state == "normal" and getattr(self, "_modal_needs_regrab", False):
+                        try:
+                            self._modal_needs_regrab = False
+                            dlg.deiconify()
+                            dlg.lift()
+                            dlg.focus_force()
+                            dlg.grab_set()
+                        except Exception:
+                            pass
+                else:
+                    self._active_dialog = None
+                    self._modal_needs_regrab = False
+
             cur_pad_id = self.notebook.index(self.notebook.select()) + 1
             widgets = self.tab_widgets.get(cur_pad_id)
 
@@ -2858,8 +2941,7 @@ class J360MoreApp:
         dlg.title(self.t("dialog_edit_game") if is_edit else self.t("dialog_add_game"))
         dlg.geometry("640x520")
         dlg.resizable(False, False)
-        dlg.transient(self.root)
-        dlg.grab_set()
+        self._setup_modal_dialog(dlg)
 
         # Centrar sobre la ventana principal
         x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 320)
