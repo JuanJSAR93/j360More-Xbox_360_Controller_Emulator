@@ -4,6 +4,8 @@ i18n.py - Sistema de Internacionalización Multi-Idioma para j360More
 Soporte para: Español, English, Français, Português (Brasil), Deutsch, Italiano, Русский
 Desarrollado por JuanJSAR
 """
+import re
+
 
 SUPPORTED_LANGUAGES = {
     "es": "Español",
@@ -288,6 +290,29 @@ STRINGS = {
         "ft_scripts": "Scripts de Comandos (*.cmd, *.bat)",
         "ft_all_files": "Todos los Archivos (*.*)",
         "ft_batch_file": "Archivo por lotes (*.bat)",
+        "msg_error": "Error",
+        "preset_title": "Preset",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "Ejecutable HidHideCLI",
+        "dev_hw_product_name": "Nombre de Producto:",
+        "dev_hw_vendor": "Fabricante:",
+        "dev_hw_inst_id": "ID de Instancia:",
+        "dev_hw_hidhide_state": "Estado en HidHide:",
+        "dev_hw_pnp_path": "Ruta PnP:",
+        "dev_hw_conn_type": "Conexión:",
+        "dev_hw_buttons": "Botones detectados:",
+        "dev_hw_axes": "Ejes detectados:",
+        "dev_hw_hats": "Crucetas / Hats:",
+        "dev_hw_guid": "GUID SDL:",
+        "dev_select_control_tab": "Por favor, selecciona una pestaña de control (Control 1-12) antes de asignar un dispositivo.",
+        "mouse_device_name": "🖱️ Ratón (Puntero / Botones)",
+        "keyboard_device_global": "⌨ Teclado (Cualquiera / Global)",
+        "kbd_device_item": "⌨ Teclado {num}: {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Interno",
+        "conn_sys": "Sistema",
+        "virtual_controller_prefix": "Virtual",
     },
     "en": {
         "app_title": "j360More - Multi-Gamepad (1 to 12 Controllers) - by JuanJSAR - ViGEmBus",
@@ -561,6 +586,29 @@ STRINGS = {
         "ft_scripts": "Command Scripts (*.cmd, *.bat)",
         "ft_all_files": "All Files (*.*)",
         "ft_batch_file": "Batch File (*.bat)",
+        "msg_error": "Error",
+        "preset_title": "Preset",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "HidHideCLI Executable",
+        "dev_hw_product_name": "Product Name:",
+        "dev_hw_vendor": "Vendor:",
+        "dev_hw_inst_id": "Instance ID:",
+        "dev_hw_hidhide_state": "HidHide Status:",
+        "dev_hw_pnp_path": "PnP Path:",
+        "dev_hw_conn_type": "Connection:",
+        "dev_hw_buttons": "Detected buttons:",
+        "dev_hw_axes": "Detected axes:",
+        "dev_hw_hats": "Hats / D-Pads:",
+        "dev_hw_guid": "SDL GUID:",
+        "dev_select_control_tab": "Please select a controller tab (Controller 1-12) before assigning a device.",
+        "mouse_device_name": "🖱️ Mouse (Pointer / Buttons)",
+        "keyboard_device_global": "⌨ Keyboard (Any / Global)",
+        "kbd_device_item": "⌨ Keyboard {num}: {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Internal",
+        "conn_sys": "System",
+        "virtual_controller_prefix": "Virtual",
     },
     "fr": {
         "app_title": "j360More - Multi-Gamepad (1 à 12 Manettes) - par JuanJSAR - ViGEmBus",
@@ -834,6 +882,29 @@ STRINGS = {
         "ft_scripts": "Scripts de commandes (*.cmd, *.bat)",
         "ft_all_files": "Tous les fichiers (*.*)",
         "ft_batch_file": "Fichier de commandes (*.bat)",
+        "msg_error": "Erreur",
+        "preset_title": "Préréglage",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "Exécutable HidHideCLI",
+        "dev_hw_product_name": "Nom du produit :",
+        "dev_hw_vendor": "Fabricant :",
+        "dev_hw_inst_id": "ID d'instance :",
+        "dev_hw_hidhide_state": "État HidHide :",
+        "dev_hw_pnp_path": "Chemin PnP :",
+        "dev_hw_conn_type": "Connexion :",
+        "dev_hw_buttons": "Boutons détectés :",
+        "dev_hw_axes": "Axes détectés :",
+        "dev_hw_hats": "Chapeaux / D-Pads :",
+        "dev_hw_guid": "GUID SDL :",
+        "dev_select_control_tab": "Veuillez sélectionner un onglet de manette (Manette 1-12) avant d'assigner un périphérique.",
+        "mouse_device_name": "🖱️ Souris (Pointeur / Boutons)",
+        "keyboard_device_global": "⌨ Clavier (N'importe lequel / Global)",
+        "kbd_device_item": "⌨ Clavier {num} : {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Interne",
+        "conn_sys": "Système",
+        "virtual_controller_prefix": "Virtuel",
     },
     "pt_BR": {
         "app_title": "j360More - Multi-Gamepad (1 a 12 Controles) - por JuanJSAR - ViGEmBus",
@@ -1107,6 +1178,29 @@ STRINGS = {
         "ft_scripts": "Scripts de Comandos (*.cmd, *.bat)",
         "ft_all_files": "Todos os Arquivos (*.*)",
         "ft_batch_file": "Arquivo em lote (*.bat)",
+        "msg_error": "Erro",
+        "preset_title": "Predefinição",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "Executável HidHideCLI",
+        "dev_hw_product_name": "Nome do Produto:",
+        "dev_hw_vendor": "Fabricante:",
+        "dev_hw_inst_id": "ID da Instância:",
+        "dev_hw_hidhide_state": "Status no HidHide:",
+        "dev_hw_pnp_path": "Caminho PnP:",
+        "dev_hw_conn_type": "Conexão:",
+        "dev_hw_buttons": "Botões detectados:",
+        "dev_hw_axes": "Eixos detectados:",
+        "dev_hw_hats": "Direcionais / Hats:",
+        "dev_hw_guid": "GUID SDL:",
+        "dev_select_control_tab": "Por favor, selecione uma aba de controle (Controle 1-12) antes de atribuir um dispositivo.",
+        "mouse_device_name": "🖱️ Mouse (Cursor / Botões)",
+        "keyboard_device_global": "⌨ Teclado (Qualquer / Global)",
+        "kbd_device_item": "⌨ Teclado {num}: {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Interno",
+        "conn_sys": "Sistema",
+        "virtual_controller_prefix": "Virtual",
     },
     "de": {
         "app_title": "j360More - Multi-Gamepad (1 bis 12 Controller) - von JuanJSAR - ViGEmBus",
@@ -1380,6 +1474,29 @@ STRINGS = {
         "ft_scripts": "Befehlsskripte (*.cmd, *.bat)",
         "ft_all_files": "Alle Dateien (*.*)",
         "ft_batch_file": "Batchdatei (*.bat)",
+        "msg_error": "Fehler",
+        "preset_title": "Voreinstellung",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "HidHideCLI ausführbare Datei",
+        "dev_hw_product_name": "Produktname:",
+        "dev_hw_vendor": "Hersteller:",
+        "dev_hw_inst_id": "Instanz-ID:",
+        "dev_hw_hidhide_state": "HidHide-Status:",
+        "dev_hw_pnp_path": "PnP-Pfad:",
+        "dev_hw_conn_type": "Verbindung:",
+        "dev_hw_buttons": "Erkannte Tasten:",
+        "dev_hw_axes": "Erkannte Achsen:",
+        "dev_hw_hats": "Hats / Steuerkreuze:",
+        "dev_hw_guid": "SDL GUID:",
+        "dev_select_control_tab": "Bitte wählen Sie eine Controller-Registerkarte (Controller 1-12) aus, bevor Sie ein Gerät zuweisen.",
+        "mouse_device_name": "🖱️ Maus (Zeiger / Tasten)",
+        "keyboard_device_global": "⌨ Tastatur (Beliebig / Global)",
+        "kbd_device_item": "⌨ Tastatur {num}: {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Intern",
+        "conn_sys": "System",
+        "virtual_controller_prefix": "Virtuell",
     },
     "it": {
         "app_title": "j360More - Multi-Gamepad (da 1 a 12 Controller) - di JuanJSAR - ViGEmBus",
@@ -1653,6 +1770,29 @@ STRINGS = {
         "ft_scripts": "Script di comandi (*.cmd, *.bat)",
         "ft_all_files": "Tutti i file (*.*)",
         "ft_batch_file": "File batch (*.bat)",
+        "msg_error": "Errore",
+        "preset_title": "Preimpostazione",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "Eseguibile HidHideCLI",
+        "dev_hw_product_name": "Nome del prodotto:",
+        "dev_hw_vendor": "Produttore:",
+        "dev_hw_inst_id": "ID istanza:",
+        "dev_hw_hidhide_state": "Stato HidHide:",
+        "dev_hw_pnp_path": "Percorso PnP:",
+        "dev_hw_conn_type": "Connessione:",
+        "dev_hw_buttons": "Pulsanti rilevati:",
+        "dev_hw_axes": "Assi rilevati:",
+        "dev_hw_hats": "Pad direzionali / Hats:",
+        "dev_hw_guid": "GUID SDL:",
+        "dev_select_control_tab": "Seleziona una scheda controller (Controller 1-12) prima di assegnare un dispositivo.",
+        "mouse_device_name": "🖱️ Mouse (Puntatore / Pulsanti)",
+        "keyboard_device_global": "⌨ Tastiera (Qualsiasi / Globale)",
+        "kbd_device_item": "⌨ Tastiera {num}: {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Interno",
+        "conn_sys": "Sistema",
+        "virtual_controller_prefix": "Virtuale",
     },
     "ru": {
         "app_title": "j360More - Мульти-геймпад (от 1 до 12 контроллеров) - автор JuanJSAR - ViGEmBus",
@@ -1926,6 +2066,29 @@ STRINGS = {
         "ft_scripts": "Командные скрипты (*.cmd, *.bat)",
         "ft_all_files": "Все файлы (*.*)",
         "ft_batch_file": "Пакетный файл (*.bat)",
+        "msg_error": "Ошибка",
+        "preset_title": "Пресет",
+        "hidhide_title": "HidHide",
+        "filetype_hidhide_cli": "Исполняемый файл HidHideCLI",
+        "dev_hw_product_name": "Название продукта:",
+        "dev_hw_vendor": "Производитель:",
+        "dev_hw_inst_id": "ID экземпляра:",
+        "dev_hw_hidhide_state": "Статус HidHide:",
+        "dev_hw_pnp_path": "Путь PnP:",
+        "dev_hw_conn_type": "Подключение:",
+        "dev_hw_buttons": "Обнаружено кнопок:",
+        "dev_hw_axes": "Обнаружено осей:",
+        "dev_hw_hats": "Крестовины / Hats:",
+        "dev_hw_guid": "SDL GUID:",
+        "dev_select_control_tab": "Пожалуйста, выберите вкладку контроллера (Контроллер 1-12) перед назначением устройства.",
+        "mouse_device_name": "🖱️ Мышь (Указатель / Кнопки)",
+        "keyboard_device_global": "⌨ Клавиатура (Любая / Общая)",
+        "kbd_device_item": "⌨ Клавиатура {num}: {name} ({conn})",
+        "conn_usb": "USB",
+        "conn_bt": "Bluetooth",
+        "conn_int": "Встроенная",
+        "conn_sys": "Система",
+        "virtual_controller_prefix": "Виртуальный",
     }
 }
 
@@ -1964,15 +2127,181 @@ def is_none_mapping(val: str) -> bool:
     s = val.strip()
     return s.startswith("--") or s in ALL_NONE_LABELS
 
+INPUT_OPTION_TRANSLATIONS = {
+    "es": {
+        "btn_prefix": "Botón",
+        "axis_prefix": "Eje",
+        "iaxis_prefix": "IEje",
+        "pov_up": "POV 1 Arriba",
+        "pov_down": "POV 1 Abajo",
+        "pov_left": "POV 1 Izquierda",
+        "pov_right": "POV 1 Derecha",
+        "key_prefix": "Tecla",
+    },
+    "en": {
+        "btn_prefix": "Button",
+        "axis_prefix": "Axis",
+        "iaxis_prefix": "IAxis",
+        "pov_up": "POV 1 Up",
+        "pov_down": "POV 1 Down",
+        "pov_left": "POV 1 Left",
+        "pov_right": "POV 1 Right",
+        "key_prefix": "Key",
+    },
+    "fr": {
+        "btn_prefix": "Bouton",
+        "axis_prefix": "Axe",
+        "iaxis_prefix": "IAxe",
+        "pov_up": "POV 1 Haut",
+        "pov_down": "POV 1 Bas",
+        "pov_left": "POV 1 Gauche",
+        "pov_right": "POV 1 Droite",
+        "key_prefix": "Touche",
+    },
+    "pt_BR": {
+        "btn_prefix": "Botão",
+        "axis_prefix": "Eixo",
+        "iaxis_prefix": "IEixo",
+        "pov_up": "POV 1 Cima",
+        "pov_down": "POV 1 Baixo",
+        "pov_left": "POV 1 Esquerda",
+        "pov_right": "POV 1 Direita",
+        "key_prefix": "Tecla",
+    },
+    "de": {
+        "btn_prefix": "Taste",
+        "axis_prefix": "Achse",
+        "iaxis_prefix": "IAchse",
+        "pov_up": "POV 1 Oben",
+        "pov_down": "POV 1 Unten",
+        "pov_left": "POV 1 Links",
+        "pov_right": "POV 1 Rechts",
+        "key_prefix": "Taste",
+    },
+    "it": {
+        "btn_prefix": "Pulsante",
+        "axis_prefix": "Asse",
+        "iaxis_prefix": "IAsse",
+        "pov_up": "POV 1 Su",
+        "pov_down": "POV 1 Giù",
+        "pov_left": "POV 1 Sinistra",
+        "pov_right": "POV 1 Destra",
+        "key_prefix": "Tasto",
+    },
+    "ru": {
+        "btn_prefix": "Кнопка",
+        "axis_prefix": "Ось",
+        "iaxis_prefix": "ИОсь",
+        "pov_up": "POV 1 Вверх",
+        "pov_down": "POV 1 Вниз",
+        "pov_left": "POV 1 Влево",
+        "pov_right": "POV 1 Вправо",
+        "key_prefix": "Клавиша",
+    },
+}
+
+POV_DIRECTIONS = {
+    "es": {"up": "Arriba", "down": "Abajo", "left": "Izquierda", "right": "Derecha"},
+    "en": {"up": "Up", "down": "Down", "left": "Left", "right": "Right"},
+    "fr": {"up": "Haut", "down": "Bas", "left": "Gauche", "right": "Droite"},
+    "pt_BR": {"up": "Cima", "down": "Baixo", "left": "Esquerda", "right": "Direita"},
+    "de": {"up": "Oben", "down": "Unten", "left": "Links", "right": "Rechts"},
+    "it": {"up": "Su", "down": "Giù", "left": "Sinistra", "right": "Destra"},
+    "ru": {"up": "Вверх", "down": "Вниз", "left": "Влево", "right": "Вправо"},
+}
+
+ALL_DIR_MAP = {
+    "up": "Up", "arriba": "Up", "haut": "Up", "cima": "Up", "oben": "Up", "su": "Up", "вверх": "Up",
+    "down": "Down", "abajo": "Down", "bas": "Down", "baixo": "Down", "unten": "Down", "giù": "Down", "giu": "Down", "вниз": "Down",
+    "left": "Left", "izquierda": "Left", "izq": "Left", "izq.": "Left", "gauche": "Left", "esquerda": "Left", "links": "Left", "sinistra": "Left", "влево": "Left",
+    "right": "Right", "derecha": "Right", "der": "Right", "der.": "Right", "droite": "Right", "direita": "Right", "rechts": "Right", "destra": "Right", "вправо": "Right"
+}
+
+RE_BUTTON = re.compile(r'^(?:button|bot[oó]n|bouton|bot[aã]o|taste|pulsante|кнопка)\s*(\d+)$', re.IGNORECASE)
+RE_AXIS = re.compile(r'^(i?)(?:axis|eje|axe|eixo|achse|asse|ось|иось|инв\.\s*ось)\s*(\d+)([+\-]?)$', re.IGNORECASE)
+RE_POV = re.compile(r'^pov\s*(\d+)\s+(.+)$', re.IGNORECASE)
+RE_KEY = re.compile(r'^(?:tecla|key|touche|taste|tasto|клавиша)\s*:\s*(.+)$', re.IGNORECASE)
+
+def canonicalize_mapping(val: str) -> str:
+    """Convierte cualquier representación de mapeo (localizada o canónica) a formato canónico interno."""
+    if is_none_mapping(val):
+        return "-- Ninguno --"
+    s = val.strip()
+
+    m_btn = RE_BUTTON.match(s)
+    if m_btn:
+        return f"Button {m_btn.group(1)}"
+
+    m_axis = RE_AXIS.match(s)
+    if m_axis:
+        inv = "I" if (m_axis.group(1).upper() == "I" or "ИОСЬ" in s.upper() or "ИНВ" in s.upper()) else ""
+        return f"{inv}Axis {m_axis.group(2)}{m_axis.group(3)}"
+
+    m_pov = RE_POV.match(s)
+    if m_pov:
+        h = m_pov.group(1)
+        dir_raw = m_pov.group(2).lower().strip()
+        can_dir = ALL_DIR_MAP.get(dir_raw, dir_raw.capitalize())
+        return f"POV {h} {can_dir}"
+
+    m_key = RE_KEY.match(s)
+    if m_key:
+        return f"Tecla: {m_key.group(1).strip()}"
+
+    return s
+
+def localize_mapping(val: str, lang: str = "es") -> str:
+    """Convierte un mapeo a su representación de interfaz traducida al idioma especificado."""
+    if is_none_mapping(val):
+        return get_none_label(lang)
+
+    can = canonicalize_mapping(val)
+    t = INPUT_OPTION_TRANSLATIONS.get(lang, INPUT_OPTION_TRANSLATIONS.get("es", {}))
+
+    m_btn = RE_BUTTON.match(can)
+    if m_btn:
+        return f"{t.get('btn_prefix', 'Button')} {m_btn.group(1)}"
+
+    m_axis = RE_AXIS.match(can)
+    if m_axis:
+        inv = m_axis.group(1).upper() == "I"
+        prefix = t.get("iaxis_prefix", "IAxis") if inv else t.get("axis_prefix", "Axis")
+        return f"{prefix} {m_axis.group(2)}{m_axis.group(3)}"
+
+    m_pov = RE_POV.match(can)
+    if m_pov:
+        h = m_pov.group(1)
+        d_can = m_pov.group(2).lower().strip()
+        loc_dirs = POV_DIRECTIONS.get(lang, POV_DIRECTIONS.get("es", {}))
+        loc_d = loc_dirs.get(d_can, m_pov.group(2))
+        return f"POV {h} {loc_d}"
+
+    m_key = RE_KEY.match(can)
+    if m_key:
+        return f"{t.get('key_prefix', 'Tecla')}: {m_key.group(1).strip()}"
+
+    return val
+
 def get_input_options(lang: str = "es") -> list:
+    """Devuelve la lista completa de opciones desplegables traducidas al idioma especificado."""
     none_lbl = get_none_label(lang)
     options = [none_lbl]
+    t = INPUT_OPTION_TRANSLATIONS.get(lang, INPUT_OPTION_TRANSLATIONS.get("es", {}))
+    btn_p = t.get("btn_prefix", "Button")
+    axis_p = t.get("axis_prefix", "Axis")
+    iaxis_p = t.get("iaxis_prefix", "IAxis")
+    key_p = t.get("key_prefix", "Tecla")
+
     for b in range(1, 17):
-        options.append(f"Button {b}")
+        options.append(f"{btn_p} {b}")
     for a in range(1, 7):
-        options.extend([f"Axis {a}", f"IAxis {a}"])
-    for p in ["POV 1 Up", "POV 1 Down", "POV 1 Left", "POV 1 Right"]:
-        options.append(p)
+        options.extend([f"{axis_p} {a}", f"{iaxis_p} {a}"])
+
+    pov_dirs = POV_DIRECTIONS.get(lang, POV_DIRECTIONS.get("es", {}))
+    for d in ["up", "down", "left", "right"]:
+        options.append(f"POV 1 {pov_dirs.get(d, d.capitalize())}")
+
     for k in ["w", "s", "a", "d", "j", "k", "u", "i", "q", "e", "space", "enter", "up", "down", "left", "right"]:
-        options.append(f"Tecla: {k}")
+        options.append(f"{key_p}: {k}")
     return options
+

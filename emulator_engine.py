@@ -4,6 +4,7 @@ import threading
 from typing import Dict, Any, Optional, Set, Tuple
 import vgamepad as vg
 from input_devices import DeviceManager
+from i18n import canonicalize_mapping, is_none_mapping
 
 BUTTON_VG_MAP = {
     "DPAD_UP": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP,
@@ -174,10 +175,10 @@ class EmulatorEngine:
                 self.pressed_keys.discard(key_name.lower())
 
     def _eval_mapping(self, mapping_str: str, joy_state: Dict[str, Any], dev_id: str = "") -> Tuple[bool, float]:
-        if not mapping_str or mapping_str.startswith("--") or mapping_str.lower() in ("none", "ninguno", "нет", "aucun", "nenhum", "keiner", "nessuno"):
+        if not mapping_str or is_none_mapping(mapping_str):
             return False, 0.0
 
-        mapping_str = mapping_str.strip()
+        mapping_str = canonicalize_mapping(mapping_str.strip())
 
         # 1. Mapeo a Teclado
         if mapping_str.lower().startswith("tecla: ") or mapping_str.lower().startswith("key: "):
@@ -284,7 +285,7 @@ class EmulatorEngine:
                         pad.release_button(button=vg_code)
 
                 # 2. Gatillo Izquierdo (LT)
-                lt_map = mappings.get("LEFT_TRIGGER", "")
+                lt_map = canonicalize_mapping(mappings.get("LEFT_TRIGGER", ""))
                 is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state, dev_id)
                 if is_lt_pressed and lt_raw == 1.0 and "Axis" not in lt_map:
                     lt_norm = 1.0
@@ -302,7 +303,7 @@ class EmulatorEngine:
                 pad.left_trigger(value=lt_byte)
 
                 # Gatillo Derecho (RT)
-                rt_map = mappings.get("RIGHT_TRIGGER", "")
+                rt_map = canonicalize_mapping(mappings.get("RIGHT_TRIGGER", ""))
                 is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state, dev_id)
                 if is_rt_pressed and rt_raw == 1.0 and "Axis" not in rt_map:
                     rt_norm = 1.0
@@ -444,7 +445,7 @@ class EmulatorEngine:
         c_ls = calib.get("left_stick", {})
         c_rs = calib.get("right_stick", {})
 
-        lt_map = mappings.get("LEFT_TRIGGER", "")
+        lt_map = canonicalize_mapping(mappings.get("LEFT_TRIGGER", ""))
         is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state, dev_id)
         if is_lt_pressed and lt_raw == 1.0 and "Axis" not in lt_map:
             lt_norm = 1.0
@@ -453,7 +454,7 @@ class EmulatorEngine:
         lt_calib = apply_trigger_calibration(lt_norm, c_lt.get("deadzone", 0), c_lt.get("anti_deadzone", 0), c_lt.get("sensitivity", 0), c_lt.get("invert", False))
         lt_byte = int(lt_calib * 255)
 
-        rt_map = mappings.get("RIGHT_TRIGGER", "")
+        rt_map = canonicalize_mapping(mappings.get("RIGHT_TRIGGER", ""))
         is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state, dev_id)
         if is_rt_pressed and rt_raw == 1.0 and "Axis" not in rt_map:
             rt_norm = 1.0

@@ -22,10 +22,11 @@ from input_devices import DeviceManager
 from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration
 from i18n import (
     get_text, get_target_name, SUPPORTED_LANGUAGES,
-    ALL_NONE_LABELS, get_none_label, get_input_options, is_none_mapping
+    ALL_NONE_LABELS, get_none_label, get_input_options, is_none_mapping,
+    canonicalize_mapping, localize_mapping
 )
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
@@ -62,22 +63,6 @@ CONTROLLER_PNG_FALLBACK = os.path.join(ASSETS_DIR, "controller.png")
 ICON_SVG_PATH = os.path.join(ASSETS_DIR, "icon.svg")
 ICON_PNG_PATH = os.path.join(ASSETS_DIR, "icon.png")
 ICON_ICO_PATH = os.path.join(ASSETS_DIR, "icon.ico")
-
-INPUT_OPTIONS = [
-    "-- Ninguno --",
-    "Button 1", "Button 2", "Button 3", "Button 4",
-    "Button 5", "Button 6", "Button 7", "Button 8",
-    "Button 9", "Button 10", "Button 11", "Button 12",
-    "Button 13", "Button 14", "Button 15", "Button 16",
-    "Axis 1", "IAxis 1", "Axis 2", "IAxis 2",
-    "Axis 3", "IAxis 3", "Axis 4", "IAxis 4",
-    "Axis 5", "IAxis 5", "Axis 6", "IAxis 6",
-    "POV 1 Up", "POV 1 Down", "POV 1 Left", "POV 1 Right",
-    "Tecla: w", "Tecla: s", "Tecla: a", "Tecla: d",
-    "Tecla: j", "Tecla: k", "Tecla: u", "Tecla: i",
-    "Tecla: q", "Tecla: e", "Tecla: space", "Tecla: enter",
-    "Tecla: up", "Tecla: down", "Tecla: left", "Tecla: right"
-]
 
 # Coordenadas relativas en el canvas para la imagen renderizada a 350x275
 HITBOXES = {
@@ -134,38 +119,6 @@ def map_target_to_canvas_key(target: str) -> str:
         return "RIGHT_STICK_UP"
     return target
 
-TARGET_NAMES_ES = {
-    "A": "Botón A",
-    "B": "Botón B",
-    "X": "Botón X",
-    "Y": "Botón Y",
-    "GUIDE": "Botón Guía (Xbox)",
-    "BACK": "Botón Back / Selec",
-    "START": "Botón Start",
-    "LEFT_THUMB": "Stick Izq. Botón (L3)",
-    "RIGHT_THUMB": "Stick Der. Botón (R3)",
-    "LEFT_STICK_X": "Stick Izq. Eje X",
-    "LEFT_STICK_Y": "Stick Izq. Eje Y",
-    "LEFT_STICK_UP": "Stick Izq. Arriba",
-    "LEFT_STICK_DOWN": "Stick Izq. Abajo",
-    "LEFT_STICK_LEFT": "Stick Izq. Izquierda",
-    "LEFT_STICK_RIGHT": "Stick Izq. Derecha",
-    "RIGHT_STICK_X": "Stick Der. Eje X",
-    "RIGHT_STICK_Y": "Stick Der. Eje Y",
-    "RIGHT_STICK_UP": "Stick Der. Arriba",
-    "RIGHT_STICK_DOWN": "Stick Der. Abajo",
-    "RIGHT_STICK_LEFT": "Stick Der. Izquierda",
-    "RIGHT_STICK_RIGHT": "Stick Der. Derecha",
-    "DPAD_UP": "D-Pad Arriba",
-    "DPAD_DOWN": "D-Pad Abajo",
-    "DPAD_LEFT": "D-Pad Izquierda",
-    "DPAD_RIGHT": "D-Pad Derecha",
-    "LEFT_SHOULDER": "Bumper Izq. (LB)",
-    "RIGHT_SHOULDER": "Bumper Der. (RB)",
-    "LEFT_TRIGGER": "Gatillo Izq. (LT)",
-    "RIGHT_TRIGGER": "Gatillo Der. (RT)",
-}
-
 DEFAULT_MAPPINGS = {
     "LEFT_TRIGGER": "-- Ninguno --",
     "LEFT_SHOULDER": "-- Ninguno --",
@@ -213,7 +166,7 @@ class J360MoreApp:
         self._setup_app_icon()
 
         # Tamaño balanceado donde todo es visible cómodamente sin cortes
-        self.root.geometry("980x615")
+        self.root.geometry("1020x620")
         self.root.resizable(False, False)
 
         self.driver_manager = DriverManager(self.config)
@@ -268,6 +221,27 @@ class J360MoreApp:
 
     def get_input_options(self) -> list:
         return get_input_options(self.current_lang)
+
+    def localize_mapping(self, val: str) -> str:
+        return localize_mapping(val, self.current_lang)
+
+    def canonicalize_mapping(self, val: str) -> str:
+        return canonicalize_mapping(val)
+
+    def get_device_display_name(self, d: dict, kbd_idx: int = 1) -> str:
+        dev_id = d.get("id", "")
+        if dev_id == "none":
+            return self.t("none_disconnected")
+        if dev_id == "keyboard":
+            return self.t("keyboard_device_global")
+        if dev_id == "mouse":
+            return self.t("mouse_device_name")
+        if dev_id.startswith("kbd_"):
+            c_type = d.get("conn_type", "USB")
+            conn_str = self.t("conn_usb") if c_type == "USB" else (self.t("conn_bt") if c_type in ("BT", "BTH") else (self.t("conn_int") if c_type == "INT" else c_type))
+            pname = d.get("product_name", self.t("keyboard_device_name"))
+            return self.t("kbd_device_item", num=kbd_idx, name=pname, conn=conn_str)
+        return d.get("name", self.t("dev_device_fallback"))
 
     def _toggle_language(self):
         codes = list(SUPPORTED_LANGUAGES.keys())
@@ -472,7 +446,7 @@ class J360MoreApp:
                 messagebox.showinfo(self.t("btn_settings"), self.t("config_saved"))
         except Exception as e:
             if not silent:
-                messagebox.showerror("Error", self.t("config_error", e=e))
+                messagebox.showerror(self.t("msg_error"), self.t("config_error", e=e))
 
     def _build_ui(self):
         # 1. Cabecera superior compacta
@@ -657,12 +631,12 @@ class J360MoreApp:
         right_col = ttk.Frame(main_grid, padding=2)
         right_col.pack(side=tk.RIGHT, fill=tk.Y, padx=4)
 
-        def make_row(parent_col, label_text, target_name, label_anchor="w", lbl_width=12):
+        def make_row(parent_col, label_text, target_name, label_anchor="w", lbl_width=14):
             row = ttk.Frame(parent_col)
             row.pack(fill=tk.X, pady=1)
             lbl = ttk.Label(row, text=label_text, width=lbl_width, anchor=label_anchor, font=("Segoe UI", 8))
             lbl.pack(side=tk.LEFT)
-            cb = ttk.Combobox(row, values=self.get_input_options(), width=11, font=("Segoe UI", 8))
+            cb = ttk.Combobox(row, values=self.get_input_options(), width=15, font=("Segoe UI", 8))
             cb.pack(side=tk.LEFT, padx=2)
             cb.bind("<<ComboboxSelected>>", lambda e, p=pad_id, t=target_name, c=cb: self._on_combo_changed(p, t, c))
             btn = ttk.Button(row, text="...", width=3, command=lambda: self._start_record(pad_id, target_name))
@@ -751,9 +725,7 @@ class J360MoreApp:
         saved_maps = cfg.get("mappings", {})
         for target, cb in widgets["combos"].items():
             val = saved_maps.get(target, DEFAULT_MAPPINGS.get(target, "-- Ninguno --"))
-            if is_none_mapping(val):
-                val = self.get_none_label()
-            cb.set(val)
+            cb.set(self.localize_mapping(val))
 
     def _find_target_at_pos(self, click_x: float, click_y: float) -> str:
         """Determina qué botón o parte interactiva fue clickeada (excluyendo el Fondo)."""
@@ -840,7 +812,7 @@ class J360MoreApp:
         row = ttk.Frame(parent)
         row.pack(fill=tk.X, pady=1)
 
-        ttk.Label(row, text=label_text, width=14, font=("Segoe UI", 8)).pack(side=tk.LEFT)
+        ttk.Label(row, text=label_text, width=16, font=("Segoe UI", 8)).pack(side=tk.LEFT)
 
         float_var = tk.DoubleVar(value=float(init_val))
         var_holder[var_key] = float_var
@@ -1092,13 +1064,13 @@ class J360MoreApp:
     def _refresh_all_devices(self):
         self.available_devices = self.device_manager.refresh_devices()
         dev_names = []
+        kbd_count = 0
         for d in self.available_devices:
-            if d["id"] == "none":
-                dev_names.append(self.t("none_disconnected"))
-            elif d["id"] == "keyboard":
-                dev_names.append(self.t("keyboard_device_name"))
+            if d.get("id", "").startswith("kbd_"):
+                kbd_count += 1
+                dev_names.append(self.get_device_display_name(d, kbd_count))
             else:
-                dev_names.append(d["name"])
+                dev_names.append(self.get_device_display_name(d))
 
         for pad_id, widgets in self.tab_widgets.items():
             cb = widgets["dev_combo"]
@@ -1122,13 +1094,13 @@ class J360MoreApp:
         try:
             self.available_devices = new_devices
             dev_names = []
+            kbd_count = 0
             for d in self.available_devices:
-                if d["id"] == "none":
-                    dev_names.append(self.t("none_disconnected"))
-                elif d["id"] == "keyboard":
-                    dev_names.append(self.t("keyboard_device_name"))
+                if d.get("id", "").startswith("kbd_"):
+                    kbd_count += 1
+                    dev_names.append(self.get_device_display_name(d, kbd_count))
                 else:
-                    dev_names.append(d["name"])
+                    dev_names.append(self.get_device_display_name(d))
 
             for pad_id, widgets in self.tab_widgets.items():
                 cb = widgets["dev_combo"]
@@ -1179,7 +1151,7 @@ class J360MoreApp:
             mappings = {}
             for target, cb in widgets["combos"].items():
                 raw_val = cb.get().strip()
-                mappings[target] = "-- Ninguno --" if is_none_mapping(raw_val) else raw_val
+                mappings[target] = self.canonicalize_mapping(raw_val)
             self.config["controllers"][str_id]["mappings"] = mappings
 
             calib = {}
@@ -1206,7 +1178,8 @@ class J360MoreApp:
         self.engine.set_config(self.config)
 
     def _check_mapping_conflict(self, current_pad_id: int, target_name: str, new_mapping: str):
-        if not new_mapping or new_mapping == "-- Ninguno --":
+        can_new = self.canonicalize_mapping(new_mapping)
+        if not can_new or is_none_mapping(can_new):
             return None
 
         current_cfg = self.config.get("controllers", {}).get(str(current_pad_id), {})
@@ -1214,8 +1187,9 @@ class J360MoreApp:
 
         # 1. Comprobar si ya esta asignada en OTRA posicion de este mismo mando
         for other_btn, mapped_val in current_maps.items():
-            if other_btn != target_name and mapped_val and mapped_val.strip().lower() == new_mapping.strip().lower():
-                return ("same", current_pad_id, current_cfg.get("name", f"Control {current_pad_id}"), other_btn)
+            can_other = self.canonicalize_mapping(mapped_val)
+            if other_btn != target_name and can_other and can_other.lower() == can_new.lower():
+                return ("same", current_pad_id, current_cfg.get("name", self.t("tab_control", i=current_pad_id)), other_btn)
 
         # 2. Comprobar si esta asignada en otro mando virtual con el mismo periferico fisico
         current_dev = current_cfg.get("physical_device_id", "none")
@@ -1234,17 +1208,20 @@ class J360MoreApp:
                 if other_dev == current_dev:
                     other_maps = other_cfg.get("mappings", {})
                     for other_btn, mapped_val in other_maps.items():
-                        if mapped_val and mapped_val.strip().lower() == new_mapping.strip().lower():
-                            other_name = other_cfg.get("name", f"Control {other_id}")
+                        can_other = self.canonicalize_mapping(mapped_val)
+                        if can_other and can_other.lower() == can_new.lower():
+                            other_name = other_cfg.get("name", self.t("tab_control", i=other_id))
                             return ("other", other_id, other_name, other_btn)
         return None
 
     def _apply_mapping_with_conflict_check(self, pad_id: int, target_name: str, new_val: str, combo: ttk.Combobox = None) -> bool:
         new_val = new_val.strip()
+        can_new = self.canonicalize_mapping(new_val)
+        display_val = self.localize_mapping(can_new)
         prev_val = self.config.get("controllers", {}).get(str(pad_id), {}).get("mappings", {}).get(target_name, "-- Ninguno --")
 
-        if new_val != "-- Ninguno --":
-            conflict = self._check_mapping_conflict(pad_id, target_name, new_val)
+        if not is_none_mapping(can_new):
+            conflict = self._check_mapping_conflict(pad_id, target_name, can_new)
             if conflict:
                 conflict_type, other_id, other_name, other_btn = conflict
                 other_btn_str = self.target_name(other_btn)
@@ -1253,12 +1230,12 @@ class J360MoreApp:
                 if conflict_type == "same":
                     ans = messagebox.askyesnocancel(
                         self.t("conflict_same_title"),
-                        self.t("conflict_same_msg", val=new_val, other=other_btn_str, target=target_name_str),
+                        self.t("conflict_same_msg", val=display_val, other=other_btn_str, target=target_name_str),
                         icon="warning"
                     )
                     if ans is None:
                         if combo:
-                            combo.set(prev_val)
+                            combo.set(self.localize_mapping(prev_val))
                         return False
                     elif ans is True:
                         self.config["controllers"][str(pad_id)]["mappings"][other_btn] = "-- Ninguno --"
@@ -1270,12 +1247,12 @@ class J360MoreApp:
                 elif conflict_type == "other":
                     ans = messagebox.askyesnocancel(
                         self.t("conflict_other_title"),
-                        self.t("conflict_other_msg", val=new_val, other=other_btn_str, name=other_name, id=other_id),
+                        self.t("conflict_other_msg", val=display_val, other=other_btn_str, name=other_name, id=other_id),
                         icon="warning"
                     )
                     if ans is None:
                         if combo:
-                            combo.set(prev_val)
+                            combo.set(self.localize_mapping(prev_val))
                         return False
                     elif ans is True:
                         str_other = str(other_id)
@@ -1288,7 +1265,7 @@ class J360MoreApp:
 
         cb = combo or self.tab_widgets.get(pad_id, {}).get("combos", {}).get(target_name)
         if cb:
-            cb.set(new_val)
+            cb.set(display_val)
 
         self._sync_ui_to_config()
         return True
@@ -1444,9 +1421,7 @@ class J360MoreApp:
 
         for target, cb in widgets["combos"].items():
             val = DEFAULT_MAPPINGS.get(target, "-- Ninguno --")
-            if is_none_mapping(val):
-                val = self.get_none_label()
-            cb.set(val)
+            cb.set(self.localize_mapping(val))
 
         c_w = widgets.get("calib", {})
         for k in ["left_trigger", "right_trigger"]:
@@ -1466,7 +1441,7 @@ class J360MoreApp:
                 c_w[k]["inv_y_var"].set(False)
 
         self._sync_ui_to_config()
-        messagebox.showinfo("Preset", self.t("preset_restored", i=cur_pad_id))
+        messagebox.showinfo(self.t("preset_title"), self.t("preset_restored", i=cur_pad_id))
 
     def _check_system_drivers(self):
         """Verifica la disponibilidad de ViGEmBus e HidHide al arrancar la aplicación."""
@@ -1652,7 +1627,7 @@ class J360MoreApp:
         def on_browse_hidhide():
             chosen = filedialog.askopenfilename(
                 title=self.t("set_browse_title"),
-                filetypes=[("HidHideCLI executable", "HidHideCLI.exe"), ("*.exe", "*.exe"), ("*.*", "*.*")]
+                filetypes=[(self.t("filetype_hidhide_cli"), "HidHideCLI.exe"), (self.t("ft_executables"), "*.exe"), (self.t("ft_all_files"), "*.*")]
             )
             if chosen:
                 path_var.set(chosen)
@@ -1822,14 +1797,16 @@ class J360MoreApp:
                 if p_dev and p_dev != "none":
                     if p_dev not in assigned_map:
                         assigned_map[p_dev] = []
-                    assigned_map[p_dev].append(f"Virtual {pad_id}")
+                    assigned_map[p_dev].append(f"{self.t('virtual_controller_prefix')} {pad_id}")
 
             for dev in self.available_devices:
                 if dev["id"] == "none":
                     continue
 
                 xinput_str = ", ".join(assigned_map.get(dev["id"], []))
-                conn_icon = "🔌 USB" if dev["conn_type"] == "USB" else ("📶 BT" if dev["conn_type"] in ("BT", "BTH") else ("💻 INT" if dev["conn_type"] == "INT" else "⌨️ SYS"))
+                c_type = dev.get("conn_type", "SYS")
+                conn_lbl = self.t("conn_usb") if c_type == "USB" else (self.t("conn_bt") if c_type in ("BT", "BTH") else (self.t("conn_int") if c_type == "INT" else self.t("conn_sys")))
+                conn_icon = f"🔌 {conn_lbl}" if c_type == "USB" else (f"📶 {conn_lbl}" if c_type in ("BT", "BTH") else (f"💻 {conn_lbl}" if c_type == "INT" else f"⌨️ {conn_lbl}"))
                 status_str = self.t("dev_status_connected")
 
                 inst_path = dev.get("instance_path")
@@ -1849,6 +1826,8 @@ class J360MoreApp:
                 else:
                     hidhide_str = self.t("dev_visible")
 
+                dev_pname = self.t("keyboard_device_global") if dev["id"] == "keyboard" else (self.t("mouse_device_name") if dev["id"] == "mouse" else dev.get("product_name", dev.get("name", self.t("dev_device_fallback"))))
+
                 tree.insert(
                     "",
                     tk.END,
@@ -1859,7 +1838,7 @@ class J360MoreApp:
                         dev.get("instance_id", "N/A"),
                         hidhide_str,
                         dev.get("vendor_name", self.t("dev_std_vendor")),
-                        dev.get("product_name", dev.get("name", self.t("dev_device_fallback")))
+                        dev_pname
                     ),
                     tags=(dev["id"],)
                 )
@@ -1916,7 +1895,7 @@ class J360MoreApp:
 
             selected = tree.selection()
             if not selected:
-                messagebox.showinfo("HidHide", self.t("dev_select_device"))
+                messagebox.showinfo(self.t("hidhide_title"), self.t("dev_select_device"))
                 return
             item = tree.item(selected[0])
             tags = item.get("tags", [])
@@ -1931,7 +1910,7 @@ class J360MoreApp:
 
             inst_path = dev.get("instance_path")
             if not inst_path:
-                messagebox.showwarning("HidHide", self.t("dev_no_pnp_path"))
+                messagebox.showwarning(self.t("hidhide_title"), self.t("dev_no_pnp_path"))
                 return
 
             hidden_list = self.config.setdefault("hidden_devices", [])
@@ -1942,12 +1921,12 @@ class J360MoreApp:
             if self.engine.is_running():
                 self.driver_manager.hide_device(inst_path)
                 messagebox.showinfo(
-                    "HidHide",
+                    self.t("hidhide_title"),
                     self.t("dev_hide_active_msg", name=dev.get('product_name'))
                 )
             else:
                 messagebox.showinfo(
-                    "HidHide",
+                    self.t("hidhide_title"),
                     self.t("dev_hide_marked_msg", name=dev.get('product_name'))
                 )
             populate_tree()
@@ -1958,7 +1937,7 @@ class J360MoreApp:
 
             selected = tree.selection()
             if not selected:
-                messagebox.showinfo("HidHide", self.t("dev_select_device"))
+                messagebox.showinfo(self.t("hidhide_title"), self.t("dev_select_device"))
                 return
             item = tree.item(selected[0])
             tags = item.get("tags", [])
@@ -1969,7 +1948,7 @@ class J360MoreApp:
 
             inst_path = dev.get("instance_path")
             if not inst_path:
-                messagebox.showwarning("HidHide", self.t("dev_no_pnp_path"))
+                messagebox.showwarning(self.t("hidhide_title"), self.t("dev_no_pnp_path"))
                 return
 
             hidden_list = self.config.setdefault("hidden_devices", [])
@@ -1979,7 +1958,7 @@ class J360MoreApp:
 
             self.driver_manager.unhide_device(inst_path)
             messagebox.showinfo(
-                "HidHide",
+                self.t("hidhide_title"),
                 self.t("dev_unhide_msg", name=dev.get('product_name'))
             )
             populate_tree()
@@ -2090,9 +2069,7 @@ class J360MoreApp:
                     t_w = self.tab_widgets[tid]
                     for target, cb in t_w.get("combos", {}).items():
                         val = src_maps.get(target, "-- Ninguno --")
-                        if is_none_mapping(val):
-                            val = self.get_none_label()
-                        cb.set(val)
+                        cb.set(self.localize_mapping(val))
                     if inc_calib_var.get():
                         c_w = t_w.get("calib", {})
                         for k in ["left_trigger", "right_trigger"]:
@@ -2374,9 +2351,11 @@ class J360MoreApp:
             worker_state["listening"] = False
 
             tgt = worker_state["current_target"]
-            staged_mappings[tgt] = detected_val
+            can_val = self.canonicalize_mapping(detected_val)
+            staged_mappings[tgt] = can_val
 
-            lbl_status.config(text=self.t("wizard_detected", input=detected_val), foreground="#009922")
+            loc_val = self.localize_mapping(can_val)
+            lbl_status.config(text=self.t("wizard_detected", input=loc_val), foreground="#009922")
             cv_main.itemconfig(main_halo, outline="#00cc44")
             cv_main.itemconfig(main_core, fill="#00ff66")
             cv_zoom.create_oval(120 - 35, 120 - 35, 120 + 35, 120 + 35, outline="#00cc44", width=5)
@@ -2443,14 +2422,14 @@ class J360MoreApp:
             if is_keyboard:
                 for axis_key in ("LEFT_STICK_X", "LEFT_STICK_Y", "RIGHT_STICK_X", "RIGHT_STICK_Y"):
                     if axis_key not in staged_mappings:
-                        staged_mappings[axis_key] = self.get_none_label()
+                        staged_mappings[axis_key] = "-- Ninguno --"
 
             widgets = self.tab_widgets.get(pad_id)
             if widgets and "combos" in widgets:
                 combos = widgets["combos"]
                 for t, v in staged_mappings.items():
                     if t in combos:
-                        combos[t].set(self.get_none_label() if is_none_mapping(v) else v)
+                        combos[t].set(self.localize_mapping(v))
 
             self._sync_ui_to_config()
             self.save_config(silent=True)
@@ -2531,7 +2510,7 @@ class J360MoreApp:
             flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
             subprocess.Popen(["joy.cpl"], shell=True, creationflags=flags)
         except Exception as e:
-            messagebox.showerror("Error", self.t("joy_cpl_error", e=e))
+            messagebox.showerror(self.t("msg_error"), self.t("joy_cpl_error", e=e))
 
     def _open_hidhide_client(self):
         try:
@@ -2548,7 +2527,7 @@ class J360MoreApp:
                     self.t("hidhide_client_not_found_msg")
                 )
         except Exception as e:
-            messagebox.showerror("Error", self.t("hidhide_client_error", e=e))
+            messagebox.showerror(self.t("msg_error"), self.t("hidhide_client_error", e=e))
 
     def _draw_trigger_graph(self, cv: tk.Canvas, dz: int, adz: int, sens: int, inv: bool, raw_val: float, out_byte: int):
         cv.delete("all")
@@ -3056,7 +3035,7 @@ class J360MoreApp:
                     f.write("\r\n".join(bat_lines) + "\r\n")
                 messagebox.showinfo(self.t("tab_games"), self.t("bat_created_success", path=chosen_bat))
             except Exception as e:
-                messagebox.showerror("Error", self.t("msg_bat_save_error", e=e))
+                messagebox.showerror(self.t("msg_error"), self.t("msg_bat_save_error", e=e))
 
         btn_save = ttk.Button(btn_bar, text=self.t("btn_save"), command=save_and_close)
         btn_save.pack(side=tk.LEFT, padx=(0, 6))
@@ -3082,7 +3061,7 @@ class J360MoreApp:
         exe_path = game.get("path", "").strip()
 
         if not os.path.exists(exe_path):
-            messagebox.showerror("Error", self.t("game_not_found", path=exe_path))
+            messagebox.showerror(self.t("msg_error"), self.t("game_not_found", path=exe_path))
             return
 
         # Construir entorno enriquecido
@@ -3112,7 +3091,7 @@ class J360MoreApp:
             if not self.engine.is_running():
                 self._toggle_emulation()
         except Exception as e:
-            messagebox.showerror("Error", self.t("game_launch_error", e=e))
+            messagebox.showerror(self.t("msg_error"), self.t("game_launch_error", e=e))
 
     def _on_close(self):
         if self.engine.is_running():
