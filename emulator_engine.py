@@ -24,6 +24,38 @@ BUTTON_VG_MAP = {
     "Y": vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
 }
 
+DS4_BUTTON_VG_MAP = {
+    "A": vg.DS4_BUTTONS.DS4_BUTTON_CROSS,
+    "B": vg.DS4_BUTTONS.DS4_BUTTON_CIRCLE,
+    "X": vg.DS4_BUTTONS.DS4_BUTTON_SQUARE,
+    "Y": vg.DS4_BUTTONS.DS4_BUTTON_TRIANGLE,
+    "LEFT_SHOULDER": vg.DS4_BUTTONS.DS4_BUTTON_SHOULDER_LEFT,
+    "RIGHT_SHOULDER": vg.DS4_BUTTONS.DS4_BUTTON_SHOULDER_RIGHT,
+    "START": vg.DS4_BUTTONS.DS4_BUTTON_OPTIONS,
+    "BACK": vg.DS4_BUTTONS.DS4_BUTTON_SHARE,
+    "LEFT_THUMB": vg.DS4_BUTTONS.DS4_BUTTON_THUMB_LEFT,
+    "RIGHT_THUMB": vg.DS4_BUTTONS.DS4_BUTTON_THUMB_RIGHT,
+}
+
+def get_ds4_dpad_direction(up: bool, down: bool, left: bool, right: bool):
+    if up and right:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTHEAST
+    if up and left:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTHWEST
+    if down and right:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTHEAST
+    if down and left:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTHWEST
+    if up:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTH
+    if down:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTH
+    if left:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_WEST
+    if right:
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_EAST
+    return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NONE
+
 def apply_axis_calibration(val: float, deadzone_pct: float, anti_deadzone_pct: float, sensitivity_pct: float, invert: bool = False) -> float:
     """Aplica zona muerta, anti-deadzone, sensibilidad exponencial e inversion a un eje [-1.0, 1.0]."""
     if invert:
@@ -112,24 +144,29 @@ class EmulatorEngine:
                 return
 
             max_ctrls = self.config.get("max_controllers", 12)
-            print(f"[*] Iniciando motor de emulacion (hasta {max_ctrls} mandos)...")
+            emulated_type = self.config.get("emulated_type", "xbox360").lower()
+            ctrl_type_name = "DualShock 4" if emulated_type == "ds4" else "Xbox 360"
+            print(f"[*] Iniciando motor de emulacion {ctrl_type_name} (hasta {max_ctrls} mandos)...")
             # Crear los mandos virtuales en ViGEmBus únicamente si tienen periférico físico asignado
             for i in range(1, max_ctrls + 1):
                 cfg = self.config.get("controllers", {}).get(str(i), {})
                 p_dev = cfg.get("physical_device_id", "none")
                 if cfg.get("enabled", True) and p_dev and p_dev != "none":
                     try:
-                        pad = vg.VX360Gamepad()
+                        if emulated_type == "ds4":
+                            pad = vg.VDS4Gamepad()
+                        else:
+                            pad = vg.VX360Gamepad()
                         pad.reset()
                         pad.update()
                         self.gamepads[i] = pad
                     except Exception as e:
-                        print(f"  [!] Error creando mando virtual #{i}: {e}")
+                        print(f"  [!] Error creando mando virtual #{i} ({ctrl_type_name}): {e}")
 
             self.running = True
             self.thread = threading.Thread(target=self._loop, daemon=True)
             self.thread.start()
-            print(f"[+] Motor de emulacion iniciado con {len(self.gamepads)} mandos activos.")
+            print(f"[+] Motor de emulacion iniciado con {len(self.gamepads)} mandos activos ({ctrl_type_name}).")
 
     def stop(self):
         with self.lock:
@@ -274,15 +311,45 @@ class EmulatorEngine:
 
                 pressed_buttons = set()
 
+                is_ds4 = isinstance(pad, vg.VDS4Gamepad)
+
                 # 1. Botones Digitales
-                for btn_name, vg_code in BUTTON_VG_MAP.items():
-                    map_str = mappings.get(btn_name, "")
-                    is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
-                    if is_pressed:
-                        pressed_buttons.add(btn_name)
-                        pad.press_button(button=vg_code)
+                if is_ds4:
+                    for btn_name, vg_code in DS4_BUTTON_VG_MAP.items():
+                        map_str = mappings.get(btn_name, "")
+                        is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
+                        if is_pressed:
+                            pressed_buttons.add(btn_name)
+                            pad.press_button(button=vg_code)
+                        else:
+                            pad.release_button(button=vg_code)
+
+                    guide_map = mappings.get("GUIDE", "")
+                    is_guide, _ = self._eval_mapping(guide_map, joy_state, dev_id)
+                    if is_guide:
+                        pressed_buttons.add("GUIDE")
+                        pad.press_special_button(special_button=vg.DS4_SPECIAL_BUTTONS.DS4_SPECIAL_BUTTON_PS)
                     else:
-                        pad.release_button(button=vg_code)
+                        pad.release_special_button(special_button=vg.DS4_SPECIAL_BUTTONS.DS4_SPECIAL_BUTTON_PS)
+
+                    is_d_up, _ = self._eval_mapping(mappings.get("DPAD_UP", ""), joy_state, dev_id)
+                    is_d_down, _ = self._eval_mapping(mappings.get("DPAD_DOWN", ""), joy_state, dev_id)
+                    is_d_left, _ = self._eval_mapping(mappings.get("DPAD_LEFT", ""), joy_state, dev_id)
+                    is_d_right, _ = self._eval_mapping(mappings.get("DPAD_RIGHT", ""), joy_state, dev_id)
+                    if is_d_up: pressed_buttons.add("DPAD_UP")
+                    if is_d_down: pressed_buttons.add("DPAD_DOWN")
+                    if is_d_left: pressed_buttons.add("DPAD_LEFT")
+                    if is_d_right: pressed_buttons.add("DPAD_RIGHT")
+                    pad.directional_pad(direction=get_ds4_dpad_direction(is_d_up, is_d_down, is_d_left, is_d_right))
+                else:
+                    for btn_name, vg_code in BUTTON_VG_MAP.items():
+                        map_str = mappings.get(btn_name, "")
+                        is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
+                        if is_pressed:
+                            pressed_buttons.add(btn_name)
+                            pad.press_button(button=vg_code)
+                        else:
+                            pad.release_button(button=vg_code)
 
                 # 2. Gatillo Izquierdo (LT)
                 lt_map = canonicalize_mapping(mappings.get("LEFT_TRIGGER", ""))
@@ -301,6 +368,11 @@ class EmulatorEngine:
                 )
                 lt_byte = int(lt_calib * 255)
                 pad.left_trigger(value=lt_byte)
+                if is_ds4:
+                    if lt_byte > 10:
+                        pad.press_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_LEFT)
+                    else:
+                        pad.release_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_LEFT)
 
                 # Gatillo Derecho (RT)
                 rt_map = canonicalize_mapping(mappings.get("RIGHT_TRIGGER", ""))
@@ -319,6 +391,11 @@ class EmulatorEngine:
                 )
                 rt_byte = int(rt_calib * 255)
                 pad.right_trigger(value=rt_byte)
+                if is_ds4:
+                    if rt_byte > 10:
+                        pad.press_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_RIGHT)
+                    else:
+                        pad.release_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_RIGHT)
 
                 # 3. Stick Izquierdo (LS) - Soporta tanto ejes analogicos como teclas/botones por direccion
                 _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state, dev_id)
@@ -354,10 +431,15 @@ class EmulatorEngine:
                     sensitivity_pct=c_ls.get("sensitivity", 0),
                     invert=c_ls.get("invert_y", False)
                 )
-                # Xbox Y: arriba es positivo; Pygame Y: arriba es negativo
-                lx_int = int(lx_calib * 32767)
-                ly_int = int(-ly_calib * 32767)
-                pad.left_joystick(x_value=lx_int, y_value=ly_int)
+                if is_ds4:
+                    lx_byte = max(0, min(255, 128 + int(lx_calib * 127)))
+                    ly_byte = max(0, min(255, 128 + int(ly_calib * 127)))
+                    pad.left_joystick(x_value=lx_byte, y_value=ly_byte)
+                else:
+                    # Xbox Y: arriba es positivo; Pygame Y: arriba es negativo
+                    lx_int = int(lx_calib * 32767)
+                    ly_int = int(-ly_calib * 32767)
+                    pad.left_joystick(x_value=lx_int, y_value=ly_int)
 
                 # 4. Stick Derecho (RS) - Soporta tanto ejes analogicos como teclas/botones por direccion
                 _, rx_axis = self._eval_mapping(mappings.get("RIGHT_STICK_X", ""), joy_state, dev_id)
@@ -393,9 +475,14 @@ class EmulatorEngine:
                     sensitivity_pct=c_rs.get("sensitivity", 0),
                     invert=c_rs.get("invert_y", False)
                 )
-                rx_int = int(rx_calib * 32767)
-                ry_int = int(-ry_calib * 32767)
-                pad.right_joystick(x_value=rx_int, y_value=ry_int)
+                if is_ds4:
+                    rx_byte = max(0, min(255, 128 + int(rx_calib * 127)))
+                    ry_byte = max(0, min(255, 128 + int(ry_calib * 127)))
+                    pad.right_joystick(x_value=rx_byte, y_value=ry_byte)
+                else:
+                    rx_int = int(rx_calib * 32767)
+                    ry_int = int(-ry_calib * 32767)
+                    pad.right_joystick(x_value=rx_int, y_value=ry_int)
 
                 # Enviar reporte a ViGEmBus
                 pad.update()

@@ -26,7 +26,7 @@ from i18n import (
     canonicalize_mapping, localize_mapping
 )
 
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.3.0"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
@@ -56,7 +56,15 @@ else:
     CONFIG_FILE = os.path.join(SCRIPT_DIR, "config_mapping.json")
     ASSETS_DIR = os.path.join(SCRIPT_DIR, "assets")
 
-CONTROLLER_SVG_PATH = os.path.join(ASSETS_DIR, "controller.svg")
+CONTROLLER_360_SVG_PATH = os.path.join(ASSETS_DIR, "controller_360.svg") if os.path.exists(os.path.join(ASSETS_DIR, "controller_360.svg")) else os.path.join(ASSETS_DIR, "controller.svg")
+CONTROLLER_DS4_SVG_PATH = os.path.join(ASSETS_DIR, "controller_DS4.svg")
+CONTROLLER_SVG_PATH = CONTROLLER_360_SVG_PATH
+
+CONTROLLER_360_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_360_render.png")
+CONTROLLER_360_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_360_hires.png")
+CONTROLLER_DS4_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ds4_render.png")
+CONTROLLER_DS4_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_ds4_hires.png")
+
 CONTROLLER_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_render.png")
 CONTROLLER_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_hires.png")
 CONTROLLER_PNG_FALLBACK = os.path.join(ASSETS_DIR, "controller.png")
@@ -64,8 +72,8 @@ ICON_SVG_PATH = os.path.join(ASSETS_DIR, "icon.svg")
 ICON_PNG_PATH = os.path.join(ASSETS_DIR, "icon.png")
 ICON_ICO_PATH = os.path.join(ASSETS_DIR, "icon.ico")
 
-# Coordenadas relativas en el canvas para la imagen renderizada a 350x275
-HITBOXES = {
+# Coordenadas relativas en el canvas para Xbox 360 (350x275)
+XBOX_HITBOXES = {
     "A": (287.6, 154.9, 16.0),
     "B": (311.5, 129.4, 16.0),
     "X": (259.1, 129.4, 16.0),
@@ -79,7 +87,7 @@ HITBOXES = {
     "RIGHT_TRIGGER": (263.0, 42.0, 16.0),
 }
 
-CANVAS_POINTS = {
+XBOX_CANVAS_POINTS = {
     "LEFT_TRIGGER": (87.0, 42.0, 14),
     "LEFT_SHOULDER": (60.0, 56.0, 14),
     "RIGHT_TRIGGER": (263.0, 42.0, 14),
@@ -106,6 +114,53 @@ CANVAS_POINTS = {
     "X": (259.1, 129.4, 11),
     "Y": (287.6, 105.5, 11),
 }
+
+# Coordenadas relativas en el canvas para DualShock 4 (350x275)
+DS4_HITBOXES = {
+    "A": (280.5, 147.0, 14.0),
+    "B": (301.5, 126.5, 14.0),
+    "X": (259.0, 126.5, 14.0),
+    "Y": (280.5, 106.0, 14.0),
+    "GUIDE": (174.5, 167.5, 14.0),
+    "BACK": (107.0, 95.0, 12.0),
+    "START": (243.0, 95.0, 12.0),
+    "LEFT_SHOULDER": (70.0, 72.0, 15.0),
+    "RIGHT_SHOULDER": (280.0, 72.0, 15.0),
+    "LEFT_TRIGGER": (71.5, 57.5, 15.0),
+    "RIGHT_TRIGGER": (279.0, 57.5, 15.0),
+}
+
+DS4_CANVAS_POINTS = {
+    "LEFT_TRIGGER": (71.5, 57.5, 14),
+    "LEFT_SHOULDER": (70.0, 72.0, 14),
+    "RIGHT_TRIGGER": (279.0, 57.5, 14),
+    "RIGHT_SHOULDER": (280.0, 72.0, 14),
+    "LEFT_STICK_UP": (123.5, 151.5, 7),
+    "LEFT_STICK_DOWN": (123.5, 183.5, 7),
+    "LEFT_STICK_LEFT": (107.5, 167.5, 7),
+    "LEFT_STICK_RIGHT": (139.5, 167.5, 7),
+    "LEFT_THUMB": (123.5, 167.5, 8),
+    "RIGHT_STICK_UP": (225.5, 151.5, 7),
+    "RIGHT_STICK_DOWN": (225.5, 183.5, 7),
+    "RIGHT_STICK_LEFT": (209.5, 167.5, 7),
+    "RIGHT_STICK_RIGHT": (241.5, 167.5, 7),
+    "RIGHT_THUMB": (225.5, 167.5, 8),
+    "DPAD_UP": (70.0, 111.0, 9),
+    "DPAD_DOWN": (70.0, 141.5, 9),
+    "DPAD_LEFT": (54.5, 126.5, 9),
+    "DPAD_RIGHT": (85.5, 126.5, 9),
+    "BACK": (107.0, 95.0, 9),
+    "GUIDE": (174.5, 167.5, 12),
+    "START": (243.0, 95.0, 9),
+    "A": (280.5, 147.0, 11),
+    "B": (301.5, 126.5, 11),
+    "X": (259.0, 126.5, 11),
+    "Y": (280.5, 106.0, 11),
+}
+
+# Retrocompatibilidad
+HITBOXES = XBOX_HITBOXES
+CANVAS_POINTS = XBOX_CANVAS_POINTS
 
 def map_target_to_canvas_key(target: str) -> str:
     """Convierte el nombre del destino del mapeo a la clave del componente visual en el canvas."""
@@ -273,7 +328,14 @@ class J360MoreApp:
 
     def target_name(self, target: str) -> str:
         lang = self.config.get("language", "es")
-        return get_target_name(lang, target)
+        emulated_type = self.config.get("emulated_type", "xbox360")
+        return get_target_name(lang, target, emulated_type)
+
+    def _get_hitboxes(self) -> dict:
+        return DS4_HITBOXES if self.config.get("emulated_type", "xbox360").lower() == "ds4" else XBOX_HITBOXES
+
+    def _get_canvas_points(self) -> dict:
+        return DS4_CANVAS_POINTS if self.config.get("emulated_type", "xbox360").lower() == "ds4" else XBOX_CANVAS_POINTS
 
     @property
     def current_lang(self) -> str:
@@ -399,64 +461,81 @@ class J360MoreApp:
             except Exception:
                 pass
 
+    def _load_single_controller_asset(self, svg_path: str, hires_png: str, render_png: str):
+        pil_hires = None
+        pil_base = None
+
+        if os.path.exists(svg_path) and resvg_py is not None:
+            try:
+                png_bytes_hi = resvg_py.svg_to_bytes(svg_path=svg_path, width=1400)
+                pil_hires = Image.open(io.BytesIO(png_bytes_hi))
+                try:
+                    pil_hires.save(hires_png)
+                except Exception:
+                    pass
+            except Exception as e:
+                print(f"[!] Error renderizando SVG HD ({svg_path}): {e}")
+
+        if pil_hires is None and os.path.exists(hires_png):
+            try:
+                pil_hires = Image.open(hires_png)
+            except Exception:
+                pass
+
+        if pil_hires is not None:
+            try:
+                pil_base = pil_hires.resize((350, 275), Image.Resampling.LANCZOS)
+                try:
+                    pil_base.save(render_png)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+        elif os.path.exists(render_png):
+            try:
+                pil_base = Image.open(render_png)
+                pil_hires = pil_base
+            except Exception:
+                pass
+
+        tk_img = ImageTk.PhotoImage(pil_base) if pil_base else None
+        return pil_hires, pil_base, tk_img
+
     def _load_assets(self):
         self.controller_img_tk = None
         self.controller_pil_base = None
         self.controller_pil_hires = None
 
-        # 1. Cargar o renderizar SVG de alta resolución (1400px) para zoom ultra nítido
-        if os.path.exists(CONTROLLER_SVG_PATH) and resvg_py is not None:
+        # 1. Assets Xbox 360
+        (self.ctrl_360_hires, self.ctrl_360_base, self.ctrl_360_tk) = self._load_single_controller_asset(
+            CONTROLLER_360_SVG_PATH, CONTROLLER_360_HIRES_PNG, CONTROLLER_360_CACHE_PNG
+        )
+        if self.ctrl_360_base is None and os.path.exists(CONTROLLER_PNG_FALLBACK):
             try:
-                png_bytes_hi = resvg_py.svg_to_bytes(svg_path=CONTROLLER_SVG_PATH, width=1400)
-                self.controller_pil_hires = Image.open(io.BytesIO(png_bytes_hi))
-                try:
-                    self.controller_pil_hires.save(CONTROLLER_HIRES_PNG)
-                except Exception:
-                    pass
-            except Exception as e:
-                print(f"[!] Error renderizando SVG HD: {e}")
-
-        # 2. Cargar cache HD desde disco si está disponible
-        if self.controller_pil_hires is None and os.path.exists(CONTROLLER_HIRES_PNG):
-            try:
-                self.controller_pil_hires = Image.open(CONTROLLER_HIRES_PNG)
+                p = Image.open(CONTROLLER_PNG_FALLBACK).resize((350, 275), Image.Resampling.LANCZOS)
+                self.ctrl_360_base = p
+                self.ctrl_360_hires = p
+                self.ctrl_360_tk = ImageTk.PhotoImage(p)
             except Exception:
                 pass
 
-        # 3. Si disponemos de la imagen HD, generar la imagen base de 350x275 con LANCZOS
-        if self.controller_pil_hires is not None:
-            try:
-                self.controller_pil_base = self.controller_pil_hires.resize((350, 275), Image.Resampling.LANCZOS)
-                self.controller_img_tk = ImageTk.PhotoImage(self.controller_pil_base)
-                try:
-                    self.controller_pil_base.save(CONTROLLER_CACHE_PNG)
-                except Exception:
-                    pass
-                return
-            except Exception:
-                pass
+        # 2. Assets DualShock 4
+        (self.ctrl_ds4_hires, self.ctrl_ds4_base, self.ctrl_ds4_tk) = self._load_single_controller_asset(
+            CONTROLLER_DS4_SVG_PATH, CONTROLLER_DS4_HIRES_PNG, CONTROLLER_DS4_CACHE_PNG
+        )
 
-        # 4. Fallback a cache renderizada previa de 350x275
-        if os.path.exists(CONTROLLER_CACHE_PNG):
-            try:
-                pil_img = Image.open(CONTROLLER_CACHE_PNG)
-                self.controller_pil_base = pil_img.copy()
-                self.controller_pil_hires = self.controller_pil_base
-                self.controller_img_tk = ImageTk.PhotoImage(pil_img)
-                return
-            except Exception:
-                pass
+        self._update_active_assets()
 
-        # 5. Fallback a PNG anterior si existe
-        if os.path.exists(CONTROLLER_PNG_FALLBACK):
-            try:
-                pil_img = Image.open(CONTROLLER_PNG_FALLBACK).resize((350, 275), Image.Resampling.LANCZOS)
-                self.controller_pil_base = pil_img.copy()
-                self.controller_pil_hires = self.controller_pil_base
-                self.controller_img_tk = ImageTk.PhotoImage(pil_img)
-                return
-            except Exception:
-                pass
+    def _update_active_assets(self):
+        emulated_type = self.config.get("emulated_type", "xbox360").lower()
+        if emulated_type == "ds4" and self.ctrl_ds4_base is not None:
+            self.controller_pil_hires = self.ctrl_ds4_hires
+            self.controller_pil_base = self.ctrl_ds4_base
+            self.controller_img_tk = self.ctrl_ds4_tk
+        else:
+            self.controller_pil_hires = self.ctrl_360_hires
+            self.controller_pil_base = self.ctrl_360_base
+            self.controller_img_tk = self.ctrl_360_tk
 
     def load_config(self) -> dict:
         if os.path.exists(CONFIG_FILE):
@@ -594,6 +673,7 @@ class J360MoreApp:
         self.notebook.bind("<<NotebookTabChanged>>", lambda e: self._on_tab_changed())
 
     def _rebuild_tabs(self, count: int):
+        self._update_active_assets()
         # Guardar pestaña seleccionada actualmente si es posible
         cur_idx = 0
         try:
@@ -707,18 +787,31 @@ class J360MoreApp:
             widgets["combos"][target_name] = cb
             widgets["buttons"][target_name] = btn
 
+        is_ds4 = (self.config.get("emulated_type", "xbox360").lower() == "ds4")
+
         # Columna Izquierda
-        ttk.Label(left_col, text=self.t("sec_left_controls"), font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
-        make_row(left_col, self.t("row_left_trigger"), "LEFT_TRIGGER")
-        make_row(left_col, self.t("row_left_shoulder"), "LEFT_SHOULDER")
-        make_row(left_col, self.t("row_back"), "BACK")
-        make_row(left_col, self.t("row_start"), "START")
-        make_row(left_col, self.t("row_guide"), "GUIDE")
+        sec_left_title = self.t("sec_left_controls_ds4") if is_ds4 else self.t("sec_left_controls")
+        ttk.Label(left_col, text=sec_left_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
+
+        row_lt_lbl = self.t("row_left_trigger_ds4") if is_ds4 else self.t("row_left_trigger")
+        row_lb_lbl = self.t("row_left_shoulder_ds4") if is_ds4 else self.t("row_left_shoulder")
+        row_back_lbl = self.t("row_back_ds4") if is_ds4 else self.t("row_back")
+        row_start_lbl = self.t("row_start_ds4") if is_ds4 else self.t("row_start")
+        row_guide_lbl = self.t("row_guide_ds4") if is_ds4 else self.t("row_guide")
+
+        make_row(left_col, row_lt_lbl, "LEFT_TRIGGER")
+        make_row(left_col, row_lb_lbl, "LEFT_SHOULDER")
+        make_row(left_col, row_back_lbl, "BACK")
+        make_row(left_col, row_start_lbl, "START")
+        make_row(left_col, row_guide_lbl, "GUIDE")
         ttk.Separator(left_col, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=2)
-        ttk.Label(left_col, text=self.t("sec_left_stick"), font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
+
+        sec_ls_title = self.t("sec_left_stick_ds4") if is_ds4 else self.t("sec_left_stick")
+        row_ls_btn_lbl = self.t("row_stick_button_l_ds4") if is_ds4 else self.t("row_stick_button")
+        ttk.Label(left_col, text=sec_ls_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
         make_row(left_col, self.t("row_stick_axis_x"), "LEFT_STICK_X")
         make_row(left_col, self.t("row_stick_axis_y"), "LEFT_STICK_Y")
-        make_row(left_col, self.t("row_stick_button"), "LEFT_THUMB")
+        make_row(left_col, row_ls_btn_lbl, "LEFT_THUMB")
         make_row(left_col, self.t("row_stick_up"), "LEFT_STICK_UP")
         make_row(left_col, self.t("row_stick_down"), "LEFT_STICK_DOWN")
         make_row(left_col, self.t("row_stick_left"), "LEFT_STICK_LEFT")
@@ -739,7 +832,7 @@ class J360MoreApp:
 
         # Indicadores reactivos en el canvas (LEDs de pulsación)
         widgets["leds"] = {}
-        for btn_k, (cx, cy, r) in CANVAS_POINTS.items():
+        for btn_k, (cx, cy, r) in self._get_canvas_points().items():
             glow = canvas.create_oval(cx - r - 2, cy - r - 2, cx + r + 2, cy + r + 2, outline="#00ff66", width=2, state="hidden")
             tag = canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill="#00ff66", outline="#ffffff", width=2, state="hidden")
             widgets["leds"][btn_k] = (tag, glow)
@@ -767,18 +860,30 @@ class J360MoreApp:
         make_row(dpad_frame, self.t("row_dpad_right"), "DPAD_RIGHT", label_anchor="center", lbl_width=14)
 
         # Columna Derecha
-        ttk.Label(right_col, text=self.t("sec_right_controls"), font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
-        make_row(right_col, self.t("row_right_trigger"), "RIGHT_TRIGGER")
-        make_row(right_col, self.t("row_right_shoulder"), "RIGHT_SHOULDER")
-        make_row(right_col, self.t("row_btn_y"), "Y")
-        make_row(right_col, self.t("row_btn_x"), "X")
-        make_row(right_col, self.t("row_btn_b"), "B")
-        make_row(right_col, self.t("row_btn_a"), "A")
+        sec_right_title = self.t("sec_right_controls_ds4") if is_ds4 else self.t("sec_right_controls")
+        ttk.Label(right_col, text=sec_right_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
+
+        row_rt_lbl = self.t("row_right_trigger_ds4") if is_ds4 else self.t("row_right_trigger")
+        row_rb_lbl = self.t("row_right_shoulder_ds4") if is_ds4 else self.t("row_right_shoulder")
+        row_y_lbl = self.t("row_btn_y_ds4") if is_ds4 else self.t("row_btn_y")
+        row_x_lbl = self.t("row_btn_x_ds4") if is_ds4 else self.t("row_btn_x")
+        row_b_lbl = self.t("row_btn_b_ds4") if is_ds4 else self.t("row_btn_b")
+        row_a_lbl = self.t("row_btn_a_ds4") if is_ds4 else self.t("row_btn_a")
+
+        make_row(right_col, row_rt_lbl, "RIGHT_TRIGGER")
+        make_row(right_col, row_rb_lbl, "RIGHT_SHOULDER")
+        make_row(right_col, row_y_lbl, "Y")
+        make_row(right_col, row_x_lbl, "X")
+        make_row(right_col, row_b_lbl, "B")
+        make_row(right_col, row_a_lbl, "A")
         ttk.Separator(right_col, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=2)
-        ttk.Label(right_col, text=self.t("sec_right_stick"), font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
+
+        sec_rs_title = self.t("sec_right_stick_ds4") if is_ds4 else self.t("sec_right_stick")
+        row_rs_btn_lbl = self.t("row_stick_button_r_ds4") if is_ds4 else self.t("row_stick_button")
+        ttk.Label(right_col, text=sec_rs_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
         make_row(right_col, self.t("row_stick_axis_x"), "RIGHT_STICK_X")
         make_row(right_col, self.t("row_stick_axis_y"), "RIGHT_STICK_Y")
-        make_row(right_col, self.t("row_stick_button"), "RIGHT_THUMB")
+        make_row(right_col, row_rs_btn_lbl, "RIGHT_THUMB")
         make_row(right_col, self.t("row_stick_up"), "RIGHT_STICK_UP")
         make_row(right_col, self.t("row_stick_down"), "RIGHT_STICK_DOWN")
         make_row(right_col, self.t("row_stick_left"), "RIGHT_STICK_LEFT")
@@ -792,50 +897,98 @@ class J360MoreApp:
 
     def _find_target_at_pos(self, click_x: float, click_y: float) -> str:
         """Determina qué botón o parte interactiva fue clickeada (excluyendo el Fondo)."""
-        # 1. Comprobar cruceta D-Pad
-        dpad_cx, dpad_cy = 122.5, 189.6
-        dx = click_x - dpad_cx
-        dy = click_y - dpad_cy
-        dist_dpad = math.sqrt(dx * dx + dy * dy)
-        if dist_dpad <= 28.0:
-            if abs(dy) > abs(dx):
-                return "DPAD_UP" if dy < 0 else "DPAD_DOWN"
-            else:
-                return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
+        is_ds4 = (self.config.get("emulated_type", "xbox360").lower() == "ds4")
 
-        # 2. Comprobar Stick Izquierdo (direccional o centro)
-        ls_cx, ls_cy = 63.9, 140.2
-        dx_ls = click_x - ls_cx
-        dy_ls = click_y - ls_cy
-        dist_ls = math.sqrt(dx_ls * dx_ls + dy_ls * dy_ls)
-        if dist_ls <= 26.0:
-            if dist_ls < 7.5:
-                return "LEFT_THUMB"
-            else:
-                if abs(dy_ls) > abs(dx_ls):
-                    return "LEFT_STICK_UP" if dy_ls < 0 else "LEFT_STICK_DOWN"
+        if is_ds4:
+            # 1. Comprobar cruceta D-Pad (DS4: cx=70.0, cy=126.5)
+            dpad_cx, dpad_cy = 70.0, 126.5
+            dx = click_x - dpad_cx
+            dy = click_y - dpad_cy
+            dist_dpad = math.sqrt(dx * dx + dy * dy)
+            if dist_dpad <= 28.0:
+                if abs(dy) > abs(dx):
+                    return "DPAD_UP" if dy < 0 else "DPAD_DOWN"
                 else:
-                    return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
+                    return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
 
-        # 3. Comprobar Stick Derecho (direccional o centro)
-        rs_cx, rs_cy = 224.4, 189.6
-        dx_rs = click_x - rs_cx
-        dy_rs = click_y - rs_cy
-        dist_rs = math.sqrt(dx_rs * dx_rs + dy_rs * dy_rs)
-        if dist_rs <= 26.0:
-            if dist_rs < 7.5:
-                return "RIGHT_THUMB"
-            else:
-                if abs(dy_rs) > abs(dx_rs):
-                    return "RIGHT_STICK_UP" if dy_rs < 0 else "RIGHT_STICK_DOWN"
+            # 2. Comprobar Stick Izquierdo (DS4: cx=123.5, cy=167.5)
+            ls_cx, ls_cy = 123.5, 167.5
+            dx_ls = click_x - ls_cx
+            dy_ls = click_y - ls_cy
+            dist_ls = math.sqrt(dx_ls * dx_ls + dy_ls * dy_ls)
+            if dist_ls <= 24.0:
+                if dist_ls < 7.5:
+                    return "LEFT_THUMB"
                 else:
-                    return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
+                    if abs(dy_ls) > abs(dx_ls):
+                        return "LEFT_STICK_UP" if dy_ls < 0 else "LEFT_STICK_DOWN"
+                    else:
+                        return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
 
-        # 4. Comprobar los demás botones individuales
-        for btn_name, (bx, by, br) in HITBOXES.items():
-            d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
-            if d <= br:
-                return btn_name
+            # 3. Comprobar Stick Derecho (DS4: cx=225.5, cy=167.5)
+            rs_cx, rs_cy = 225.5, 167.5
+            dx_rs = click_x - rs_cx
+            dy_rs = click_y - rs_cy
+            dist_rs = math.sqrt(dx_rs * dx_rs + dy_rs * dy_rs)
+            if dist_rs <= 24.0:
+                if dist_rs < 7.5:
+                    return "RIGHT_THUMB"
+                else:
+                    if abs(dy_rs) > abs(dx_rs):
+                        return "RIGHT_STICK_UP" if dy_rs < 0 else "RIGHT_STICK_DOWN"
+                    else:
+                        return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
+
+            # 4. Comprobar los demás botones individuales de DS4
+            for btn_name, (bx, by, br) in DS4_HITBOXES.items():
+                d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
+                if d <= br:
+                    return btn_name
+        else:
+            # 1. Comprobar cruceta D-Pad (Xbox: cx=122.5, cy=189.6)
+            dpad_cx, dpad_cy = 122.5, 189.6
+            dx = click_x - dpad_cx
+            dy = click_y - dpad_cy
+            dist_dpad = math.sqrt(dx * dx + dy * dy)
+            if dist_dpad <= 28.0:
+                if abs(dy) > abs(dx):
+                    return "DPAD_UP" if dy < 0 else "DPAD_DOWN"
+                else:
+                    return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
+
+            # 2. Comprobar Stick Izquierdo (Xbox: cx=63.9, cy=140.2)
+            ls_cx, ls_cy = 63.9, 140.2
+            dx_ls = click_x - ls_cx
+            dy_ls = click_y - ls_cy
+            dist_ls = math.sqrt(dx_ls * dx_ls + dy_ls * dy_ls)
+            if dist_ls <= 26.0:
+                if dist_ls < 7.5:
+                    return "LEFT_THUMB"
+                else:
+                    if abs(dy_ls) > abs(dx_ls):
+                        return "LEFT_STICK_UP" if dy_ls < 0 else "LEFT_STICK_DOWN"
+                    else:
+                        return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
+
+            # 3. Comprobar Stick Derecho (Xbox: cx=224.4, cy=189.6)
+            rs_cx, rs_cy = 224.4, 189.6
+            dx_rs = click_x - rs_cx
+            dy_rs = click_y - rs_cy
+            dist_rs = math.sqrt(dx_rs * dx_rs + dy_rs * dy_rs)
+            if dist_rs <= 26.0:
+                if dist_rs < 7.5:
+                    return "RIGHT_THUMB"
+                else:
+                    if abs(dy_rs) > abs(dx_rs):
+                        return "RIGHT_STICK_UP" if dy_rs < 0 else "RIGHT_STICK_DOWN"
+                    else:
+                        return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
+
+            # 4. Comprobar los demás botones individuales de Xbox
+            for btn_name, (bx, by, br) in XBOX_HITBOXES.items():
+                d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
+                if d <= br:
+                    return btn_name
 
         return None
 
@@ -1613,12 +1766,12 @@ class J360MoreApp:
         """Ventana modal de configuración con Idioma, Slider (1 a 12 mandos) y ruta de HidHide."""
         dlg = tk.Toplevel(self.root)
         dlg.title(self.t("set_dlg_title"))
-        dlg.geometry("520x430")
+        dlg.geometry("520x540")
         dlg.resizable(False, False)
         self._setup_modal_dialog(dlg)
 
         x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 260)
-        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 215)
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 270)
         dlg.geometry(f"+{x}+{y}")
 
         frame = ttk.Frame(dlg, padding=16)
@@ -1637,7 +1790,21 @@ class J360MoreApp:
         lang_combo = ttk.Combobox(box_lang, textvariable=lang_var, values=list(SUPPORTED_LANGUAGES.values()), state="readonly", width=25)
         lang_combo.pack(anchor="w", padx=4, pady=2)
 
-        # SECCION 2: Mandos virtuales a emular
+        # SECCION 2: Tipo de mando virtual emulado
+        box_type = ttk.LabelFrame(frame, text="🎮 " + self.t("set_emulated_type_title"), padding=8)
+        box_type.pack(fill=tk.X, pady=(0, 8))
+
+        cur_type = self.config.get("emulated_type", "xbox360").lower()
+        type_var = tk.StringVar(value=cur_type)
+
+        type_row = ttk.Frame(box_type)
+        type_row.pack(fill=tk.X, padx=4, pady=2)
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360").pack(side=tk.LEFT, padx=(0, 16))
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4").pack(side=tk.LEFT)
+
+        ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=460).pack(anchor="w", padx=4, pady=(2, 0))
+
+        # SECCION 3: Mandos virtuales a emular
         box_mandos = ttk.LabelFrame(frame, text=self.t("set_mandos_title"), padding=10)
         box_mandos.pack(fill=tk.X, pady=(0, 8))
 
@@ -1664,7 +1831,7 @@ class J360MoreApp:
         ttk.Label(ticks_frame, text=self.t("set_6_controllers"), font=("Segoe UI", 8)).pack(side=tk.LEFT, expand=True)
         ttk.Label(ticks_frame, text=self.t("set_12_controllers"), font=("Segoe UI", 8)).pack(side=tk.RIGHT)
 
-        # SECCION 3: Integración con HidHide (Opcional)
+        # SECCION 4: Integración con HidHide (Opcional)
         box_hidhide = ttk.LabelFrame(frame, text=self.t("set_hidhide_title"), padding=10)
         box_hidhide.pack(fill=tk.X, pady=(0, 8))
 
@@ -1713,11 +1880,17 @@ class J360MoreApp:
             self.config["language"] = new_lang
             self.config["author"] = "JuanJSAR"
 
-            # 2. Aplicar mandos
+            # 2. Aplicar tipo de mando emulado
+            old_type = self.config.get("emulated_type", "xbox360").lower()
+            new_type = type_var.get().lower()
+            type_changed = (new_type != old_type)
+            self.config["emulated_type"] = new_type
+
+            # 3. Aplicar mandos
             new_count = val_var.get()
             self.config["max_controllers"] = new_count
 
-            # 3. Aplicar configuración de HidHide
+            # 4. Aplicar configuración de HidHide
             cli_path = path_var.get().strip()
             self.config["hidhide_cli_path"] = cli_path
             self.config["suppress_hidhide_warning"] = not show_warn_var.get()
@@ -1726,6 +1899,13 @@ class J360MoreApp:
             if self.driver_manager.is_hidhide_installed():
                 self.driver_manager.set_cloak_active(cloak_active_var.get())
                 self.driver_manager.ensure_process_whitelisted()
+
+            if type_changed:
+                self._update_active_assets()
+                if self.engine.is_running():
+                    self.engine.stop()
+                    self.engine.set_config(self.config)
+                    self.engine.start()
 
             self._sync_ui_to_config()
             self._rebuild_tabs(new_count)
@@ -2325,7 +2505,7 @@ class J360MoreApp:
             lbl_status.config(text=self.t("wizard_waiting"), foreground="#666666")
 
             canvas_key = map_target_to_canvas_key(tgt)
-            pt = CANVAS_POINTS.get(canvas_key, (175.0, 137.5, 10))
+            pt = self._get_canvas_points().get(canvas_key, (175.0, 137.5, 10))
             cx, cy = pt[0], pt[1]
 
             cv_main.coords(main_halo, cx - 14, cy - 14, cx + 14, cy + 14)
@@ -2729,8 +2909,9 @@ class J360MoreApp:
 
                 # Animacion llamativa del boton en modo ASIGNACION (halo pulsante ambar/rojo)
                 if canvas and rec_ind:
-                    if rec_canvas_key and rec_canvas_key in CANVAS_POINTS:
-                        cx, cy, r = CANVAS_POINTS[rec_canvas_key]
+                    active_pts = self._get_canvas_points()
+                    if rec_canvas_key and rec_canvas_key in active_pts:
+                        cx, cy, r = active_pts[rec_canvas_key]
                         t = time.time()
                         pulse = (math.sin(t * 10) + 1.0) / 2.0  # 0..1 oscila a ~1.6 Hz
                         halo_r = r + 3 + int(pulse * 5)

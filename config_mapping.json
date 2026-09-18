@@ -57,7 +57,7 @@
           "invert_y": false
         }
       },
-      "physical_device_id": "none",
+      "physical_device_id": "keyboard",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
         "LEFT_SHOULDER": "-- Ninguno --",
@@ -969,5 +969,6 @@
   ],
   "language": "es",
   "author": "JuanJSAR",
+  "emulated_type": "ds4",
   "games": []
 }
