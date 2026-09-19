@@ -52,6 +52,7 @@ if "%BUILD_MODE%"=="1" (
     pyinstaller --noconfirm --onefile --windowed --noupx ^
         --name "j360More" ^
         --icon "assets\icon.ico" ^
+        --version-file "version_info.txt" ^
         --add-data "assets;assets" ^
         --collect-all "vgamepad" ^
         --collect-all "resvg_py" ^
@@ -80,6 +81,7 @@ if "%BUILD_MODE%"=="1" (
     pyinstaller --noconfirm --onedir --windowed ^
         --name "j360More" ^
         --icon "assets\icon.ico" ^
+        --version-file "version_info.txt" ^
         --add-data "assets;assets" ^
         --collect-all "vgamepad" ^
         --collect-all "resvg_py" ^
