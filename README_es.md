@@ -15,9 +15,11 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 
 ## 📸 Capturas de Pantalla
 
-| Mapeo y Emulación Principal | Calibración de Sticks Analógicos | Configuración e Integración HidHide |
-|:---:|:---:|:---:|
-| [![Mapeo Principal](assets/screenshot_main.png)](assets/screenshot_main.png) | [![Sticks Analógicos](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Configuración](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
+| Mapeo Xbox 360 | Mapeo DualShock 4 |
+|:---:|:---:|
+| [![Mapeo Xbox 360](assets/screenshot_main.png)](assets/screenshot_main.png) | [![Mapeo DualShock 4](assets/screenshot_main2.png)](assets/screenshot_main2.png) |
+| **Calibración de Sticks Analógicos** | **Configuración e Integración HidHide** |
+| [![Calibración de Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Configuración](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
 
 ---
 
@@ -48,11 +50,12 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
   - Botones **`🔒 Ocultar al Emular`** y **`🔓 Mantener Visible`** (se muestran deshabilitados si HidHide no está presente).
   - **Ocultamiento Dinámico**: Al pulsar **`▶ Iniciar Emulación`**, j360More oculta de inmediato los periféricos seleccionados para todo Windows mediante HidHide, permitiendo que **solo j360More** pueda leerlos (gracias a la lista blanca automática). Al pulsar **`⏹ Detener Emulación`** (o cerrar la app), los periféricos vuelven a ser visibles para todo el sistema automáticamente.
 
-### 5. Diagrama Vectorial Interactivo del Mando Xbox 360
-- Diagrama renderizado en alta fidelidad.
+### 5. Diagramas Vectoriales Interactivos (Xbox 360 y DualShock 4)
+- Diagramas renderizados en alta fidelidad tanto para mandos **Xbox 360** (`controller_360.svg`) como **DualShock 4** (`controller_DS4.svg`).
+- Compatibilidad total con modos de emulación **Xbox 360**, **DualShock 4** y **Mixto** (mitad Xbox 360 y mitad DS4 en múltiplos pares: 2, 4, 6, 8, 10, 12).
 - **Mapeo por Clic**: Haz clic directo sobre cualquier botón o palanca del dibujo del mando para iniciar su asignación instantánea.
-- **LEDs Reactivos Glow**: Cada botón, gatillo, cruceta o movimiento de stick se ilumina en verde neón en tiempo real al pulsarlo en tu mando físico.
-- **Halo de Asignación**: Indicador visual pulsante ambar/rojo sobre el componente que está esperando que presiones un botón o tecla.
+- **LEDs Reactivos Glow**: Cada botón, gatillo, cruceta o movimiento de stick se ilumina en tiempo real al pulsarlo en tu mando físico.
+- **Halo de Asignación**: Indicador visual pulsante sobre el componente que está esperando que presiones un botón o tecla.
 
 ### 6. Calibración Especializada de Gatillos y Sticks
 - **Sub-pestaña `Triggers` (Gatillos LT / RT)**:

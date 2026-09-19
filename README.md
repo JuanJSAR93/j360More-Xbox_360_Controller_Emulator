@@ -15,9 +15,11 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 
 ## 📸 Application Screenshots
 
-| Main Mapping & Emulation | Analog Sticks Calibration | Settings & HidHide Integration |
-|:---:|:---:|:---:|
-| [![Main Mapping](assets/screenshot_main.png)](assets/screenshot_main.png) | [![Analog Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Settings](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
+| Xbox 360 Mapping | DualShock 4 Mapping |
+|:---:|:---:|
+| [![Xbox 360 Mapping](assets/screenshot_main.png)](assets/screenshot_main.png) | [![DualShock 4 Mapping](assets/screenshot_main2.png)](assets/screenshot_main2.png) |
+| **Analog Sticks Calibration** | **Settings & HidHide Integration** |
+| [![Analog Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Settings](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
 
 ---
 
@@ -48,10 +50,11 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
   - **`🔒 Cloak on Emulation`** and **`🔓 Keep Visible`** toolbar buttons (safely disabled if HidHide is not installed).
   - **Dynamic Cloaking**: Clicking **`▶ Start Emulation`** immediately cloaks selected physical devices for all Windows applications, allowing **only j360More** to read them (via automatic process whitelisting). Stopping emulation (or closing the app) instantly restores visibility system-wide.
 
-### 5. Interactive Vector Xbox 360 Controller Diagram
-- High-fidelity vector rendering of the Xbox 360 gamepad.
+### 5. Interactive Vector Diagrams (Xbox 360 & DualShock 4)
+- High-fidelity vector rendering for both **Xbox 360** (`controller_360.svg`) and **DualShock 4** (`controller_DS4.svg`) controllers.
+- Full support for **Xbox 360**, **DualShock 4**, and **Mixed** (half Xbox 360, half DS4 in even multiples: 2, 4, 6, 8, 10, 12) emulation modes.
 - **Click-to-Map**: Click directly on any button or stick on the controller illustration to trigger instant button mapping.
-- **Reactive Glow LEDs**: Every button press, trigger pull, D-pad direction, or stick motion illuminates in neon green in real time.
+- **Reactive Glow LEDs**: Every button press, trigger pull, D-pad direction, or stick motion illuminates in real time.
 - **Assignment Halo**: A pulsing visual indicator highlights the exact component waiting for physical input.
 
 ### 6. Specialized Analog Calibration for Triggers & Sticks

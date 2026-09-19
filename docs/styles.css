@@ -1623,3 +1623,178 @@ html, body {
   }
 }
 
+/* ==========================================================================
+   Dual Emulation Section (Xbox 360 & DualShock 4)
+   ========================================================================== */
+.dual-emulation-section {
+  position: relative;
+}
+
+.dual-controllers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 2.25rem;
+  margin-top: 2.5rem;
+}
+
+.dual-controller-card {
+  background: linear-gradient(165deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dual-controller-card.xbox-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--xbox-neon);
+  box-shadow: 0 16px 40px rgba(16, 124, 65, 0.25), 0 0 20px rgba(16, 207, 101, 0.15);
+}
+
+.dual-controller-card.ds4-card:hover {
+  transform: translateY(-6px);
+  border-color: #38bdf8;
+  box-shadow: 0 16px 40px rgba(56, 189, 248, 0.25), 0 0 20px rgba(56, 189, 248, 0.15);
+}
+
+.dual-controller-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.dual-badge {
+  padding: 0.4rem 0.95rem;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dual-badge.xbox-badge {
+  background: rgba(16, 207, 101, 0.15);
+  color: var(--xbox-neon);
+  border: 1px solid rgba(16, 207, 101, 0.4);
+}
+
+.dual-badge.ds4-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.dual-count-pill {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.dual-svg-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 1rem;
+  margin-bottom: 1.5rem;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  border-radius: var(--radius-md);
+  min-height: 220px;
+}
+
+.dual-controller-svg {
+  max-width: 100%;
+  max-height: 200px;
+  height: auto;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+.xbox-card:hover .dual-controller-svg {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 28px rgba(16, 207, 101, 0.35));
+}
+
+.ds4-card:hover .dual-controller-svg {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 28px rgba(56, 189, 248, 0.35));
+}
+
+.dual-controller-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.dual-controller-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+
+/* Mixed Mode Banner */
+.mixed-mode-banner {
+  margin-top: 3rem;
+  background: linear-gradient(135deg, rgba(16, 207, 101, 0.08) 0%, rgba(56, 189, 248, 0.08) 50%, rgba(188, 140, 255, 0.08) 100%);
+  border: 1px solid rgba(188, 140, 255, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mixed-banner-badge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(188, 140, 255, 0.2);
+  color: #bc8cff;
+  border: 1px solid rgba(188, 140, 255, 0.4);
+  margin-bottom: 0.75rem;
+}
+
+.mixed-banner-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.mixed-banner-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.mixed-banner-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mixed-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+

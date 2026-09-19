@@ -106,8 +106,15 @@ class DeviceManager:
 
             # ViGEmBus emula exactamente 'Xbox 360 Controller' con VID 045E y PID 028E
             # y en SDL el GUID común es 0300b9695e0400008e02000000007200
-            if vid == "045E" and pid == "028E" and name == "Xbox 360 Controller":
+            if vid == "045E" and pid == "028E" and ("xbox 360" in name.lower() or "xinput" in name.lower()):
                 return True
+
+            # ViGEmBus emula 'DualShock 4 Controller' con VID 054C y PID 05C4
+            # y en SDL el GUID común es 03008fe54c050000c405000000016800 y nombre 'PS4 Controller' / 'Wireless Controller'
+            if vid == "054C" and pid == "05C4":
+                name_l = name.lower()
+                if any(x in name_l for x in ("ps4", "playstation", "wireless controller", "dualshock", "compatible con hid", "sony")):
+                    return True
         except Exception:
             pass
         return False
@@ -187,6 +194,8 @@ class DeviceManager:
             p = g.get("instance_path", "").strip()
             if p:
                 up = p.upper()
+                if "VID_045E&PID_028E" in up or "VID_054C&PID_05C4" in up:
+                    continue
                 m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', up)
                 m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', up)
                 if m_vid and m_pid:
@@ -196,6 +205,8 @@ class DeviceManager:
         # 2. Complementar con rutas PnP presentes de clase HID
         for p in present_pnp_paths:
             up = p.upper()
+            if "VID_045E&PID_028E" in up or "VID_054C&PID_05C4" in up:
+                continue
             if up.startswith("HID\\"):
                 m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', up)
                 m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', up)
@@ -208,6 +219,8 @@ class DeviceManager:
         # 3. Fallback USB si no hay rutas HID para ese dispositivo
         for p in present_pnp_paths:
             up = p.upper()
+            if "VID_045E&PID_028E" in up or "VID_054C&PID_05C4" in up:
+                continue
             if up.startswith("USB\\"):
                 m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', up)
                 m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', up)

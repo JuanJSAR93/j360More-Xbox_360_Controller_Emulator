@@ -19,7 +19,7 @@ except ImportError:
 
 from driver_manager import DriverManager
 from input_devices import DeviceManager
-from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration
+from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration, get_pad_emulated_type
 from i18n import (
     get_text, get_target_name, SUPPORTED_LANGUAGES,
     ALL_NONE_LABELS, get_none_label, get_input_options, is_none_mapping,
@@ -65,9 +65,7 @@ CONTROLLER_360_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_360_hires.png")
 CONTROLLER_DS4_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ds4_render.png")
 CONTROLLER_DS4_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_ds4_hires.png")
 
-CONTROLLER_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_render.png")
-CONTROLLER_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_hires.png")
-CONTROLLER_PNG_FALLBACK = os.path.join(ASSETS_DIR, "controller.png")
+CONTROLLER_PNG_FALLBACK = os.path.join(ASSETS_DIR, "controller_360_render.png")
 ICON_SVG_PATH = os.path.join(ASSETS_DIR, "icon.svg")
 ICON_PNG_PATH = os.path.join(ASSETS_DIR, "icon.png")
 ICON_ICO_PATH = os.path.join(ASSETS_DIR, "icon.ico")
@@ -326,16 +324,32 @@ class J360MoreApp:
         lang = self.config.get("language", "es")
         return get_text(lang, key, **kwargs)
 
-    def target_name(self, target: str) -> str:
+    def _get_current_pad_id(self) -> int:
+        try:
+            if hasattr(self, "notebook") and self.notebook.tabs():
+                cur_tab = self.notebook.select()
+                for pid, frame in self.tab_frames.items():
+                    if str(frame) == cur_tab:
+                        return pid
+        except Exception:
+            pass
+        return 1
+
+    def get_pad_emulated_type(self, pad_id: Optional[int] = None) -> str:
+        if pad_id is None:
+            pad_id = self._get_current_pad_id()
+        return get_pad_emulated_type(self.config, pad_id)
+
+    def target_name(self, target: str, pad_id: Optional[int] = None) -> str:
         lang = self.config.get("language", "es")
-        emulated_type = self.config.get("emulated_type", "xbox360")
+        emulated_type = self.get_pad_emulated_type(pad_id)
         return get_target_name(lang, target, emulated_type)
 
-    def _get_hitboxes(self) -> dict:
-        return DS4_HITBOXES if self.config.get("emulated_type", "xbox360").lower() == "ds4" else XBOX_HITBOXES
+    def _get_hitboxes(self, pad_id: Optional[int] = None) -> dict:
+        return DS4_HITBOXES if self.get_pad_emulated_type(pad_id) == "ds4" else XBOX_HITBOXES
 
-    def _get_canvas_points(self) -> dict:
-        return DS4_CANVAS_POINTS if self.config.get("emulated_type", "xbox360").lower() == "ds4" else XBOX_CANVAS_POINTS
+    def _get_canvas_points(self, pad_id: Optional[int] = None) -> dict:
+        return DS4_CANVAS_POINTS if self.get_pad_emulated_type(pad_id) == "ds4" else XBOX_CANVAS_POINTS
 
     @property
     def current_lang(self) -> str:
@@ -688,9 +702,16 @@ class J360MoreApp:
         self.tab_frames.clear()
         self.tab_widgets.clear()
 
+        is_mixed = self.config.get("emulated_type", "xbox360").lower() in ("mixed", "mixto")
         for i in range(1, count + 1):
             tab = ttk.Frame(self.notebook, padding=4)
-            tab_text = self.t("tab_control", i=i)
+            base_text = self.t("tab_control", i=i)
+            if is_mixed:
+                pad_type = self.get_pad_emulated_type(i)
+                badge = "[Xbox]" if pad_type == "xbox360" else "[DS4]"
+                tab_text = f"{base_text} {badge}"
+            else:
+                tab_text = base_text
             self.notebook.add(tab, text=f" {tab_text} ")
             self.tab_frames[i] = tab
             self._build_tab_content(i, tab)
@@ -787,7 +808,7 @@ class J360MoreApp:
             widgets["combos"][target_name] = cb
             widgets["buttons"][target_name] = btn
 
-        is_ds4 = (self.config.get("emulated_type", "xbox360").lower() == "ds4")
+        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
 
         # Columna Izquierda
         sec_left_title = self.t("sec_left_controls_ds4") if is_ds4 else self.t("sec_left_controls")
@@ -823,8 +844,9 @@ class J360MoreApp:
         canvas.pack(pady=2)
         widgets["canvas"] = canvas
 
-        if self.controller_img_tk:
-            canvas.create_image(c_w // 2, c_h // 2, image=self.controller_img_tk)
+        pad_img = self.ctrl_ds4_tk if (is_ds4 and self.ctrl_ds4_tk) else self.ctrl_360_tk
+        if pad_img:
+            canvas.create_image(c_w // 2, c_h // 2, image=pad_img)
 
         # Vincular clics del ratón para mapear directamente al pulsar en el SVG
         canvas.bind("<Button-1>", lambda e, p=pad_id: self._on_canvas_click(e, p))
@@ -832,7 +854,7 @@ class J360MoreApp:
 
         # Indicadores reactivos en el canvas (LEDs de pulsación)
         widgets["leds"] = {}
-        for btn_k, (cx, cy, r) in self._get_canvas_points().items():
+        for btn_k, (cx, cy, r) in self._get_canvas_points(pad_id).items():
             glow = canvas.create_oval(cx - r - 2, cy - r - 2, cx + r + 2, cy + r + 2, outline="#00ff66", width=2, state="hidden")
             tag = canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill="#00ff66", outline="#ffffff", width=2, state="hidden")
             widgets["leds"][btn_k] = (tag, glow)
@@ -895,9 +917,9 @@ class J360MoreApp:
             val = saved_maps.get(target, DEFAULT_MAPPINGS.get(target, "-- Ninguno --"))
             cb.set(self.localize_mapping(val))
 
-    def _find_target_at_pos(self, click_x: float, click_y: float) -> str:
+    def _find_target_at_pos(self, click_x: float, click_y: float, pad_id: Optional[int] = None) -> str:
         """Determina qué botón o parte interactiva fue clickeada (excluyendo el Fondo)."""
-        is_ds4 = (self.config.get("emulated_type", "xbox360").lower() == "ds4")
+        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
 
         if is_ds4:
             # 1. Comprobar cruceta D-Pad (DS4: cx=70.0, cy=126.5)
@@ -1004,10 +1026,10 @@ class J360MoreApp:
                 self.hint_lbl.config(text=self.t("hint_no_device"))
             return
 
-        target = self._find_target_at_pos(event.x, event.y)
+        target = self._find_target_at_pos(event.x, event.y, pad_id)
         if target:
             canvas.config(cursor="hand2")
-            lbl_text = self.target_name(target)
+            lbl_text = self.target_name(target, pad_id)
             self.hint_lbl.config(text=self.t("hint_click_map", name=lbl_text))
         else:
             canvas.config(cursor="")
@@ -1018,9 +1040,9 @@ class J360MoreApp:
         if not widgets.get("is_device_assigned", True):
             return
 
-        target = self._find_target_at_pos(event.x, event.y)
+        target = self._find_target_at_pos(event.x, event.y, pad_id)
         if target:
-            lbl_text = self.target_name(target)
+            lbl_text = self.target_name(target, pad_id)
             self.hint_lbl.config(text=self.t("hint_mapping_wait", name=lbl_text))
             self._start_record(pad_id, target)
 
@@ -1140,8 +1162,11 @@ class J360MoreApp:
                 "inv_var": inv_var
             }
 
-        make_trigger_panel(parent, "left_trigger", self.t("title_left_trigger"))
-        make_trigger_panel(parent, "right_trigger", self.t("title_right_trigger"))
+        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
+        t_lt = self.t("title_left_trigger_ds4") if is_ds4 else self.t("title_left_trigger")
+        t_rt = self.t("title_right_trigger_ds4") if is_ds4 else self.t("title_right_trigger")
+        make_trigger_panel(parent, "left_trigger", t_lt)
+        make_trigger_panel(parent, "right_trigger", t_rt)
 
     def _build_subtab_sticks(self, pad_id: int, parent: ttk.Frame, widgets: dict):
         cfg = self.config.get("controllers", {}).get(str(pad_id), {})
@@ -1212,8 +1237,11 @@ class J360MoreApp:
                 "inv_y_var": inv_y_var
             }
 
-        make_stick_box(parent, "left_stick", self.t("title_left_stick"))
-        make_stick_box(parent, "right_stick", self.t("title_right_stick"))
+        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
+        t_ls = self.t("title_left_stick_ds4") if is_ds4 else self.t("title_left_stick")
+        t_rs = self.t("title_right_stick_ds4") if is_ds4 else self.t("title_right_stick")
+        make_stick_box(parent, "left_stick", t_ls)
+        make_stick_box(parent, "right_stick", t_rs)
 
     def _update_tab_state(self, pad_id: int, has_dev: bool):
         """Si el control no tiene un periférico asignado, no se puede activar y todas las funciones de mapeo se desactivan (opacas)."""
@@ -1797,10 +1825,40 @@ class J360MoreApp:
         cur_type = self.config.get("emulated_type", "xbox360").lower()
         type_var = tk.StringVar(value=cur_type)
 
+        def get_ctrl_label(cnt):
+            t = type_var.get().lower()
+            base = self.t("set_ctrl_count_1") if cnt == 1 else self.t("set_ctrl_count", count=cnt)
+            if t in ("mixed", "mixto"):
+                half = cnt // 2
+                return f"{base}  ({half} Xbox + {half} DS4)"
+            return base
+
+        is_updating = [False]
+
+        def on_type_changed():
+            t = type_var.get().lower()
+            cur = val_var.get()
+            if t in ("mixed", "mixto"):
+                if cur % 2 != 0:
+                    new_cur = min(12, cur + 1)
+                    if new_cur < 2:
+                        new_cur = 2
+                    val_var.set(new_cur)
+                    is_updating[0] = True
+                    try:
+                        slider.set(new_cur)
+                    finally:
+                        is_updating[0] = False
+                slider.configure(from_=2)
+            else:
+                slider.configure(from_=1)
+            val_display.config(text=get_ctrl_label(val_var.get()))
+
         type_row = ttk.Frame(box_type)
         type_row.pack(fill=tk.X, padx=4, pady=2)
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360").pack(side=tk.LEFT, padx=(0, 16))
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4").pack(side=tk.LEFT)
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 16))
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 16))
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_mixed"), variable=type_var, value="mixed", command=on_type_changed).pack(side=tk.LEFT)
 
         ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=460).pack(anchor="w", padx=4, pady=(2, 0))
 
@@ -1809,21 +1867,32 @@ class J360MoreApp:
         box_mandos.pack(fill=tk.X, pady=(0, 8))
 
         current_val = self.config.get("max_controllers", 8)
+        if cur_type in ("mixed", "mixto") and current_val % 2 != 0:
+            current_val = max(2, min(12, current_val + 1))
         val_var = tk.IntVar(value=current_val)
-
-        def get_ctrl_label(cnt):
-            return self.t("set_ctrl_count_1") if cnt == 1 else self.t("set_ctrl_count", count=cnt)
 
         val_display = ttk.Label(box_mandos, text=get_ctrl_label(current_val), font=("Segoe UI", 10, "bold"), foreground="#0066cc")
         val_display.pack(anchor="center", pady=(0, 2))
 
         def on_slider(v):
-            ival = int(float(v))
-            val_var.set(ival)
-            val_display.config(text=get_ctrl_label(ival))
+            if is_updating[0]:
+                return
+            is_updating[0] = True
+            try:
+                f_val = float(v)
+                if type_var.get().lower() in ("mixed", "mixto"):
+                    ival = max(2, min(12, int(round(f_val / 2.0) * 2)))
+                else:
+                    ival = max(1, min(12, int(round(f_val))))
+                val_var.set(ival)
+                val_display.config(text=get_ctrl_label(ival))
+            finally:
+                is_updating[0] = False
 
-        slider = ttk.Scale(box_mandos, from_=1, to=12, orient=tk.HORIZONTAL, value=current_val, command=on_slider)
+        init_from = 2 if cur_type in ("mixed", "mixto") else 1
+        slider = ttk.Scale(box_mandos, from_=init_from, to=12, orient=tk.HORIZONTAL, value=current_val, command=on_slider)
         slider.pack(fill=tk.X, pady=2)
+        slider.bind("<ButtonRelease-1>", lambda e: slider.set(val_var.get()))
 
         ticks_frame = ttk.Frame(box_mandos)
         ticks_frame.pack(fill=tk.X)
@@ -1887,7 +1956,11 @@ class J360MoreApp:
             self.config["emulated_type"] = new_type
 
             # 3. Aplicar mandos
+            old_count = self.config.get("max_controllers", 8)
             new_count = val_var.get()
+            if new_type in ("mixed", "mixto") and new_count % 2 != 0:
+                new_count = max(2, min(12, new_count + 1))
+            count_changed = (new_count != old_count)
             self.config["max_controllers"] = new_count
 
             # 4. Aplicar configuración de HidHide
@@ -1900,7 +1973,7 @@ class J360MoreApp:
                 self.driver_manager.set_cloak_active(cloak_active_var.get())
                 self.driver_manager.ensure_process_whitelisted()
 
-            if type_changed:
+            if type_changed or count_changed:
                 self._update_active_assets()
                 if self.engine.is_running():
                     self.engine.stop()
@@ -2427,14 +2500,17 @@ class J360MoreApp:
         center_frame = ttk.Frame(dlg, padding="10 2 10 2")
         center_frame.pack(fill=tk.X)
 
-        left_box = ttk.LabelFrame(center_frame, text=f" {self.t('subtab_general')} - {self.t('wizard_official_pad')} ", padding=2)
+        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
+        pad_badge = "DualShock 4" if is_ds4 else "Xbox 360"
+        left_box = ttk.LabelFrame(center_frame, text=f" {self.t('subtab_general')} - {pad_badge} ", padding=2)
         left_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
 
         cv_main = tk.Canvas(left_box, width=350, height=275, bg="#ffffff", highlightthickness=1, highlightbackground="#d0d0d0")
         cv_main.pack(anchor="center", pady=2)
 
-        if self.controller_img_tk:
-            cv_main.create_image(175, 137, image=self.controller_img_tk)
+        pad_img = self.ctrl_ds4_tk if (is_ds4 and self.ctrl_ds4_tk) else self.ctrl_360_tk
+        if pad_img:
+            cv_main.create_image(175, 137, image=pad_img)
 
         main_halo = cv_main.create_oval(0, 0, 0, 0, outline="#ff2200", width=3, state="hidden")
         main_core = cv_main.create_oval(0, 0, 0, 0, fill="#ffaa00", outline="#ffffff", width=1.5, state="hidden")
@@ -2500,12 +2576,12 @@ class J360MoreApp:
             lbl_step.config(text=f"{self.t('wizard_step', cur=cur, total=total)} ({pct}%)")
             prog_bar["value"] = pct
 
-            lbl_target_name.config(text=f"👉 {self.target_name(tgt)}")
+            lbl_target_name.config(text=f"👉 {self.target_name(tgt, pad_id)}")
             lbl_target_hint.config(text=get_hint_text(tgt))
             lbl_status.config(text=self.t("wizard_waiting"), foreground="#666666")
 
             canvas_key = map_target_to_canvas_key(tgt)
-            pt = self._get_canvas_points().get(canvas_key, (175.0, 137.5, 10))
+            pt = self._get_canvas_points(pad_id).get(canvas_key, (175.0, 137.5, 10))
             cx, cy = pt[0], pt[1]
 
             cv_main.coords(main_halo, cx - 14, cy - 14, cx + 14, cy + 14)
@@ -2514,7 +2590,7 @@ class J360MoreApp:
             cv_main.itemconfig(main_core, fill="#ffaa00", state="normal")
 
             cv_zoom.delete("all")
-            source_img = self.controller_pil_hires or self.controller_pil_base
+            source_img = (self.ctrl_ds4_hires or self.ctrl_ds4_base) if is_ds4 else (self.ctrl_360_hires or self.ctrl_360_base)
             if source_img:
                 try:
                     scale_x = source_img.width / 350.0
@@ -2909,7 +2985,7 @@ class J360MoreApp:
 
                 # Animacion llamativa del boton en modo ASIGNACION (halo pulsante ambar/rojo)
                 if canvas and rec_ind:
-                    active_pts = self._get_canvas_points()
+                    active_pts = self._get_canvas_points(cur_pad_id)
                     if rec_canvas_key and rec_canvas_key in active_pts:
                         cx, cy, r = active_pts[rec_canvas_key]
                         t = time.time()

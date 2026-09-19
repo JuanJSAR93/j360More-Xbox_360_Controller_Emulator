@@ -87,6 +87,7 @@
 
       <ul class="nav-links">
         <li><a href="#cualidades" data-i18n="nav_features">Cualidades</a></li>
+        <li><a href="#emulacion-dual" data-i18n="nav_dual">Emulación Dual</a></li>
         <li><a href="#capturas" data-i18n="nav_screenshots">Capturas</a></li>
         <li><a href="#controladores" data-i18n="nav_drivers">Controladores</a></li>
         <li><a href="#requisitos" data-i18n="nav_requirements">Requisitos</a></li>
@@ -165,7 +166,7 @@
             <span class="window-dot yellow"></span>
             <span class="window-dot green"></span>
           </div>
-          <span class="window-title">j360More v1.2.0</span>
+          <span class="window-title">j360More v1.3.0</span>
         </div>
         <div class="screenshot-img-wrapper">
           <img src="assets/screenshot_main.png" alt="j360More Interfaz Principal" class="screenshot-zoomable" style="max-width: 100%; height: auto; animation: none;">
@@ -291,6 +292,70 @@
     </div>
   </section>
 
+  <!-- ==================== Soporte Dual: Xbox 360 y DualShock 4 ==================== -->
+  <section id="emulacion-dual" class="section dual-emulation-section">
+    <div class="section-header">
+      <span class="section-tag" data-i18n="dual_tag">Soporte Multi-Consola</span>
+      <h2 class="section-title" data-i18n="dual_title">Emulación Oficial de Xbox 360 y DualShock 4</h2>
+      <p class="section-desc" data-i18n="dual_subtitle">
+        j360More es el único emulador que te permite elegir qué tipo de mando crear en Windows a través de ViGEmBus: Xbox 360, DualShock 4 de PlayStation o modo Mixto simultáneo.
+      </p>
+    </div>
+
+    <div class="dual-controllers-grid">
+      <!-- Controller 1: Xbox 360 -->
+      <div class="dual-controller-card xbox-card">
+        <div class="dual-controller-header">
+          <div class="dual-badge xbox-badge" data-i18n="dual_xbox_badge">XInput Nativo</div>
+          <span class="dual-count-pill" data-i18n="dual_xbox_count">1 a 12 Mandos</span>
+        </div>
+        <div class="dual-svg-wrapper">
+          <img src="assets/controller_360.svg" alt="Mando Xbox 360 Vectorial" class="dual-controller-svg">
+        </div>
+        <div class="dual-controller-body">
+          <h3 class="dual-controller-title" data-i18n="dual_xbox_title">Mando Xbox 360 (XInput)</h3>
+          <p class="dual-controller-desc" data-i18n="dual_xbox_desc">
+            El estándar principal en PC. Compatibilidad asegurada con títulos de Steam, Xbox Game Pass, Epic Games Store y emuladores modernos.
+          </p>
+        </div>
+      </div>
+
+      <!-- Controller 2: DualShock 4 -->
+      <div class="dual-controller-card ds4-card">
+        <div class="dual-controller-header">
+          <div class="dual-badge ds4-badge" data-i18n="dual_ds4_badge">DirectInput / Sony HID</div>
+          <span class="dual-count-pill" data-i18n="dual_ds4_count">1 a 12 Mandos</span>
+        </div>
+        <div class="dual-svg-wrapper">
+          <img src="assets/controller_ds4.svg" alt="Mando DualShock 4 Vectorial" class="dual-controller-svg">
+        </div>
+        <div class="dual-controller-body">
+          <h3 class="dual-controller-title" data-i18n="dual_ds4_title">Mando PlayStation 4 (DualShock 4)</h3>
+          <p class="dual-controller-desc" data-i18n="dual_ds4_desc">
+            Emulación de mandos PlayStation 4, ideal para juegos con soporte nativo de botones de PlayStation y emuladores como RPCS3, PCSX2 y DuckStation.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mixed Mode Banner -->
+    <div class="mixed-mode-banner">
+      <div class="mixed-banner-content">
+        <div class="mixed-banner-badge" data-i18n="dual_mixed_badge">Soporte Mixto (50% Xbox + 50% DS4)</div>
+        <h3 class="mixed-banner-title" data-i18n="dual_mixed_title">¿Partidas con ambos tipos de mandos? Usa el Modo Mixto</h3>
+        <p class="mixed-banner-desc" data-i18n="dual_mixed_desc">
+          Configura 2, 4, 6, 8, 10 o 12 mandos y j360More dividirá la carga equitativamente: la primera mitad se emula como Xbox 360 y la segunda mitad como DualShock 4, permitiendo jugar en simultáneo sin conflictos.
+        </p>
+      </div>
+      <div class="mixed-banner-chips">
+        <span class="mixed-chip" data-i18n="dual_chip_2">🎮 2 Mandos (1 Xbox + 1 DS4)</span>
+        <span class="mixed-chip" data-i18n="dual_chip_4">🎮 4 Mandos (2 Xbox + 2 DS4)</span>
+        <span class="mixed-chip" data-i18n="dual_chip_8">🎮 8 Mandos (4 Xbox + 4 DS4)</span>
+        <span class="mixed-chip" data-i18n="dual_chip_12">🎮 12 Mandos (6 Xbox + 6 DS4)</span>
+      </div>
+    </div>
+  </section>
+
   <!-- ==================== Capturas de Pantalla / Screenshots Showcase ==================== -->
   <section id="capturas" class="screenshots-section">
     <div class="section-header">
@@ -302,7 +367,7 @@
     </div>
 
     <div class="screenshots-grid">
-      <!-- Screenshot 1: Main Mapping -->
+      <!-- Screenshot 1: Xbox 360 Mapping -->
       <div class="screenshot-card">
         <div class="window-mockup">
           <div class="window-header">
@@ -311,10 +376,10 @@
               <span class="window-dot yellow"></span>
               <span class="window-dot green"></span>
             </div>
-            <span class="window-title">j360More - Mapeo Principal (1 a 12 Mandos)</span>
+            <span class="window-title">j360More - Mapeo Xbox 360 (1 a 12 Mandos)</span>
           </div>
           <div class="screenshot-img-wrapper">
-            <img src="assets/screenshot_main.png" alt="j360More - Mapeo Visual Interactivo y Soporte Multi-Mando" class="screenshot-zoomable">
+            <img src="assets/screenshot_main.png" alt="j360More - Mapeo Visual Interactivo Xbox 360" class="screenshot-zoomable">
             <div class="screenshot-overlay">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/>
@@ -325,15 +390,46 @@
           </div>
         </div>
         <div class="screenshot-info">
-          <span class="screenshot-badge" data-i18n="s1_badge">Mapeo Principal</span>
-          <h3 class="screenshot-title" data-i18n="s1_title">Mapeo Visual Interactivo y Soporte Multi-Mando</h3>
+          <span class="screenshot-badge" data-i18n="s1_badge">Xbox 360</span>
+          <h3 class="screenshot-title" data-i18n="s1_title">Mapeo para Xbox 360</h3>
           <p class="screenshot-desc" data-i18n="s1_desc">
-            Diagrama interactivo del mando Xbox 360 con LEDs reactivos en tiempo real, pestañas dedicadas para hasta 12 jugadores y protección inteligente contra mandos fantasma.
+            Configuración y emulación de mandos Xbox 360 para hasta 12 jugadores independientes.
           </p>
         </div>
       </div>
 
-      <!-- Screenshot 2: Sticks Calibration -->
+      <!-- Screenshot 2: DualShock 4 Mapping -->
+      <div class="screenshot-card">
+        <div class="window-mockup">
+          <div class="window-header">
+            <div class="window-dots">
+              <span class="window-dot red"></span>
+              <span class="window-dot yellow"></span>
+              <span class="window-dot green"></span>
+            </div>
+            <span class="window-title">j360More - Mapeo DualShock 4</span>
+          </div>
+          <div class="screenshot-img-wrapper">
+            <img src="assets/screenshot_main2.png" alt="j360More - Mapeo DualShock 4" class="screenshot-zoomable">
+            <div class="screenshot-overlay">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span data-i18n="screenshot_zoom">Haz clic para ampliar</span>
+            </div>
+          </div>
+        </div>
+        <div class="screenshot-info">
+          <span class="screenshot-badge" data-i18n="s1b_badge">DualShock 4</span>
+          <h3 class="screenshot-title" data-i18n="s1b_title">Mapeo para DualShock 4</h3>
+          <p class="screenshot-desc" data-i18n="s1b_desc">
+            Configuración y emulación de mandos DualShock 4, disponible en modo individual o en modo Mixto.
+          </p>
+        </div>
+      </div>
+
+      <!-- Screenshot 3: Sticks Calibration -->
       <div class="screenshot-card">
         <div class="window-mockup">
           <div class="window-header">
@@ -345,7 +441,7 @@
             <span class="window-title">j360More - Calibración Analógica de Sticks</span>
           </div>
           <div class="screenshot-img-wrapper">
-            <img src="assets/screenshot_sticks.png" alt="j360More - Calibración Analógica Milimétrica" class="screenshot-zoomable">
+            <img src="assets/screenshot_sticks.png" alt="j360More - Calibración Analógica de Sticks" class="screenshot-zoomable">
             <div class="screenshot-overlay">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/>
@@ -356,15 +452,15 @@
           </div>
         </div>
         <div class="screenshot-info">
-          <span class="screenshot-badge" data-i18n="s2_badge">Calibración Fina</span>
-          <h3 class="screenshot-title" data-i18n="s2_title">Plano Cartesiano y Curvas de Respuesta de Sticks</h3>
+          <span class="screenshot-badge" data-i18n="s2_badge">Calibración</span>
+          <h3 class="screenshot-title" data-i18n="s2_title">Ajuste Analógico de Sticks</h3>
           <p class="screenshot-desc" data-i18n="s2_desc">
-            Visualizador 2D en tiempo real con control exacto de Zona Muerta (Dead Zone), Anti-Dead Zone para anular la deriva (drift), sensibilidad cuadrática e inversión de ejes.
+            Ajuste de zona muerta para corregir deriva (drift), curvas de sensibilidad e inversión de ejes.
           </p>
         </div>
       </div>
 
-      <!-- Screenshot 3: Settings & HidHide -->
+      <!-- Screenshot 4: Settings & HidHide -->
       <div class="screenshot-card">
         <div class="window-mockup">
           <div class="window-header">
@@ -387,10 +483,10 @@
           </div>
         </div>
         <div class="screenshot-info">
-          <span class="screenshot-badge" data-i18n="s3_badge">Ajustes del Sistema</span>
-          <h3 class="screenshot-title" data-i18n="s3_title">Configuración General e Integración con HidHide</h3>
+          <span class="screenshot-badge" data-i18n="s3_badge">Configuración</span>
+          <h3 class="screenshot-title" data-i18n="s3_title">Opciones de Emulación y Drivers</h3>
           <p class="screenshot-desc" data-i18n="s3_desc">
-            Selector bilingüe instantáneo (Español / Inglés), ajuste del número de mandos a emular (1 a 12) y activación del Cloaking global para erradicar el doble mando en juegos.
+            Selección del tipo de mando (Xbox 360, DualShock 4 o Mixto), cantidad de mandos, idioma y control de HidHide.
           </p>
         </div>
       </div>

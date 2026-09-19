@@ -49,8 +49,8 @@
        sodipodi:type="inkscape:persp3d" />
   </defs>
   <sodipodi:namedview
-     inkscape:window-height="1033"
-     inkscape:window-width="1902"
+     inkscape:window-height="991"
+     inkscape:window-width="1920"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      guidetolerance="10.0"
@@ -63,16 +63,16 @@
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:zoom="0.5"
-     inkscape:cx="1271"
-     inkscape:cy="1273"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:zoom="0.25"
+     inkscape:cx="1126"
+     inkscape:cy="802"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
      inkscape:current-layer="svg2"
      inkscape:showpageshadow="2"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:window-maximized="0">
+     inkscape:window-maximized="1">
     <inkscape:grid
        type="xygrid"
        id="grid2384"
@@ -125,6 +125,11 @@
        cx="414.40305"
        cy="909.0849"
        r="200" />
+  </g>
+  <g
+     id="g12"
+     style="display:inline"
+     inkscape:label="BottonLogo">
     <circle
        style="fill:#3fbf00;fill-opacity:1;stroke:none;stroke-width:0.667;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path3175"

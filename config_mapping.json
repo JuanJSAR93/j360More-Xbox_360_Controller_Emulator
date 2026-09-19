@@ -1,34 +1,45 @@
 {
-  "description": "Mapeo de botones y configuracion para 8 mandos virtuales Xbox 360",
-  "version": "1.0",
+  "version": "2.0",
+  "author": "JuanJSAR",
+  "language": "en",
+  "max_controllers": 8,
+  "games": [],
   "controllers": {
     "1": {
       "name": "Jugador 1",
       "enabled": false,
-      "keyboard_mapping": {
-        "up": "DPAD_UP",
-        "down": "DPAD_DOWN",
-        "left": "DPAD_LEFT",
-        "right": "DPAD_RIGHT",
-        "c": "A",
-        "v": "B",
-        "x": "X",
-        "z": "Y",
-        "q": "LEFT_SHOULDER",
-        "e": "RIGHT_SHOULDER",
-        "a": "BACK",
-        "d": "START"
+      "physical_device_id": "none",
+      "mappings": {
+        "LEFT_TRIGGER": "-- Ninguno --",
+        "LEFT_SHOULDER": "-- Ninguno --",
+        "BACK": "-- Ninguno --",
+        "START": "-- Ninguno --",
+        "GUIDE": "-- Ninguno --",
+        "LEFT_STICK_X": "-- Ninguno --",
+        "LEFT_STICK_Y": "-- Ninguno --",
+        "LEFT_THUMB": "-- Ninguno --",
+        "LEFT_STICK_UP": "-- Ninguno --",
+        "LEFT_STICK_DOWN": "-- Ninguno --",
+        "LEFT_STICK_LEFT": "-- Ninguno --",
+        "LEFT_STICK_RIGHT": "-- Ninguno --",
+        "DPAD_UP": "-- Ninguno --",
+        "DPAD_DOWN": "-- Ninguno --",
+        "DPAD_LEFT": "-- Ninguno --",
+        "DPAD_RIGHT": "-- Ninguno --",
+        "RIGHT_TRIGGER": "-- Ninguno --",
+        "RIGHT_SHOULDER": "-- Ninguno --",
+        "Y": "-- Ninguno --",
+        "X": "-- Ninguno --",
+        "B": "-- Ninguno --",
+        "A": "-- Ninguno --",
+        "RIGHT_STICK_X": "-- Ninguno --",
+        "RIGHT_STICK_Y": "-- Ninguno --",
+        "RIGHT_THUMB": "-- Ninguno --",
+        "RIGHT_STICK_UP": "-- Ninguno --",
+        "RIGHT_STICK_DOWN": "-- Ninguno --",
+        "RIGHT_STICK_LEFT": "-- Ninguno --",
+        "RIGHT_STICK_RIGHT": "-- Ninguno --"
       },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y",
-        "DPAD_UP",
-        "DPAD_DOWN",
-        "DPAD_LEFT",
-        "DPAD_RIGHT"
-      ],
       "calibration": {
         "left_trigger": {
           "deadzone": 0.0,
@@ -56,81 +67,11 @@
           "invert_x": false,
           "invert_y": false
         }
-      },
-      "physical_device_id": "keyboard",
-      "mappings": {
-        "LEFT_TRIGGER": "Tecla: S",
-        "LEFT_SHOULDER": "Tecla: A",
-        "BACK": "Tecla: LShift",
-        "START": "Tecla: Enter",
-        "GUIDE": "-- Ninguno --",
-        "LEFT_STICK_X": "-- Ninguno --",
-        "LEFT_STICK_Y": "-- Ninguno --",
-        "LEFT_THUMB": "-- Ninguno --",
-        "LEFT_STICK_UP": "-- Ninguno --",
-        "LEFT_STICK_DOWN": "-- Ninguno --",
-        "LEFT_STICK_LEFT": "-- Ninguno --",
-        "LEFT_STICK_RIGHT": "-- Ninguno --",
-        "DPAD_UP": "Tecla: Up",
-        "DPAD_DOWN": "Tecla: Down",
-        "DPAD_LEFT": "Tecla: Left",
-        "DPAD_RIGHT": "Tecla: Right",
-        "RIGHT_TRIGGER": "Tecla: F",
-        "RIGHT_SHOULDER": "Tecla: D",
-        "Y": "Tecla: V",
-        "X": "Tecla: Z",
-        "B": "Tecla: C",
-        "A": "Tecla: X",
-        "RIGHT_STICK_X": "-- Ninguno --",
-        "RIGHT_STICK_Y": "-- Ninguno --",
-        "RIGHT_THUMB": "-- Ninguno --",
-        "RIGHT_STICK_UP": "-- Ninguno --",
-        "RIGHT_STICK_DOWN": "-- Ninguno --",
-        "RIGHT_STICK_LEFT": "-- Ninguno --",
-        "RIGHT_STICK_RIGHT": "-- Ninguno --"
       }
     },
     "2": {
       "name": "Jugador 2",
       "enabled": false,
-      "keyboard_mapping": {
-        "2": "A",
-        "9": "DPAD_LEFT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -162,49 +103,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "3": {
       "name": "Jugador 3",
       "enabled": false,
-      "keyboard_mapping": {
-        "3": "A",
-        "9": "DPAD_LEFT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -236,49 +167,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "4": {
       "name": "Jugador 4",
       "enabled": false,
-      "keyboard_mapping": {
-        "4": "A",
-        "9": "DPAD_LEFT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -310,49 +231,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "5": {
       "name": "Jugador 5",
       "enabled": false,
-      "keyboard_mapping": {
-        "5": "A",
-        "0": "DPAD_RIGHT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -384,49 +295,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "6": {
       "name": "Jugador 6",
       "enabled": false,
-      "keyboard_mapping": {
-        "6": "A",
-        "0": "DPAD_RIGHT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -458,49 +359,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "7": {
       "name": "Jugador 7",
       "enabled": false,
-      "keyboard_mapping": {
-        "7": "A",
-        "0": "DPAD_RIGHT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -532,49 +423,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "8": {
       "name": "Jugador 8",
       "enabled": false,
-      "keyboard_mapping": {
-        "8": "A",
-        "0": "DPAD_RIGHT"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -606,63 +487,39 @@
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
         "RIGHT_STICK_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8.0,
+          "anti_deadzone": 0.0,
+          "sensitivity": 0.0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "9": {
       "name": "Jugador 9",
       "enabled": false,
-      "keyboard_mapping": {
-        "up": "DPAD_UP",
-        "down": "DPAD_DOWN",
-        "left": "DPAD_LEFT",
-        "right": "DPAD_RIGHT",
-        "c": "A",
-        "v": "B",
-        "x": "X",
-        "z": "Y",
-        "q": "LEFT_SHOULDER",
-        "e": "RIGHT_SHOULDER",
-        "a": "BACK",
-        "d": "START"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y",
-        "DPAD_UP",
-        "DPAD_DOWN",
-        "DPAD_LEFT",
-        "DPAD_RIGHT"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -672,15 +529,11 @@
         "GUIDE": "-- Ninguno --",
         "LEFT_STICK_X": "-- Ninguno --",
         "LEFT_STICK_Y": "-- Ninguno --",
-        "LEFT_THUMB": "-- Ninguno --",
         "LEFT_STICK_UP": "-- Ninguno --",
         "LEFT_STICK_DOWN": "-- Ninguno --",
         "LEFT_STICK_LEFT": "-- Ninguno --",
         "LEFT_STICK_RIGHT": "-- Ninguno --",
-        "DPAD_UP": "-- Ninguno --",
-        "DPAD_DOWN": "-- Ninguno --",
-        "DPAD_LEFT": "-- Ninguno --",
-        "DPAD_RIGHT": "-- Ninguno --",
+        "LEFT_THUMB": "-- Ninguno --",
         "RIGHT_TRIGGER": "-- Ninguno --",
         "RIGHT_SHOULDER": "-- Ninguno --",
         "Y": "-- Ninguno --",
@@ -689,68 +542,48 @@
         "A": "-- Ninguno --",
         "RIGHT_STICK_X": "-- Ninguno --",
         "RIGHT_STICK_Y": "-- Ninguno --",
-        "RIGHT_THUMB": "-- Ninguno --",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
-        "RIGHT_STICK_RIGHT": "-- Ninguno --"
+        "RIGHT_STICK_RIGHT": "-- Ninguno --",
+        "RIGHT_THUMB": "-- Ninguno --",
+        "DPAD_UP": "-- Ninguno --",
+        "DPAD_DOWN": "-- Ninguno --",
+        "DPAD_LEFT": "-- Ninguno --",
+        "DPAD_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "10": {
       "name": "Jugador 10",
       "enabled": false,
-      "keyboard_mapping": {
-        "up": "DPAD_UP",
-        "down": "DPAD_DOWN",
-        "left": "DPAD_LEFT",
-        "right": "DPAD_RIGHT",
-        "c": "A",
-        "v": "B",
-        "x": "X",
-        "z": "Y",
-        "q": "LEFT_SHOULDER",
-        "e": "RIGHT_SHOULDER",
-        "a": "BACK",
-        "d": "START"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y",
-        "DPAD_UP",
-        "DPAD_DOWN",
-        "DPAD_LEFT",
-        "DPAD_RIGHT"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -760,15 +593,11 @@
         "GUIDE": "-- Ninguno --",
         "LEFT_STICK_X": "-- Ninguno --",
         "LEFT_STICK_Y": "-- Ninguno --",
-        "LEFT_THUMB": "-- Ninguno --",
         "LEFT_STICK_UP": "-- Ninguno --",
         "LEFT_STICK_DOWN": "-- Ninguno --",
         "LEFT_STICK_LEFT": "-- Ninguno --",
         "LEFT_STICK_RIGHT": "-- Ninguno --",
-        "DPAD_UP": "-- Ninguno --",
-        "DPAD_DOWN": "-- Ninguno --",
-        "DPAD_LEFT": "-- Ninguno --",
-        "DPAD_RIGHT": "-- Ninguno --",
+        "LEFT_THUMB": "-- Ninguno --",
         "RIGHT_TRIGGER": "-- Ninguno --",
         "RIGHT_SHOULDER": "-- Ninguno --",
         "Y": "-- Ninguno --",
@@ -777,68 +606,48 @@
         "A": "-- Ninguno --",
         "RIGHT_STICK_X": "-- Ninguno --",
         "RIGHT_STICK_Y": "-- Ninguno --",
-        "RIGHT_THUMB": "-- Ninguno --",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
-        "RIGHT_STICK_RIGHT": "-- Ninguno --"
+        "RIGHT_STICK_RIGHT": "-- Ninguno --",
+        "RIGHT_THUMB": "-- Ninguno --",
+        "DPAD_UP": "-- Ninguno --",
+        "DPAD_DOWN": "-- Ninguno --",
+        "DPAD_LEFT": "-- Ninguno --",
+        "DPAD_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "11": {
       "name": "Jugador 11",
       "enabled": false,
-      "keyboard_mapping": {
-        "up": "DPAD_UP",
-        "down": "DPAD_DOWN",
-        "left": "DPAD_LEFT",
-        "right": "DPAD_RIGHT",
-        "c": "A",
-        "v": "B",
-        "x": "X",
-        "z": "Y",
-        "q": "LEFT_SHOULDER",
-        "e": "RIGHT_SHOULDER",
-        "a": "BACK",
-        "d": "START"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y",
-        "DPAD_UP",
-        "DPAD_DOWN",
-        "DPAD_LEFT",
-        "DPAD_RIGHT"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -848,15 +657,11 @@
         "GUIDE": "-- Ninguno --",
         "LEFT_STICK_X": "-- Ninguno --",
         "LEFT_STICK_Y": "-- Ninguno --",
-        "LEFT_THUMB": "-- Ninguno --",
         "LEFT_STICK_UP": "-- Ninguno --",
         "LEFT_STICK_DOWN": "-- Ninguno --",
         "LEFT_STICK_LEFT": "-- Ninguno --",
         "LEFT_STICK_RIGHT": "-- Ninguno --",
-        "DPAD_UP": "-- Ninguno --",
-        "DPAD_DOWN": "-- Ninguno --",
-        "DPAD_LEFT": "-- Ninguno --",
-        "DPAD_RIGHT": "-- Ninguno --",
+        "LEFT_THUMB": "-- Ninguno --",
         "RIGHT_TRIGGER": "-- Ninguno --",
         "RIGHT_SHOULDER": "-- Ninguno --",
         "Y": "-- Ninguno --",
@@ -865,68 +670,48 @@
         "A": "-- Ninguno --",
         "RIGHT_STICK_X": "-- Ninguno --",
         "RIGHT_STICK_Y": "-- Ninguno --",
-        "RIGHT_THUMB": "-- Ninguno --",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
-        "RIGHT_STICK_RIGHT": "-- Ninguno --"
+        "RIGHT_STICK_RIGHT": "-- Ninguno --",
+        "RIGHT_THUMB": "-- Ninguno --",
+        "DPAD_UP": "-- Ninguno --",
+        "DPAD_DOWN": "-- Ninguno --",
+        "DPAD_LEFT": "-- Ninguno --",
+        "DPAD_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     },
     "12": {
       "name": "Jugador 12",
       "enabled": false,
-      "keyboard_mapping": {
-        "up": "DPAD_UP",
-        "down": "DPAD_DOWN",
-        "left": "DPAD_LEFT",
-        "right": "DPAD_RIGHT",
-        "c": "A",
-        "v": "B",
-        "x": "X",
-        "z": "Y",
-        "q": "LEFT_SHOULDER",
-        "e": "RIGHT_SHOULDER",
-        "a": "BACK",
-        "d": "START"
-      },
-      "test_sequence": [
-        "A",
-        "B",
-        "X",
-        "Y",
-        "DPAD_UP",
-        "DPAD_DOWN",
-        "DPAD_LEFT",
-        "DPAD_RIGHT"
-      ],
-      "calibration": {
-        "left_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "right_trigger": {
-          "deadzone": 0.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert": false
-        },
-        "left_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        },
-        "right_stick": {
-          "deadzone": 8.0,
-          "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
-        }
-      },
       "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "-- Ninguno --",
@@ -936,15 +721,11 @@
         "GUIDE": "-- Ninguno --",
         "LEFT_STICK_X": "-- Ninguno --",
         "LEFT_STICK_Y": "-- Ninguno --",
-        "LEFT_THUMB": "-- Ninguno --",
         "LEFT_STICK_UP": "-- Ninguno --",
         "LEFT_STICK_DOWN": "-- Ninguno --",
         "LEFT_STICK_LEFT": "-- Ninguno --",
         "LEFT_STICK_RIGHT": "-- Ninguno --",
-        "DPAD_UP": "-- Ninguno --",
-        "DPAD_DOWN": "-- Ninguno --",
-        "DPAD_LEFT": "-- Ninguno --",
-        "DPAD_RIGHT": "-- Ninguno --",
+        "LEFT_THUMB": "-- Ninguno --",
         "RIGHT_TRIGGER": "-- Ninguno --",
         "RIGHT_SHOULDER": "-- Ninguno --",
         "Y": "-- Ninguno --",
@@ -953,22 +734,44 @@
         "A": "-- Ninguno --",
         "RIGHT_STICK_X": "-- Ninguno --",
         "RIGHT_STICK_Y": "-- Ninguno --",
-        "RIGHT_THUMB": "-- Ninguno --",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
-        "RIGHT_STICK_RIGHT": "-- Ninguno --"
+        "RIGHT_STICK_RIGHT": "-- Ninguno --",
+        "RIGHT_THUMB": "-- Ninguno --",
+        "DPAD_UP": "-- Ninguno --",
+        "DPAD_DOWN": "-- Ninguno --",
+        "DPAD_LEFT": "-- Ninguno --",
+        "DPAD_RIGHT": "-- Ninguno --"
+      },
+      "calibration": {
+        "left_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "right_trigger": {
+          "deadzone": 0,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert": false
+        },
+        "left_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        },
+        "right_stick": {
+          "deadzone": 8,
+          "anti_deadzone": 0,
+          "sensitivity": 0,
+          "invert_x": false,
+          "invert_y": false
+        }
       }
     }
-  },
-  "max_controllers": 12,
-  "hidhide_cli_path": "C:\\Program Files\\Nefarius Software Solutions\\HidHide\\x64\\HidHideCLI.exe",
-  "suppress_hidhide_warning": true,
-  "hidden_devices": [
-    "HID\\{00001812-0000-1000-8000-00805f9b34fb}&Dev&VID_045e&PID_0b13&REV_0509&74c412bbd521&IG_00\\9&18accb0&0&0000"
-  ],
-  "language": "es",
-  "author": "JuanJSAR",
-  "emulated_type": "ds4",
-  "games": []
+  }
 }

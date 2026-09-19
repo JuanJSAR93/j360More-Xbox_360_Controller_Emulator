@@ -108,6 +108,17 @@ def apply_trigger_calibration(val: float, deadzone_pct: float, anti_deadzone_pct
 
     return max(0.0, min(1.0, res))
 
+def get_pad_emulated_type(config: dict, pad_id: int) -> str:
+    """Determina si un pad_id debe ser emulado como 'xbox360' o 'ds4'."""
+    mode = config.get("emulated_type", "xbox360").lower()
+    if mode == "ds4":
+        return "ds4"
+    elif mode in ("mixed", "mixto"):
+        max_ctrls = config.get("max_controllers", 8)
+        half = max_ctrls // 2
+        return "xbox360" if pad_id <= half else "ds4"
+    return "xbox360"
+
 class EmulatorEngine:
     def __init__(self, device_manager: DeviceManager):
         self.device_manager = device_manager
@@ -145,15 +156,23 @@ class EmulatorEngine:
 
             max_ctrls = self.config.get("max_controllers", 12)
             emulated_type = self.config.get("emulated_type", "xbox360").lower()
-            ctrl_type_name = "DualShock 4" if emulated_type == "ds4" else "Xbox 360"
+            if emulated_type in ("mixed", "mixto"):
+                half = max_ctrls // 2
+                ctrl_type_name = f"Mixto ({half}x Xbox 360 + {half}x DS4)"
+            elif emulated_type == "ds4":
+                ctrl_type_name = "DualShock 4"
+            else:
+                ctrl_type_name = "Xbox 360"
+
             print(f"[*] Iniciando motor de emulacion {ctrl_type_name} (hasta {max_ctrls} mandos)...")
             # Crear los mandos virtuales en ViGEmBus únicamente si tienen periférico físico asignado
             for i in range(1, max_ctrls + 1):
                 cfg = self.config.get("controllers", {}).get(str(i), {})
                 p_dev = cfg.get("physical_device_id", "none")
                 if cfg.get("enabled", True) and p_dev and p_dev != "none":
+                    pad_type = get_pad_emulated_type(self.config, i)
                     try:
-                        if emulated_type == "ds4":
+                        if pad_type == "ds4":
                             pad = vg.VDS4Gamepad()
                         else:
                             pad = vg.VX360Gamepad()
@@ -161,7 +180,8 @@ class EmulatorEngine:
                         pad.update()
                         self.gamepads[i] = pad
                     except Exception as e:
-                        print(f"  [!] Error creando mando virtual #{i} ({ctrl_type_name}): {e}")
+                        pad_label = "DualShock 4" if pad_type == "ds4" else "Xbox 360"
+                        print(f"  [!] Error creando mando virtual #{i} ({pad_label}): {e}")
 
             self.running = True
             self.thread = threading.Thread(target=self._loop, daemon=True)
