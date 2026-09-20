@@ -58,12 +58,18 @@ else:
 
 CONTROLLER_360_SVG_PATH = os.path.join(ASSETS_DIR, "controller_360.svg") if os.path.exists(os.path.join(ASSETS_DIR, "controller_360.svg")) else os.path.join(ASSETS_DIR, "controller.svg")
 CONTROLLER_DS4_SVG_PATH = os.path.join(ASSETS_DIR, "controller_DS4.svg")
+CONTROLLER_DS5_SVG_PATH = os.path.join(ASSETS_DIR, "controller_DS5.svg")
+CONTROLLER_NS2P_SVG_PATH = os.path.join(ASSETS_DIR, "controller_ns2p.svg")
 CONTROLLER_SVG_PATH = CONTROLLER_360_SVG_PATH
 
 CONTROLLER_360_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_360_render.png")
 CONTROLLER_360_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_360_hires.png")
 CONTROLLER_DS4_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ds4_render.png")
 CONTROLLER_DS4_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_ds4_hires.png")
+CONTROLLER_DS5_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ds5_render.png")
+CONTROLLER_DS5_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_ds5_hires.png")
+CONTROLLER_NS2P_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ns2p_render.png")
+CONTROLLER_NS2P_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_ns2p_hires.png")
 
 CONTROLLER_PNG_FALLBACK = os.path.join(ASSETS_DIR, "controller_360_render.png")
 ICON_SVG_PATH = os.path.join(ASSETS_DIR, "icon.svg")
@@ -156,19 +162,91 @@ DS4_CANVAS_POINTS = {
     "Y": (280.5, 106.0, 11),
 }
 
-# Retrocompatibilidad
-# Coordenadas relativas en el canvas para Switch 2 Pro (350x275)
-NS2PRO_HITBOXES = dict(XBOX_HITBOXES)
-NS2PRO_HITBOXES["A"] = XBOX_HITBOXES["B"]  # Derecha
-NS2PRO_HITBOXES["B"] = XBOX_HITBOXES["A"]  # Abajo
-NS2PRO_HITBOXES["X"] = XBOX_HITBOXES["Y"]  # Arriba
-NS2PRO_HITBOXES["Y"] = XBOX_HITBOXES["X"]  # Izquierda
+# Coordenadas relativas en el canvas para PlayStation 5 DualSense (350x275)
+DS5_HITBOXES = {
+    "A": (278.6, 139.9, 14.0),
+    "B": (298.7, 121.2, 14.0),
+    "X": (257.5, 121.2, 14.0),
+    "Y": (278.6, 100.7, 14.0),
+    "GUIDE": (173.9, 151.7, 14.0),
+    "BACK": (101.1, 93.1, 12.0),
+    "START": (246.7, 93.1, 12.0),
+    "LEFT_SHOULDER": (70.0, 67.1, 12.0),
+    "RIGHT_SHOULDER": (279.7, 68.0, 12.0),
+    "LEFT_TRIGGER": (71.5, 43.7, 12.0),
+    "RIGHT_TRIGGER": (278.7, 43.7, 12.0),
+}
 
-NS2PRO_CANVAS_POINTS = dict(XBOX_CANVAS_POINTS)
-NS2PRO_CANVAS_POINTS["A"] = XBOX_CANVAS_POINTS["B"]
-NS2PRO_CANVAS_POINTS["B"] = XBOX_CANVAS_POINTS["A"]
-NS2PRO_CANVAS_POINTS["X"] = XBOX_CANVAS_POINTS["Y"]
-NS2PRO_CANVAS_POINTS["Y"] = XBOX_CANVAS_POINTS["X"]
+DS5_CANVAS_POINTS = {
+    "LEFT_TRIGGER": (71.5, 43.7, 11),
+    "LEFT_SHOULDER": (70.0, 67.1, 11),
+    "RIGHT_TRIGGER": (278.7, 43.7, 11),
+    "RIGHT_SHOULDER": (279.7, 68.0, 11),
+    "LEFT_STICK_UP": (122.0, 138.2, 7),
+    "LEFT_STICK_DOWN": (122.0, 170.2, 7),
+    "LEFT_STICK_LEFT": (106.0, 154.2, 7),
+    "LEFT_STICK_RIGHT": (138.0, 154.2, 7),
+    "LEFT_THUMB": (122.0, 154.2, 8),
+    "RIGHT_STICK_UP": (225.5, 138.2, 7),
+    "RIGHT_STICK_DOWN": (225.5, 170.2, 7),
+    "RIGHT_STICK_LEFT": (208.0, 154.2, 7),
+    "RIGHT_STICK_RIGHT": (241.5, 154.2, 7),
+    "RIGHT_THUMB": (225.5, 154.2, 8),
+    "DPAD_UP": (68.5, 105.7, 9),
+    "DPAD_DOWN": (68.5, 136.2, 9),
+    "DPAD_LEFT": (53.0, 121.2, 9),
+    "DPAD_RIGHT": (84.0, 121.2, 9),
+    "BACK": (101.1, 93.1, 9),
+    "GUIDE": (173.9, 151.7, 12),
+    "START": (246.7, 93.1, 9),
+    "A": (278.6, 139.9, 11),
+    "B": (298.7, 121.2, 11),
+    "X": (257.5, 121.2, 11),
+    "Y": (278.6, 100.7, 11),
+}
+
+# Coordenadas relativas en el canvas para Nintendo Switch 2 Pro (350x275)
+NS2PRO_HITBOXES = {
+    "A": (288.6, 131.9, 14.0),
+    "B": (268.2, 151.4, 14.0),
+    "X": (268.1, 112.5, 14.0),
+    "Y": (247.6, 132.0, 14.0),
+    "GUIDE": (208.0, 131.5, 12.0),
+    "BACK": (132.1, 108.5, 12.0),   # Botón Menos (-)
+    "START": (219.3, 108.5, 12.0),  # Botón Más (+)
+    "LEFT_SHOULDER": (74.0, 78.0, 13.0),
+    "RIGHT_SHOULDER": (276.0, 78.0, 13.0),
+    "LEFT_TRIGGER": (74.0, 52.0, 13.0),
+    "RIGHT_TRIGGER": (276.0, 52.0, 13.0),
+}
+
+NS2PRO_CANVAS_POINTS = {
+    "LEFT_TRIGGER": (74.0, 52.0, 12),
+    "LEFT_SHOULDER": (74.0, 78.0, 12),
+    "RIGHT_TRIGGER": (276.0, 52.0, 12),
+    "RIGHT_SHOULDER": (276.0, 78.0, 12),
+    "LEFT_STICK_UP": (79.4, 114.8, 7),
+    "LEFT_STICK_DOWN": (79.4, 148.8, 7),
+    "LEFT_STICK_LEFT": (62.4, 131.8, 7),
+    "LEFT_STICK_RIGHT": (96.4, 131.8, 7),
+    "LEFT_THUMB": (79.4, 131.8, 8),
+    "RIGHT_STICK_UP": (224.4, 155.0, 7),
+    "RIGHT_STICK_DOWN": (224.4, 189.0, 7),
+    "RIGHT_STICK_LEFT": (207.4, 172.0, 7),
+    "RIGHT_STICK_RIGHT": (241.4, 172.0, 7),
+    "RIGHT_THUMB": (224.4, 172.0, 8),
+    "DPAD_UP": (126.3, 156.1, 9),
+    "DPAD_DOWN": (126.3, 185.9, 9),
+    "DPAD_LEFT": (111.8, 171.0, 9),
+    "DPAD_RIGHT": (140.8, 171.0, 9),
+    "BACK": (132.1, 108.5, 9),
+    "GUIDE": (208.0, 131.5, 10),
+    "START": (219.3, 108.5, 9),
+    "A": (288.6, 131.9, 11),
+    "B": (268.2, 151.4, 11),
+    "X": (268.1, 112.5, 11),
+    "Y": (247.6, 132.0, 11),
+}
 
 HITBOXES = XBOX_HITBOXES
 CANVAS_POINTS = XBOX_CANVAS_POINTS
@@ -360,7 +438,9 @@ class J360MoreApp:
 
     def _get_hitboxes(self, pad_id: Optional[int] = None) -> dict:
         t = self.get_pad_emulated_type(pad_id)
-        if t in ("ds4", "dualsense"):
+        if t == "dualsense":
+            return DS5_HITBOXES
+        elif t == "ds4":
             return DS4_HITBOXES
         elif t == "ns2pro":
             return NS2PRO_HITBOXES
@@ -368,11 +448,33 @@ class J360MoreApp:
 
     def _get_canvas_points(self, pad_id: Optional[int] = None) -> dict:
         t = self.get_pad_emulated_type(pad_id)
-        if t in ("ds4", "dualsense"):
+        if t == "dualsense":
+            return DS5_CANVAS_POINTS
+        elif t == "ds4":
             return DS4_CANVAS_POINTS
         elif t == "ns2pro":
             return NS2PRO_CANVAS_POINTS
         return XBOX_CANVAS_POINTS
+
+    def _get_pad_img_tk(self, pad_id: Optional[int] = None):
+        t = self.get_pad_emulated_type(pad_id)
+        if t == "dualsense" and getattr(self, "ctrl_ds5_tk", None):
+            return self.ctrl_ds5_tk
+        elif t == "ds4" and getattr(self, "ctrl_ds4_tk", None):
+            return self.ctrl_ds4_tk
+        elif t == "ns2pro" and getattr(self, "ctrl_ns2p_tk", None):
+            return self.ctrl_ns2p_tk
+        return self.ctrl_360_tk
+
+    def _get_pad_hires_img(self, pad_id: Optional[int] = None):
+        t = self.get_pad_emulated_type(pad_id)
+        if t == "dualsense":
+            return getattr(self, "ctrl_ds5_hires", None) or getattr(self, "ctrl_ds5_base", None) or self.ctrl_ds4_hires
+        elif t == "ds4":
+            return self.ctrl_ds4_hires or self.ctrl_ds4_base
+        elif t == "ns2pro":
+            return getattr(self, "ctrl_ns2p_hires", None) or getattr(self, "ctrl_ns2p_base", None) or self.ctrl_360_hires
+        return self.ctrl_360_hires or self.ctrl_360_base
 
     @property
     def current_lang(self) -> str:
@@ -502,7 +604,21 @@ class J360MoreApp:
         pil_hires = None
         pil_base = None
 
-        if os.path.exists(svg_path) and resvg_py is not None:
+        # 1. Si ya existen los archivos PNG en assets, usarlos directamente SIN regenerar
+        if os.path.exists(hires_png):
+            try:
+                pil_hires = Image.open(hires_png)
+            except Exception:
+                pass
+
+        if os.path.exists(render_png):
+            try:
+                pil_base = Image.open(render_png)
+            except Exception:
+                pass
+
+        # 2. Solo si no existen las imágenes PNG, intentar renderizar desde SVG
+        if pil_hires is None and pil_base is None and os.path.exists(svg_path) and resvg_py is not None:
             try:
                 png_bytes_hi = resvg_py.svg_to_bytes(svg_path=svg_path, width=1400)
                 pil_hires = Image.open(io.BytesIO(png_bytes_hi))
@@ -513,13 +629,8 @@ class J360MoreApp:
             except Exception as e:
                 print(f"[!] Error renderizando SVG HD ({svg_path}): {e}")
 
-        if pil_hires is None and os.path.exists(hires_png):
-            try:
-                pil_hires = Image.open(hires_png)
-            except Exception:
-                pass
-
-        if pil_hires is not None:
+        # 3. Asegurar que pil_base tenga tamaño (350, 275) si se derivó de hires
+        if pil_base is None and pil_hires is not None:
             try:
                 pil_base = pil_hires.resize((350, 275), Image.Resampling.LANCZOS)
                 try:
@@ -528,12 +639,8 @@ class J360MoreApp:
                     pass
             except Exception:
                 pass
-        elif os.path.exists(render_png):
-            try:
-                pil_base = Image.open(render_png)
-                pil_hires = pil_base
-            except Exception:
-                pass
+        elif pil_hires is None and pil_base is not None:
+            pil_hires = pil_base
 
         tk_img = ImageTk.PhotoImage(pil_base) if pil_base else None
         return pil_hires, pil_base, tk_img
@@ -561,14 +668,32 @@ class J360MoreApp:
             CONTROLLER_DS4_SVG_PATH, CONTROLLER_DS4_HIRES_PNG, CONTROLLER_DS4_CACHE_PNG
         )
 
+        # 3. Assets PlayStation 5 (DualSense)
+        (self.ctrl_ds5_hires, self.ctrl_ds5_base, self.ctrl_ds5_tk) = self._load_single_controller_asset(
+            CONTROLLER_DS5_SVG_PATH, CONTROLLER_DS5_HIRES_PNG, CONTROLLER_DS5_CACHE_PNG
+        )
+
+        # 4. Assets Nintendo Switch 2 Pro
+        (self.ctrl_ns2p_hires, self.ctrl_ns2p_base, self.ctrl_ns2p_tk) = self._load_single_controller_asset(
+            CONTROLLER_NS2P_SVG_PATH, CONTROLLER_NS2P_HIRES_PNG, CONTROLLER_NS2P_CACHE_PNG
+        )
+
         self._update_active_assets()
 
     def _update_active_assets(self):
         emulated_type = self.config.get("emulated_type", "xbox360").lower()
-        if emulated_type in ("ds4", "dualsense") and self.ctrl_ds4_base is not None:
+        if emulated_type == "dualsense" and getattr(self, "ctrl_ds5_base", None) is not None:
+            self.controller_pil_hires = self.ctrl_ds5_hires
+            self.controller_pil_base = self.ctrl_ds5_base
+            self.controller_img_tk = self.ctrl_ds5_tk
+        elif emulated_type == "ds4" and getattr(self, "ctrl_ds4_base", None) is not None:
             self.controller_pil_hires = self.ctrl_ds4_hires
             self.controller_pil_base = self.ctrl_ds4_base
             self.controller_img_tk = self.ctrl_ds4_tk
+        elif emulated_type == "ns2pro" and getattr(self, "ctrl_ns2p_base", None) is not None:
+            self.controller_pil_hires = self.ctrl_ns2p_hires
+            self.controller_pil_base = self.ctrl_ns2p_base
+            self.controller_img_tk = self.ctrl_ns2p_tk
         else:
             self.controller_pil_hires = self.ctrl_360_hires
             self.controller_pil_base = self.ctrl_360_base
@@ -916,7 +1041,7 @@ class J360MoreApp:
         canvas.pack(pady=2)
         widgets["canvas"] = canvas
 
-        pad_img = self.ctrl_ds4_tk if (is_ps and self.ctrl_ds4_tk) else self.ctrl_360_tk
+        pad_img = self._get_pad_img_tk(pad_id)
         if pad_img:
             canvas.create_image(c_w // 2, c_h // 2, image=pad_img)
 
@@ -1011,100 +1136,67 @@ class J360MoreApp:
     def _find_target_at_pos(self, click_x: float, click_y: float, pad_id: Optional[int] = None) -> str:
         """Determina qué botón o parte interactiva fue clickeada (excluyendo el Fondo)."""
         pad_type = self.get_pad_emulated_type(pad_id)
-        is_ps = pad_type in ("ds4", "dualsense")
-        is_switch = (pad_type == "ns2pro")
 
-        if is_ps:
-            # 1. Comprobar cruceta D-Pad (DS4: cx=70.0, cy=126.5)
+        # Centros geométricos de D-Pad y Sticks según el controlador emulado activo
+        if pad_type == "dualsense":
+            dpad_cx, dpad_cy = 68.5, 121.2
+            ls_cx, ls_cy = 122.0, 154.2
+            rs_cx, rs_cy = 225.5, 154.2
+        elif pad_type == "ds4":
             dpad_cx, dpad_cy = 70.0, 126.5
-            dx = click_x - dpad_cx
-            dy = click_y - dpad_cy
-            dist_dpad = math.sqrt(dx * dx + dy * dy)
-            if dist_dpad <= 28.0:
-                if abs(dy) > abs(dx):
-                    return "DPAD_UP" if dy < 0 else "DPAD_DOWN"
-                else:
-                    return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
-
-            # 2. Comprobar Stick Izquierdo (DS4: cx=123.5, cy=167.5)
             ls_cx, ls_cy = 123.5, 167.5
-            dx_ls = click_x - ls_cx
-            dy_ls = click_y - ls_cy
-            dist_ls = math.sqrt(dx_ls * dx_ls + dy_ls * dy_ls)
-            if dist_ls <= 24.0:
-                if dist_ls < 7.5:
-                    return "LEFT_THUMB"
-                else:
-                    if abs(dy_ls) > abs(dx_ls):
-                        return "LEFT_STICK_UP" if dy_ls < 0 else "LEFT_STICK_DOWN"
-                    else:
-                        return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
-
-            # 3. Comprobar Stick Derecho (DS4: cx=225.5, cy=167.5)
             rs_cx, rs_cy = 225.5, 167.5
-            dx_rs = click_x - rs_cx
-            dy_rs = click_y - rs_cy
-            dist_rs = math.sqrt(dx_rs * dx_rs + dy_rs * dy_rs)
-            if dist_rs <= 24.0:
-                if dist_rs < 7.5:
-                    return "RIGHT_THUMB"
-                else:
-                    if abs(dy_rs) > abs(dx_rs):
-                        return "RIGHT_STICK_UP" if dy_rs < 0 else "RIGHT_STICK_DOWN"
-                    else:
-                        return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
-
-            # 4. Comprobar los demás botones individuales de DS4
-            for btn_name, (bx, by, br) in DS4_HITBOXES.items():
-                d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
-                if d <= br:
-                    return btn_name
-        else:
-            # 1. Comprobar cruceta D-Pad (Xbox / Switch: cx=122.5, cy=189.6)
+        elif pad_type == "ns2pro":
+            dpad_cx, dpad_cy = 126.3, 171.0
+            ls_cx, ls_cy = 79.4, 131.8
+            rs_cx, rs_cy = 224.4, 172.0
+        else:  # xbox360
             dpad_cx, dpad_cy = 122.5, 189.6
-            dx = click_x - dpad_cx
-            dy = click_y - dpad_cy
-            dist_dpad = math.sqrt(dx * dx + dy * dy)
-            if dist_dpad <= 28.0:
-                if abs(dy) > abs(dx):
-                    return "DPAD_UP" if dy < 0 else "DPAD_DOWN"
-                else:
-                    return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
-
-            # 2. Comprobar Stick Izquierdo (Xbox / Switch: cx=63.9, cy=140.2)
             ls_cx, ls_cy = 63.9, 140.2
-            dx_ls = click_x - ls_cx
-            dy_ls = click_y - ls_cy
-            dist_ls = math.sqrt(dx_ls * dx_ls + dy_ls * dy_ls)
-            if dist_ls <= 26.0:
-                if dist_ls < 7.5:
-                    return "LEFT_THUMB"
-                else:
-                    if abs(dy_ls) > abs(dx_ls):
-                        return "LEFT_STICK_UP" if dy_ls < 0 else "LEFT_STICK_DOWN"
-                    else:
-                        return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
-
-            # 3. Comprobar Stick Derecho (Xbox / Switch: cx=224.4, cy=189.6)
             rs_cx, rs_cy = 224.4, 189.6
-            dx_rs = click_x - rs_cx
-            dy_rs = click_y - rs_cy
-            dist_rs = math.sqrt(dx_rs * dx_rs + dy_rs * dy_rs)
-            if dist_rs <= 26.0:
-                if dist_rs < 7.5:
-                    return "RIGHT_THUMB"
-                else:
-                    if abs(dy_rs) > abs(dx_rs):
-                        return "RIGHT_STICK_UP" if dy_rs < 0 else "RIGHT_STICK_DOWN"
-                    else:
-                        return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
 
-            # 4. Comprobar los demás botones individuales de Xbox / Switch
-            hitbox_map = NS2PRO_HITBOXES if is_switch else XBOX_HITBOXES
-            for btn_name, (bx, by, br) in hitbox_map.items():
-                d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
-                if d <= br:
-                    return btn_name
+        # 1. Comprobar cruceta D-Pad
+        dx = click_x - dpad_cx
+        dy = click_y - dpad_cy
+        dist_dpad = math.sqrt(dx * dx + dy * dy)
+        if dist_dpad <= 28.0:
+            if abs(dy) > abs(dx):
+                return "DPAD_UP" if dy < 0 else "DPAD_DOWN"
+            else:
+                return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
+
+        # 2. Comprobar Stick Izquierdo
+        dx_ls = click_x - ls_cx
+        dy_ls = click_y - ls_cy
+        dist_ls = math.sqrt(dx_ls * dx_ls + dy_ls * dy_ls)
+        if dist_ls <= 26.0:
+            if dist_ls < 7.5:
+                return "LEFT_THUMB"
+            else:
+                if abs(dy_ls) > abs(dx_ls):
+                    return "LEFT_STICK_UP" if dy_ls < 0 else "LEFT_STICK_DOWN"
+                else:
+                    return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
+
+        # 3. Comprobar Stick Derecho
+        dx_rs = click_x - rs_cx
+        dy_rs = click_y - rs_cy
+        dist_rs = math.sqrt(dx_rs * dx_rs + dy_rs * dy_rs)
+        if dist_rs <= 26.0:
+            if dist_rs < 7.5:
+                return "RIGHT_THUMB"
+            else:
+                if abs(dy_rs) > abs(dx_rs):
+                    return "RIGHT_STICK_UP" if dy_rs < 0 else "RIGHT_STICK_DOWN"
+                else:
+                    return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
+
+        # 4. Comprobar los demás botones individuales del mando activo
+        hitbox_map = self._get_hitboxes(pad_id)
+        for btn_name, (bx, by, br) in hitbox_map.items():
+            d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
+            if d <= br:
+                return btn_name
 
         return None
 
@@ -2688,7 +2780,7 @@ class J360MoreApp:
         cv_main = tk.Canvas(left_box, width=350, height=275, bg="#ffffff", highlightthickness=1, highlightbackground="#d0d0d0")
         cv_main.pack(anchor="center", pady=2)
 
-        pad_img = self.ctrl_ds4_tk if (is_ps and self.ctrl_ds4_tk) else self.ctrl_360_tk
+        pad_img = self._get_pad_img_tk(pad_id)
         if pad_img:
             cv_main.create_image(175, 137, image=pad_img)
 
@@ -2770,7 +2862,7 @@ class J360MoreApp:
             cv_main.itemconfig(main_core, fill="#ffaa00", state="normal")
 
             cv_zoom.delete("all")
-            source_img = (self.ctrl_ds4_hires or self.ctrl_ds4_base) if is_ps else (self.ctrl_360_hires or self.ctrl_360_base)
+            source_img = self._get_pad_hires_img(pad_id)
             if source_img:
                 try:
                     scale_x = source_img.width / 350.0
