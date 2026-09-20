@@ -4,7 +4,7 @@
 const translations = {
   es: {
     nav_features: "Cualidades",
-    nav_dual: "Emulación Dual",
+    nav_dual: "Multi-Consola",
     nav_screenshots: "Capturas",
     nav_drivers: "Controladores",
     nav_requirements: "Requisitos",
@@ -166,7 +166,7 @@ const translations = {
   },
   en: {
     nav_features: "Features",
-    nav_dual: "Dual Emulation",
+    nav_dual: "Multi-Console",
     nav_screenshots: "Screenshots",
     nav_drivers: "Drivers",
     nav_requirements: "Requirements",

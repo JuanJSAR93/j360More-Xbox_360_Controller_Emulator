@@ -775,7 +775,7 @@
     }
   },
   "driver_backend": "viiper",
-  "emulated_type": "ns2pro",
+  "emulated_type": "xbox360",
   "hidhide_cli_path": "C:\\Program Files\\Nefarius Software Solutions\\HidHide\\x64\\HidHideCLI.exe",
   "suppress_hidhide_warning": false
 }
