@@ -9,7 +9,7 @@
 
 **j360More** is an advanced multi-controller virtual gamepad solution developed by **JuanJSAR**. Supporting both **VIIPER** (multiplatform USB/IP) and **ViGEmBus** backends, it features a modern bilingual interface (**English and Spanish**), an intuitive layout inspired by x360ce, support for up to **12 simultaneous virtual controllers** (**Xbox 360**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense**, and **Nintendo Switch 2 Pro**), and optional integration with **Nefarius HidHide** to eliminate the double-input issue in PC games and emulators.
 
-Designed with cross-platform architecture: running natively on **Windows (10/11)** with full **Linux support coming soon** powered by VIIPER and the standard USB/IP protocol!
+Designed with cross-platform architecture: running natively on **Windows (10/11)** with full **Linux support (Beta)** powered by VIIPER and the standard USB/IP protocol!
 
 Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, generic arcade sticks, steering wheels, keyboard and mouse) to each virtual controller, calibrate analog response curves in real time, and monitor reactive input feedback directly on an interactive vector diagram.
 
@@ -36,7 +36,7 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
   - Modern cross-platform architecture utilizing USB/IP.
   - Bundled directly inside `bin/viiper.exe` — launched and managed automatically by the application.
   - Unlocks emulation of **Xbox 360**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)**, and **Nintendo Switch 2 Pro (`ns2pro`)**.
-  - Paves the way for seamless **Linux support (coming soon)** using the Linux kernel's built-in `usbip` modules.
+  - Paves the way for seamless **Linux support (Beta)** using the Linux kernel's built-in `usbip` modules.
 - **ViGEmBus Driver Backend**:
   - Legacy Windows kernel-mode driver supporting **Xbox 360**, **DualShock 4**, and **Mixed** modes.
   - 100% backward-compatible: existing configuration files keep ViGEmBus automatically unless changed by the user.
@@ -48,9 +48,9 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 - **Nintendo Switch 2 Pro (`ns2pro`)**: Authentic Nintendo layout (B/A, Y/X, L/ZL, R/ZR, -, +, Home), normalized $0 \dots 4095$ range with precision centering at $2048$.
 - **Mixed Mode**: Automatically emulates half as Xbox 360 and half as PlayStation/Nintendo gamepads for mixed multiplayer setups.
 
-### 4. Cross-Platform Vision: Windows & Linux (Coming Soon)
+### 4. Cross-Platform Vision: Windows & Linux (Beta)
 - **Windows**: Ready out of the box with `usbip-win2` or `ViGEmBus`.
-- **Linux (Coming Soon)**: Using native Linux USB/IP kernel modules (`usbip` / `vhci-hcd`) and the Linux build of the VIIPER daemon.
+- **Linux (Beta)**: Using native Linux USB/IP kernel modules (`usbip` / `vhci-hcd`), native ELF binary, and the Linux build of the VIIPER daemon.
 
 ### 5. Smart Activation & Virtual Controller Filtering
 - **Zero Phantom Controllers**: Only assigned and enabled controller tabs spawn virtual gamepads.
@@ -82,7 +82,7 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 
 ### Operating System:
 - **Windows 10 / 11 (64-bit)** (Supported now)
-- **Linux (x86_64)** (*Coming soon via USB/IP*)
+- **Linux (x86_64)** (*Beta via native ELF binary and USB/IP*)
 
 ### Driver Requirements:
 Choose one of the two supported backends:
