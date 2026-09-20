@@ -1,0 +1,116 @@
+name: Build & Release (Windows & Linux)
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows Executable (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile Windows Executable with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onefile --windowed --noupx `
+            --name "j360More" `
+            --icon "assets/icon.ico" `
+            --version-file "version_info.txt" `
+            --add-data "assets;assets" `
+            --add-data "bin;bin" `
+            --collect-all "vgamepad" `
+            --collect-all "resvg_py" `
+            gui_app.py
+
+      - name: Package Windows Release
+        run: |
+          Copy-Item config_mapping.json dist/ -Force
+          if (Test-Path bin) { Copy-Item bin dist/bin -Recurse -Force }
+          Compress-Archive -Path dist/* -DestinationPath dist/j360More-v1.4.0-windows-x64.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: j360More-Windows-x64
+          path: dist/j360More-v1.4.0-windows-x64.zip
+
+  build-linux:
+    name: Build Linux Binary (ELF / tar.gz)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Linux System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk libsdl2-2.0-0 libsdl2-image-2.0-0
+
+      - name: Install Python Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile Linux Binary
+        run: |
+          chmod +x build_linux.sh
+          ./build_linux.sh
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: j360More-Linux-x64
+          path: dist/j360More-v1.4.0-linux-x86_64.tar.gz
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-windows, build-linux]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: j360More-Windows-x64
+          path: release-artifacts
+
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: j360More-Linux-x64
+          path: release-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-artifacts/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true

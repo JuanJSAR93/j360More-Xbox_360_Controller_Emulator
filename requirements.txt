@@ -1,4 +1,4 @@
-vgamepad>=0.1.0
+vgamepad>=0.1.0; sys_platform == 'win32'
 pynput>=1.8.0
 pygame-ce>=2.5.0
 pillow>=10.0.0
