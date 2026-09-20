@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a303c"/>
+      <stop offset="100%" stop-color="#141820"/>
+    </linearGradient>
+    <linearGradient id="whitePlate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="50%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="blackMiddle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e2430"/>
+      <stop offset="100%" stop-color="#0f1319"/>
+    </linearGradient>
+    <linearGradient id="lightbarGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="dsGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- DualSense Outer Silhouette / Wings (White Shell) -->
+  <path d="M 230,110 C 310,105 490,105 570,110 C 650,115 720,180 735,270 C 755,370 730,500 705,550 C 690,575 660,570 640,530 C 600,450 580,360 550,330 C 510,290 470,295 400,295 C 330,295 290,290 250,330 C 220,360 200,450 160,530 C 140,570 110,575 95,550 C 70,500 45,370 65,270 C 80,180 150,115 230,110 Z" fill="url(#whitePlate)" stroke="#94a3b8" stroke-width="4"/>
+
+  <!-- Inner Black Grip Shell & Lower Core -->
+  <path d="M 255,270 C 290,250 340,255 400,255 C 460,255 510,250 545,270 C 570,285 585,320 575,370 C 555,470 540,520 510,530 C 490,535 460,490 445,460 C 425,420 375,420 355,460 C 340,490 310,535 290,530 C 260,520 245,470 225,370 C 215,320 230,285 255,270 Z" fill="url(#blackMiddle)" stroke="#334155" stroke-width="3"/>
+
+  <!-- Lightbar Glow Accent -->
+  <path d="M 285,135 C 330,130 470,130 515,135 C 525,180 520,230 510,260 C 460,250 340,250 290,260 C 280,230 275,180 285,135 Z" fill="none" stroke="url(#lightbarGlow)" stroke-width="6" filter="url(#dsGlow)" opacity="0.9"/>
+
+  <!-- Touchpad Plate -->
+  <rect x="295" y="140" width="210" height="115" rx="12" fill="#1e293b" stroke="#475569" stroke-width="3"/>
+
+  <!-- D-Pad Base & Buttons -->
+  <circle cx="210" cy="225" r="55" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+  <!-- Up -->
+  <path d="M 198,180 L 222,180 L 222,205 L 198,205 Z" fill="#38bdf8" rx="3"/>
+  <!-- Down -->
+  <path d="M 198,245 L 222,245 L 222,270 L 198,270 Z" fill="#38bdf8" rx="3"/>
+  <!-- Left -->
+  <path d="M 165,213 L 190,213 L 190,237 L 165,237 Z" fill="#38bdf8" rx="3"/>
+  <!-- Right -->
+  <path d="M 230,213 L 255,213 L 255,237 L 230,237 Z" fill="#38bdf8" rx="3"/>
+
+  <!-- PlayStation Action Buttons (Triangle, Circle, Cross, Square) -->
+  <circle cx="590" cy="225" r="55" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+  <!-- Triangle (Top) -->
+  <circle cx="590" cy="185" r="14" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+  <text x="590" y="190" fill="#38bdf8" font-size="14" font-weight="900" font-family="Arial" text-anchor="middle">△</text>
+  <!-- Circle (Right) -->
+  <circle cx="625" cy="225" r="14" fill="#1e293b" stroke="#f87171" stroke-width="2"/>
+  <text x="625" y="230" fill="#f87171" font-size="14" font-weight="900" font-family="Arial" text-anchor="middle">○</text>
+  <!-- Cross (Bottom) -->
+  <circle cx="590" cy="265" r="14" fill="#1e293b" stroke="#818cf8" stroke-width="2"/>
+  <text x="590" y="270" fill="#818cf8" font-size="14" font-weight="900" font-family="Arial" text-anchor="middle">✕</text>
+  <!-- Square (Left) -->
+  <circle cx="555" cy="225" r="14" fill="#1e293b" stroke="#ec4899" stroke-width="2"/>
+  <text x="555" y="230" fill="#ec4899" font-size="14" font-weight="900" font-family="Arial" text-anchor="middle">□</text>
+
+  <!-- Left Analog Stick -->
+  <circle cx="315" cy="355" r="46" fill="#090d16" stroke="#334155" stroke-width="3"/>
+  <circle cx="315" cy="355" r="36" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <circle cx="315" cy="355" r="14" fill="#334155"/>
+
+  <!-- Right Analog Stick -->
+  <circle cx="485" cy="355" r="46" fill="#090d16" stroke="#334155" stroke-width="3"/>
+  <circle cx="485" cy="355" r="36" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <circle cx="485" cy="355" r="14" fill="#334155"/>
+
+  <!-- PS Logo Button & Mute Button -->
+  <path d="M 400,320 L 407,332 L 393,332 Z" fill="#818cf8"/>
+  <circle cx="400" cy="336" r="3" fill="#38bdf8"/>
+  <rect x="390" y="375" width="20" height="7" rx="3" fill="#e2e8f0"/>
+
+  <!-- L1 / R1 Bumpers and Triggers outline -->
+  <path d="M 180,95 C 220,90 270,95 285,110 L 265,130 C 240,120 200,120 170,125 Z" fill="#334155" stroke="#475569" stroke-width="2"/>
+  <path d="M 620,95 C 580,90 530,95 515,110 L 535,130 C 560,120 600,120 630,125 Z" fill="#334155" stroke="#475569" stroke-width="2"/>
+</svg>

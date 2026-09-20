@@ -132,17 +132,18 @@
       <div class="badge-wrapper">
         <span class="badge badge-primary" data-i18n="hero_badge_players">🎮 Hasta 12 Mandos Simultáneos</span>
         <span class="badge badge-secondary" data-i18n="hero_badge_hz">⚡ Ultra Baja Latencia 120Hz</span>
+        <span class="badge badge-multiplatform" style="background: rgba(188, 140, 255, 0.15); border: 1px solid rgba(188, 140, 255, 0.4); color: #bc8cff;" data-i18n="hero_badge_multiplatform">🐧 Windows & Linux (Próximamente)</span>
         <span class="badge badge-rawkb" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;" data-i18n="hero_badge_rawkb">⌨️ Multi-Teclado Raw Input</span>
-        <span class="badge badge-author" style="background: rgba(188,140,255,0.15); border: 1px solid rgba(188,140,255,0.4); color: #bc8cff;" data-i18n="hero_badge_author">👨‍💻 Creado por JuanJSAR</span>
+        <span class="badge badge-author" style="background: rgba(16, 207, 101, 0.15); border: 1px solid rgba(16, 207, 101, 0.4); color: var(--xbox-neon);" data-i18n="hero_badge_author">👨‍💻 Creado por JuanJSAR</span>
       </div>
 
       <h1 class="hero-title">
         Multi-Gamepad <br>
-        <span class="gradient-text">Xbox 360 Emulator</span>
+        <span class="gradient-text">Virtual Controller Emulator</span>
       </h1>
 
       <p class="hero-subtitle" data-i18n="hero_subtitle">
-        Convierte cualquier control genérico USB, mando de PlayStation, palanca arcade o múltiples teclados independientes en mandos oficiales de Xbox 360 (XInput) con precisión milimétrica y compatibilidad total en PC.
+        Convierte cualquier control genérico USB, mando de PlayStation, Nintendo Switch, palanca arcade o múltiples teclados independientes en mandos oficiales de Xbox 360, DualShock 4, DualSense o Switch 2 Pro con precisión milimétrica y compatibilidad total.
       </p>
 
       <div class="hero-actions">
@@ -292,13 +293,13 @@
     </div>
   </section>
 
-  <!-- ==================== Soporte Dual: Xbox 360 y DualShock 4 ==================== -->
-  <section id="emulacion-dual" class="section dual-emulation-section">
+  <!-- ==================== Emulación Multi-Consola / Multi-Console Section ==================== -->
+  <section id="emulacion-dual" class="dual-section">
     <div class="section-header">
       <span class="section-tag" data-i18n="dual_tag">Soporte Multi-Consola</span>
-      <h2 class="section-title" data-i18n="dual_title">Emulación Oficial de Xbox 360 y DualShock 4</h2>
+      <h2 class="section-title" data-i18n="dual_title">Emulación de Xbox 360, PS4, PS5 y Switch 2 Pro</h2>
       <p class="section-desc" data-i18n="dual_subtitle">
-        j360More es el único emulador que te permite elegir qué tipo de mando crear en Windows a través de ViGEmBus: Xbox 360, DualShock 4 de PlayStation o modo Mixto simultáneo.
+        j360More te permite elegir qué tipo de mando crear en tu sistema mediante los drivers VIIPER y ViGEmBus: Xbox 360, DualShock 4, DualSense (PS5), Nintendo Switch 2 Pro o modo Mixto simultáneo.
       </p>
     </div>
 
@@ -336,22 +337,56 @@
           </p>
         </div>
       </div>
+
+      <!-- Controller 3: DualSense PS5 -->
+      <div class="dual-controller-card dualsense-card">
+        <div class="dual-controller-header">
+          <div class="dual-badge dualsense-badge" data-i18n="dual_dualsense_badge">PlayStation 5 HID</div>
+          <span class="dual-count-pill" data-i18n="dual_dualsense_count">1 a 12 Mandos</span>
+        </div>
+        <div class="dual-svg-wrapper">
+          <img src="assets/controller_dualsense.svg" alt="Mando PlayStation 5 DualSense Vectorial" class="dual-controller-svg">
+        </div>
+        <div class="dual-controller-body">
+          <h3 class="dual-controller-title" data-i18n="dual_dualsense_title">Mando PlayStation 5 (DualSense)</h3>
+          <p class="dual-controller-desc" data-i18n="dual_dualsense_desc">
+            Emulación de mandos DualSense de PlayStation 5 mediante el driver VIIPER, con mapeo completo de botones y compatibilidad de última generación.
+          </p>
+        </div>
+      </div>
+
+      <!-- Controller 4: Switch 2 Pro -->
+      <div class="dual-controller-card switch-card">
+        <div class="dual-controller-header">
+          <div class="dual-badge switch-badge" data-i18n="dual_switch_badge">Nintendo HID</div>
+          <span class="dual-count-pill" data-i18n="dual_switch_count">1 a 12 Mandos</span>
+        </div>
+        <div class="dual-svg-wrapper">
+          <img src="assets/controller_switch.svg" alt="Mando Nintendo Switch 2 Pro Vectorial" class="dual-controller-svg">
+        </div>
+        <div class="dual-controller-body">
+          <h3 class="dual-controller-title" data-i18n="dual_switch_title">Mando Nintendo Switch 2 Pro</h3>
+          <p class="dual-controller-desc" data-i18n="dual_switch_desc">
+            Soporte para el nuevo mando Switch 2 Pro (ns2pro) con disposición de botones de Nintendo, calibración precisa de 12 bits y centrado neutro.
+          </p>
+        </div>
+      </div>
     </div>
 
     <!-- Mixed Mode Banner -->
     <div class="mixed-mode-banner">
       <div class="mixed-banner-content">
-        <div class="mixed-banner-badge" data-i18n="dual_mixed_badge">Soporte Mixto (50% Xbox + 50% DS4)</div>
-        <h3 class="mixed-banner-title" data-i18n="dual_mixed_title">¿Partidas con ambos tipos de mandos? Usa el Modo Mixto</h3>
+        <div class="mixed-banner-badge" data-i18n="dual_mixed_badge">Soporte Mixto Multi-Consola</div>
+        <h3 class="mixed-banner-title" data-i18n="dual_mixed_title">¿Partidas combinadas? Usa el Modo Mixto</h3>
         <p class="mixed-banner-desc" data-i18n="dual_mixed_desc">
-          Configura 2, 4, 6, 8, 10 o 12 mandos y j360More dividirá la carga equitativamente: la primera mitad se emula como Xbox 360 y la segunda mitad como DualShock 4, permitiendo jugar en simultáneo sin conflictos.
+          Configura de 2 a 12 mandos y j360More dividirá la carga equitativamente entre diferentes plataformas para que tus amigos jueguen en simultáneo sin conflictos.
         </p>
       </div>
       <div class="mixed-banner-chips">
-        <span class="mixed-chip" data-i18n="dual_chip_2">🎮 2 Mandos (1 Xbox + 1 DS4)</span>
-        <span class="mixed-chip" data-i18n="dual_chip_4">🎮 4 Mandos (2 Xbox + 2 DS4)</span>
-        <span class="mixed-chip" data-i18n="dual_chip_8">🎮 8 Mandos (4 Xbox + 4 DS4)</span>
-        <span class="mixed-chip" data-i18n="dual_chip_12">🎮 12 Mandos (6 Xbox + 6 DS4)</span>
+        <span class="mixed-chip" data-i18n="dual_chip_2">🎮 2 Mandos Combinados</span>
+        <span class="mixed-chip" data-i18n="dual_chip_4">🎮 4 Mandos Combinados</span>
+        <span class="mixed-chip" data-i18n="dual_chip_8">🎮 8 Mandos Combinados</span>
+        <span class="mixed-chip" data-i18n="dual_chip_12">🎮 12 Mandos Combinados</span>
       </div>
     </div>
   </section>
@@ -505,33 +540,76 @@
       </div>
 
       <div class="drivers-grid">
-        <!-- ViGEmBus Card (OBLIGATORIO) -->
+        <!-- VIIPER Card (POR DEFECTO / MULTIPLATAFORMA) -->
         <div class="driver-card mandatory">
+          <div>
+            <div class="driver-header">
+              <div>
+                <h3 class="driver-title">VIIPER (USB/IP)</h3>
+                <span class="driver-author">Por Alia5 & vadimgrn</span>
+              </div>
+              <span class="driver-badge-tag default-tag" data-i18n="driver_viiper_tag">Por Defecto / Multiplataforma</span>
+            </div>
+
+            <div class="driver-body">
+              <p class="driver-desc" data-i18n="driver_viiper_desc">
+                Potente servidor de emulación USB sobre red local (USB/IP) que permite crear mandos virtuales de última generación directamente en Windows y Linux (próximamente). <strong>El ejecutable ya viene incluido en j360More</strong>.
+              </p>
+
+              <div class="driver-purpose-box viiper">
+                <h4 data-i18n="driver_viiper_why_title">¿Para qué se utiliza en j360More?</h4>
+                <p data-i18n="driver_viiper_why_desc">
+                  Es el nuevo motor de emulación predeterminado y multiplataforma. Permite generar mandos de <strong>Xbox 360</strong>, <strong>DualShock 4</strong>, <strong>DualSense (PS5)</strong> y <strong>Nintendo Switch 2 Pro</strong>. En Windows requiere el controlador complementario <strong>usbip-win2</strong>.
+                </p>
+              </div>
+
+              <ul class="driver-bullets">
+                <li data-i18n="driver_viiper_b1">Emulación de 4 familias de mandos: Xbox 360, PS4, PS5 y Switch 2 Pro.</li>
+                <li data-i18n="driver_viiper_b2">Arquitectura estándar USB/IP: soporte para Windows y Linux (próximamente).</li>
+                <li data-i18n="driver_viiper_b3">Binario autónomo incluido en 'bin/viiper.exe' sin instalaciones engorrosas.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="driver-footer">
+            <a href="https://github.com/vadimgrn/usbip-win2/releases" target="_blank" rel="noopener noreferrer" class="btn-driver-download viiper" data-i18n="driver_viiper_btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              Descargar Driver usbip-win2 (GitHub)
+            </a>
+          </div>
+        </div>
+
+        <!-- ViGEmBus Card (ALTERNATIVO / WINDOWS) -->
+        <div class="driver-card recommended">
           <div>
             <div class="driver-header">
               <div>
                 <h3 class="driver-title">ViGEmBus</h3>
                 <span class="driver-author">Por Benjamin Höglinger-Stelzer (Nefarius)</span>
               </div>
-              <span class="driver-badge-tag obligatory" data-i18n="driver_vigem_tag">Obligatorio</span>
+              <span class="driver-badge-tag alternative-tag" data-i18n="driver_vigem_tag">Alternativo (Windows)</span>
             </div>
 
             <div class="driver-body">
               <p class="driver-desc" data-i18n="driver_vigem_desc">
-                El <strong>Virtual Gamepad Emulation Bus</strong> es un driver de nivel de sistema (kernel-mode) que permite a Windows generar y conectar mandos virtuales de Xbox 360 y DualShock 4 idénticos a los mandos físicos oficiales.
+                El <strong>Virtual Gamepad Emulation Bus</strong> es un driver de nivel de sistema (kernel-mode) clásico para Windows que genera mandos virtuales de Xbox 360 y DualShock 4.
               </p>
 
               <div class="driver-purpose-box vigem">
                 <h4 data-i18n="driver_vigem_why_title">¿Para qué se utiliza en j360More?</h4>
                 <p data-i18n="driver_vigem_why_desc">
-                  Es el <strong>motor central de emulación</strong>. Sin ViGEmBus, la aplicación no puede crear los mandos virtuales en Windows. Se encarga de que cualquier juego de Steam, Xbox Game Pass o emulador reconozca los controles como mandos oficiales de Xbox 360 (XInput).
+                  Es el motor alternativo tradicional para usuarios de Windows con ViGEmBus previamente instalado. Permite crear mandos virtuales de Xbox 360 y DualShock 4 con máxima compatibilidad en Windows 10 y 11.
                 </p>
               </div>
 
               <ul class="driver-bullets">
                 <li data-i18n="driver_vigem_b1">Emulación nativa de 1 a 12 slots XInput en Windows.</li>
                 <li data-i18n="driver_vigem_b2">Compatibilidad total con gatillos analógicos y vibración.</li>
-                <li data-i18n="driver_vigem_b3">Firmado digitalmente para máxima estabilidad en Windows 10 y 11.</li>
+                <li data-i18n="driver_vigem_b3">100% retrocompatible con configuraciones previas de j360More.</li>
               </ul>
             </div>
           </div>
@@ -615,13 +693,13 @@
             <tbody>
               <tr>
                 <td class="req-comp" data-i18n="req_row_os">Sistema Operativo</td>
-                <td data-label="Mínimo">Windows 10 (64-bit)</td>
-                <td data-label="Recomendado" data-i18n="req_row_os_val">Windows 11 (64-bit) actualizado</td>
+                <td data-label="Mínimo" data-i18n="req_row_os_val1">Windows 10 / 11 (64-bit)</td>
+                <td data-label="Recomendado" data-i18n="req_row_os_val">Windows 11 / Linux (Próximamente)</td>
               </tr>
               <tr>
-                <td class="req-comp" data-i18n="req_row_vigem">Driver ViGEmBus</td>
-                <td data-label="Mínimo">ViGEmBus v1.17+</td>
-                <td data-label="Recomendado" data-i18n="req_row_vigem_val">Última versión oficial estable</td>
+                <td class="req-comp" data-i18n="req_row_drivers">Driver de Emulación</td>
+                <td data-label="Mínimo" data-i18n="req_row_drivers_val1">VIIPER (con usbip-win2) o ViGEmBus</td>
+                <td data-label="Recomendado" data-i18n="req_row_drivers_val2">VIIPER (Multiplataforma: X360, DS4, PS5, Switch 2)</td>
               </tr>
               <tr>
                 <td class="req-comp" data-i18n="req_row_hidhide">Driver HidHide</td>
@@ -636,7 +714,7 @@
               <tr>
                 <td class="req-comp" data-i18n="req_row_runtime">Formato del Programa</td>
                 <td data-label="Mínimo" data-i18n="req_row_runtime_val1">Ejecutable standalone sin dependencias</td>
-                <td data-label="Recomendado" data-i18n="req_row_runtime_val2">Modo portátil directo (41 MB)</td>
+                <td data-label="Recomendado" data-i18n="req_row_runtime_val2">Modo portátil directo con bin/viiper.exe</td>
               </tr>
             </tbody>
           </table>

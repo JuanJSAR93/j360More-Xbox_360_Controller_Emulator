@@ -1,4 +1,4 @@
-# j360More - Emulador Multimando (1 a 12 Mandos Xbox 360)
+# j360More - Emulador Multimando (Xbox 360, PS4, PS5 y Switch 2 Pro)
 
 [📖 Read in English](README.md) | [Descargas Oficiales (Releases)](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Documentación Web](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
@@ -7,7 +7,9 @@
 > Descargas y Versiones: [Releases Oficiales](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases)  
 > Documentación Web (GitHub Pages): Carpeta `/docs`
 
-**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte tanto para el backend multiplataforma **VIIPER** (USB/IP) como para **ViGEmBus**, ofrece interfaz bilingüe (**Español e Inglés**), diseño moderno inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **DualShock 4**, **DualSense (PS5)** y **Nintendo Switch 2 Pro**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
+**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte tanto para el nuevo driver multiplataforma **VIIPER** (USB/IP) como para **ViGEmBus**, ofrece una moderna interfaz bilingüe (**Español e Inglés**), diseño intuitivo inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense** y **Nintendo Switch 2 Pro**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
+
+Diseñado con arquitectura multiplataforma: funcionamiento nativo en **Windows (10/11)** y con **soporte completo para Linux (próximamente)** gracias a VIIPER y al protocolo estándar USB/IP.
 
 Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput/XInput, joysticks genéricos, volantes, teclado y ratón) a cada mando virtual, calibrar curvas analógicas en tiempo real y probar la respuesta reactiva directamente sobre un diagrama vectorial interactivo.
 
@@ -18,7 +20,7 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 | Mapeo Xbox 360 | Mapeo DualShock 4 |
 |:---:|:---:|
 | [![Mapeo Xbox 360](assets/screenshot_main.png)](assets/screenshot_main.png) | [![Mapeo DualShock 4](assets/screenshot_main2.png)](assets/screenshot_main2.png) |
-| **Calibración de Sticks Analógicos** | **Configuración e Integración HidHide** |
+| **Calibración de Sticks Analógicos** | **Configuración y Selección de Drivers** |
 | [![Calibración de Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Configuración](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
 
 ---
@@ -29,61 +31,71 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 - Configura libremente la cantidad de mandos virtuales activos (de 1 a 12) desde la ventana de **`⚙ Configuración...`**.
 - Pestañas individuales e independientes para cada jugador (`Control 1` a `Control 12`).
 
-### 2. Soporte Bilingüe Integrado (Español e Inglés)
+### 2. Arquitectura de Doble Controlador (VIIPER y ViGEmBus)
+- **Driver VIIPER (Recomendado / Por defecto en nuevas instalaciones)**:
+  - Arquitectura moderna basada en el protocolo USB/IP.
+  - Binario autónomo `bin/viiper.exe` incluido directamente en la aplicación (se inicia y gestiona en segundo plano automáticamente).
+  - Desbloquea la emulación de **Xbox 360**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)** y **Nintendo Switch 2 Pro (`ns2pro`)**.
+  - Abre el camino a la compatibilidad nativa con **Linux (próximamente)** mediante los módulos de kernel `usbip`.
+- **Driver ViGEmBus**:
+  - Controlador clásico a nivel de kernel para Windows que soporta mandos de **Xbox 360**, **DualShock 4** y modo **Mixto**.
+  - 100% retrocompatible: las configuraciones previas existentes conservan ViGEmBus de forma automática.
+
+### 3. Soporte de Emulación Multi-Consola
+- **Xbox 360 (XInput)**: El estándar universal para juegos en Steam, Xbox Game Pass, Epic Games Store y emuladores.
+- **PlayStation 4 (DualShock 4)**: DirectInput / Sony HID nativo, con iconos oficiales de PlayStation en juegos compatibles.
+- **PlayStation 5 (DualSense)**: Emulación del layout oficial de PS5 con respuesta analógica completa.
+- **Nintendo Switch 2 Pro (`ns2pro`)**: Disposición auténtica de Nintendo (B/A, Y/X, L/ZL, R/ZR, -, +, Home) con rango escalado $0 \dots 4095$ y punto central calibrado en $2048$.
+- **Modo Mixto**: Divide automáticamente los mandos creados entre Xbox 360 y PlayStation/Nintendo para partidas combinadas.
+
+### 4. Visión Multiplataforma: Windows y Linux (Próximamente)
+- **Windows**: Compatible de fábrica mediante el driver `usbip-win2` o `ViGEmBus`.
+- **Linux (Próximamente)**: Integración directa mediante los módulos de kernel de Linux (`usbip` / `vhci-hcd`) y el binario nativo de VIIPER para Linux.
+
+### 5. Activación Inteligente y Aislamiento de Mandos Virtuales
+- **Sin mandos fantasma**: Solo se instancian en el sistema los mandos virtuales que tengan asignado y habilitado un periférico físico real.
+- **Filtro automático de auto-detección**: El gestor de dispositivos reconoce e ignora los mandos virtuales generados por el propio emulador (Xbox 360, DS4, DualSense, Switch 2 Pro y dispositivos USB/IP), evitando bucles de entrada o duplicados en el selector de mandos físicos.
+
+### 6. Soporte Bilingüe Integrado (Español e Inglés)
 - Toda la interfaz, cuadros de diálogo, avisos del sistema, tablas de periféricos e información de hardware están traducidos al 100%.
 - Selección de idioma accesible en cualquier momento desde **`⚙ Configuración...`** -> **`Idioma de la Interfaz`**.
 
-### 3. Activación Inteligente y Bloqueo de Mapeo sin Dispositivo
-- Si un control tiene asignado `-- Ninguno / Desconectado --`:
-  - La casilla **`[ ] Habilitado`** se bloquea de forma opaca (`disabled`) con valor `False`.
-  - Todas las opciones de mapeo (comboboxes, botones `...`, curvas de calibración, canvas) quedan **desactivadas y opacas**.
-  - **ViGEmBus no crea mandos fantasma**: solo se instancian en el sistema los mandos que tienen un periférico físico asignado y habilitado.
-  - Si intentas iniciar la emulación sin ningún periférico asignado a ningún control, la app muestra un aviso preventivo y no inicia mandos innecesarios.
-- Al seleccionar un dispositivo (Joystick, Teclado o Ratón), todas las opciones y la casilla de habilitación se reactivan automáticamente.
+### 7. Integración Opcional con Nefarius HidHide (Anti Doble Entrada)
+- **Completamente Opcional**: Si HidHide no está instalado en tu equipo, j360More funciona con total normalidad.
+- **Ocultamiento Dinámico**: Al pulsar **`▶ Iniciar Emulación`**, j360More oculta de inmediato los periféricos seleccionados para todo Windows mediante HidHide, permitiendo que **solo j360More** pueda leerlos (gracias a la lista blanca automática). Al pulsar **`⏹ Detener Emulación`** (o cerrar la app), los periféricos vuelven a ser visibles para todo el sistema automáticamente.
 
-### 4. Integración Opcional con Nefarius HidHide (Anti Doble Entrada)
-- **Completamente Opcional**: Si HidHide no está instalado en tu equipo, j360More funciona con total normalidad para emular controles.
-- **Aviso Informativo Suave**: Si no se detecta HidHide, la app muestra un aviso leve con la casilla **`[ ] No volver a mostrar este aviso`** para no interrumpirte.
-- **Ruta Personalizada**: En `⚙ Configuración...` puedes ver el estado del driver, activar/desactivar el *Cloaking* global y especificar manualmente la ruta a `HidHideCLI.exe` con el botón **`📂 Examinar...`**.
-- **Gestión en `🎮 Dispositivos DirectInput...`**:
-  - Tabla con columna **`HidHide`** (`🚫 Oculto` vs `👁 Visible`).
-  - Botones **`🔒 Ocultar al Emular`** y **`🔓 Mantener Visible`** (se muestran deshabilitados si HidHide no está presente).
-  - **Ocultamiento Dinámico**: Al pulsar **`▶ Iniciar Emulación`**, j360More oculta de inmediato los periféricos seleccionados para todo Windows mediante HidHide, permitiendo que **solo j360More** pueda leerlos (gracias a la lista blanca automática). Al pulsar **`⏹ Detener Emulación`** (o cerrar la app), los periféricos vuelven a ser visibles para todo el sistema automáticamente.
-
-### 5. Diagramas Vectoriales Interactivos (Xbox 360 y DualShock 4)
-- Diagramas renderizados en alta fidelidad tanto para mandos **Xbox 360** (`controller_360.svg`) como **DualShock 4** (`controller_DS4.svg`).
-- Compatibilidad total con modos de emulación **Xbox 360**, **DualShock 4** y **Mixto** (mitad Xbox 360 y mitad DS4 en múltiplos pares: 2, 4, 6, 8, 10, 12).
+### 8. Diagramas Vectoriales Interactivos y LEDs Reactivos
+- Diagramas vectoriales de alta fidelidad para **Xbox 360**, **DualShock 4**, **DualSense** y **Switch 2 Pro**.
 - **Mapeo por Clic**: Haz clic directo sobre cualquier botón o palanca del dibujo del mando para iniciar su asignación instantánea.
 - **LEDs Reactivos Glow**: Cada botón, gatillo, cruceta o movimiento de stick se ilumina en tiempo real al pulsarlo en tu mando físico.
-- **Halo de Asignación**: Indicador visual pulsante sobre el componente que está esperando que presiones un botón o tecla.
 
-### 6. Calibración Especializada de Gatillos y Sticks
-- **Sub-pestaña `Triggers` (Gatillos LT / RT)**:
-  - Gráfica cuadrática de respuesta en tiempo real (DI vs XI).
-  - Ajustes de **Dead Zone (Zona Muerta)**, **Anti-Dead Zone**, **Sensibilidad** e **Inversión**.
-- **Sub-pestaña `Sticks` (Sticks Izquierdo y Derecho)**:
-  - Visualizador cartesiano 2D con retícula, punto verde de posición actual, y círculos de Dead Zone y Anti-Dead Zone.
-  - Gráfica de curva de sensibilidad de respuesta angular y magnitud.
-  - Controles de **Dead Zone**, **Anti-Dead Zone**, **Sensibilidad**, **Invertir Eje X** e **Invertir Eje Y**.
-- **Entrada Numérica Dual**: Cada parámetro cuenta con un slider de pasos enteros y un campo numérico para ingresar valores exactos o decimales con `%`.
+### 9. Calibración Especializada de Gatillos y Sticks
+- **Sub-pestaña `Triggers` (Gatillos LT / RT / ZL / ZR / L2 / R2)**: Curva cuadrática de respuesta en tiempo real, Dead Zone, Anti-Dead Zone, Sensibilidad e Inversión.
+- **Sub-pestaña `Sticks` (Sticks Izquierdo y Derecho)**: Visualizador cartesiano 2D interactivo con retícula, posición actual, círculos de Dead Zone y Anti-Dead Zone, curva de sensibilidad radial e inversión X/Y.
 
-### 7. Productividad y Utilidades
-- **Botón `...` (Captura Rápida / Record)**: Presiónalo y oprime el botón o eje de tu mando para mapearlo al instante sin buscarlo en listas.
-- **Botón `📋 Copiar Mapeo a...`**: Duplica la configuración de botones y calibración hacia otro mando (o a todos los demás) sin sobreescribir el periférico asignado a cada uno.
-- **Botón `🎮 Abrir joy.cpl`**: Acceso directo al panel de dispositivos de juego nativo de Windows.
-- **Inspección de Hardware**: Consulta VID, PID, GUID SDL, Instance ID y tipo de conexión (USB/BT).
+### 10. Soporte Multi-Teclado Independiente (Zero Cross-Talk)
+- Conecta múltiples teclados físicos USB, Bluetooth o integrados de laptop y asígnalos a mandos virtuales de jugadores separados sin interferencia entre teclas, gracias a Windows Raw Input.
 
 ---
 
 ## 📋 Requisitos del Sistema
 
-### Obligatorios:
-- **Windows 10 o Windows 11 (64-bit)**.
-- **Controlador ViGEmBus**: Necesario para crear los mandos virtuales de Xbox 360 en el sistema.
-  - Descarga oficial: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
+### Sistema Operativo:
+- **Windows 10 / 11 (64-bit)** (Soportado actualmente)
+- **Linux (x86_64)** (*Próximamente mediante USB/IP*)
 
-### Opcionales:
-- **Nefarius HidHide**: Recomendado si vas a jugar títulos que detectan periféricos DirectInput genéricos simultáneamente con mandos de Xbox 360, evitando la doble pulsación.
+### Controladores de Emulación Requeridos:
+Elige uno de los dos controladores soportados:
+1. **Controlador VIIPER (Por defecto / Multiplataforma)**:
+   - El ejecutable `bin/viiper.exe` ya viene preempaquetado con j360More.
+   - Requiere la instalación del driver **usbip-win2** en Windows (`C:\Program Files\USBip`).
+   - Descarga oficial: [usbip-win2 Releases (GitHub)](https://github.com/vadimgrn/usbip-win2/releases)
+2. **Controlador ViGEmBus (Solo Windows)**:
+   - Requiere el controlador **ViGEmBus** instalado en Windows.
+   - Descarga oficial: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
+
+### Opcional:
+- **Nefarius HidHide**: Evita la doble entrada en juegos cuando se utilizan periféricos físicos DirectInput.
   - Descarga oficial: [HidHide Releases (GitHub)](https://github.com/nefarius/HidHide/releases)
 
 ---
@@ -116,13 +128,12 @@ python gui_app.py
 
 ## 📦 Compilación a Ejecutable (.exe)
 
-Para generar el ejecutable standalone portátil (`dist\j360More.exe`) con icono oficial y sin consolas emergentes:
+Para compilar el ejecutable portable standalone (`dist\j360More.exe`) con icono oficial y el demonio VIIPER preempaquetado:
 
-```powershell
-pyinstaller --noconfirm --onefile --windowed --noupx --name "j360More" --icon "assets\icon.ico" --add-data "assets;assets" --collect-all "vgamepad" --collect-all "resvg_py" gui_app.py
+```cmd
+build.bat
 ```
-
-El binario compilado se ubicará en `dist\j360More.exe` listo para ejecutarse de forma independiente junto a `config_mapping.json`.
+Selecciona la opción `[1]` para Ejecutable Único o `[2]` para Carpeta Distribuida.
 
 ---
 
@@ -135,6 +146,8 @@ xbox_multi_emulator/
 │   ├── icon.ico                # Icono multirresolución compilado de Windows
 │   ├── controller.svg          # Diagrama vectorial del mando Xbox 360
 │   └── controller_render.png   # Render de alta resolución
+├── bin/                        # Binarios auxiliares del backend
+│   └── viiper.exe              # Servidor de emulación multiplataforma VIIPER (USB/IP)
 ├── docs/                       # Página web oficial para GitHub Pages (Bilingüe)
 │   ├── assets/                 # Recursos gráficos web
 │   ├── index.html              # Landing page principal
@@ -144,12 +157,15 @@ xbox_multi_emulator/
 │   ├── j360More.exe            # Ejecutable portable standalone
 │   └── config_mapping.json     # Mapeo persistente de controles
 ├── config_mapping.json         # Configuración base en JSON
-├── driver_manager.py           # Administrador de controladores ViGEmBus e HidHide
+├── driver_manager.py           # Administrador de detección de ViGEmBus, VIIPER e HidHide
 ├── emulator.py                 # Punto de entrada y modos consola/test
-├── emulator_engine.py          # Motor de emulación a 120Hz con vgamepad
+├── emulator_engine.py          # Motor de emulación híbrido a 120Hz (ViGEmBus y VIIPER)
 ├── gui_app.py                  # Interfaz gráfica principal Tkinter/TTK
 ├── i18n.py                     # Módulo de internacionalización (Español / Inglés)
-├── input_devices.py            # Detección SDL2 en caliente y correlación PnP
+├── input_devices.py            # Detección SDL2 en caliente, correlación PnP y exclusión de virtuales
+├── raw_keyboard.py             # Gestor de multi-teclado Raw Input (Zero Cross-Talk)
+├── viiper_backend.py           # Cliente IPC/TCP nativo para VIIPER (Xbox 360, DS4, PS5, Switch 2)
+├── version_info.txt            # Metadatos del ejecutable y derechos de autor
 └── requirements.txt            # Dependencias de Python
 ```
 
@@ -157,6 +173,8 @@ xbox_multi_emulator/
 
 ## 📄 Licencia y Créditos
 - **Creador y Desarrollador Principal**: **JuanJSAR** ([@JuanJSAR93](https://github.com/JuanJSAR93))
-- Emulación del bus de control virtual impulsada por **ViGEmBus** y **HidHide** creados por Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
-- Soporte para detección en caliente y periféricos provisto por **pygame-ce** (SDL2).
+- **VIIPER**: Desarrollado por Alia5 ([VIIPER en GitHub](https://github.com/Alia5/VIIPER)), posibilitando la emulación multiplataforma de mandos USB virtuales mediante USB/IP.
+- **usbip-win2**: Desarrollado por vadimgrn ([usbip-win2 en GitHub](https://github.com/vadimgrn/usbip-win2)).
+- **ViGEmBus e HidHide**: Creados por Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
+- **pygame-ce (SDL2)**: Detección en caliente y lectura de eventos de periféricos.
 - Diseñado para entusiastas de juegos locales multijugador en PC de todo el mundo.

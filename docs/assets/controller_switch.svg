@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="switchBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d333b"/>
+      <stop offset="50%" stop-color="#22272e"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="neonRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4b55"/>
+      <stop offset="100%" stop-color="#e01124"/>
+    </linearGradient>
+    <linearGradient id="neonBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#0080ff"/>
+    </linearGradient>
+    <filter id="switchGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Switch Pro Contoured Outer Shell -->
+  <path d="M 230,120 C 310,110 490,110 570,120 C 650,130 710,180 725,270 C 740,360 715,480 680,540 C 660,570 630,565 605,525 C 570,470 550,380 520,340 C 480,310 440,315 400,315 C 360,315 320,310 280,340 C 250,380 230,470 195,525 C 170,565 140,570 120,540 C 85,480 60,360 75,270 C 90,180 150,130 230,120 Z" fill="url(#switchBodyGrad)" stroke="#444c56" stroke-width="4"/>
+
+  <!-- Grip texture overlays -->
+  <path d="M 120,360 C 130,440 160,510 190,520 C 170,480 150,420 145,360 Z" fill="#1c2128" opacity="0.6"/>
+  <path d="M 680,360 C 670,440 640,510 610,520 C 630,480 650,420 655,360 Z" fill="#1c2128" opacity="0.6"/>
+
+  <!-- Left Analog Stick (Asymmetric, Top-Left) -->
+  <circle cx="235" cy="230" r="50" fill="#0d1117" stroke="#30363d" stroke-width="4"/>
+  <circle cx="235" cy="230" r="38" fill="#21262d" stroke="url(#neonBlue)" stroke-width="3" filter="url(#switchGlow)"/>
+  <circle cx="235" cy="230" r="16" fill="#161b22"/>
+
+  <!-- Directional Pad (Bottom-Left) -->
+  <circle cx="310" cy="365" r="52" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+  <!-- D-Pad cross -->
+  <path d="M 298,325 L 322,325 L 322,353 L 350,353 L 350,377 L 322,377 L 322,405 L 298,405 L 298,377 L 270,377 L 270,353 L 298,353 Z" fill="#30363d" stroke="#484f58" stroke-width="2"/>
+
+  <!-- Right Action Buttons (Top-Right, Nintendo Layout: X-top, A-right, B-bottom, Y-left) -->
+  <circle cx="575" cy="230" r="54" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+  <!-- Button X (Up) -->
+  <circle cx="575" cy="190" r="15" fill="#21262d" stroke="#ff4b55" stroke-width="2"/>
+  <text x="575" y="196" fill="#ff4b55" font-size="15" font-weight="900" font-family="Arial" text-anchor="middle">X</text>
+  <!-- Button A (Right) -->
+  <circle cx="615" cy="230" r="15" fill="#21262d" stroke="#ff4b55" stroke-width="2"/>
+  <text x="615" y="236" fill="#ff4b55" font-size="15" font-weight="900" font-family="Arial" text-anchor="middle">A</text>
+  <!-- Button B (Down) -->
+  <circle cx="575" cy="270" r="15" fill="#21262d" stroke="#ff4b55" stroke-width="2"/>
+  <text x="575" y="276" fill="#ff4b55" font-size="15" font-weight="900" font-family="Arial" text-anchor="middle">B</text>
+  <!-- Button Y (Left) -->
+  <circle cx="535" cy="230" r="15" fill="#21262d" stroke="#ff4b55" stroke-width="2"/>
+  <text x="535" y="236" fill="#ff4b55" font-size="15" font-weight="900" font-family="Arial" text-anchor="middle">Y</text>
+
+  <!-- Right Analog Stick (Asymmetric, Bottom-Right) -->
+  <circle cx="495" cy="365" r="50" fill="#0d1117" stroke="#30363d" stroke-width="4"/>
+  <circle cx="495" cy="365" r="38" fill="#21262d" stroke="url(#neonRed)" stroke-width="3" filter="url(#switchGlow)"/>
+  <circle cx="495" cy="365" r="16" fill="#161b22"/>
+
+  <!-- Center Buttons: Minus (-), Plus (+), Capture, Home -->
+  <!-- Minus (-) -->
+  <circle cx="340" cy="215" r="11" fill="#30363d" stroke="#484f58" stroke-width="1.5"/>
+  <rect x="334" y="213" width="12" height="4" fill="#f0f6fc"/>
+
+  <!-- Plus (+) -->
+  <circle cx="460" cy="215" r="11" fill="#30363d" stroke="#484f58" stroke-width="1.5"/>
+  <path d="M 458,209 L 462,209 L 462,213 L 466,213 L 466,217 L 462,217 L 462,221 L 458,221 L 458,217 L 454,217 L 454,213 L 458,213 Z" fill="#f0f6fc"/>
+
+  <!-- Capture (Square) -->
+  <rect x="355" y="270" width="18" height="18" rx="4" fill="#30363d" stroke="#484f58" stroke-width="1.5"/>
+  <circle cx="364" cy="279" r="4" fill="#f0f6fc"/>
+
+  <!-- Home (Circle with House) -->
+  <circle cx="445" cy="279" r="12" fill="#30363d" stroke="#38bdf8" stroke-width="2" filter="url(#switchGlow)"/>
+  <path d="M 445,273 L 450,278 L 448,278 L 448,284 L 442,284 L 442,278 L 440,278 Z" fill="#38bdf8"/>
+
+  <!-- Battery / Player LEDs (4 dots in middle) -->
+  <circle cx="375" cy="370" r="3" fill="#10cf65" filter="url(#switchGlow)"/>
+  <circle cx="392" cy="370" r="3" fill="#30363d"/>
+  <circle cx="408" cy="370" r="3" fill="#30363d"/>
+  <circle cx="425" cy="370" r="3" fill="#30363d"/>
+
+  <!-- Bumpers and Triggers (L, ZL, R, ZR) outline -->
+  <path d="M 180,105 C 230,100 270,105 285,120 L 265,138 C 240,128 200,128 170,135 Z" fill="#21262d" stroke="#484f58" stroke-width="2"/>
+  <path d="M 620,105 C 570,100 530,105 515,120 L 535,138 C 560,128 600,128 630,135 Z" fill="#21262d" stroke="#484f58" stroke-width="2"/>
+</svg>

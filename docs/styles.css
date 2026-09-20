@@ -1661,6 +1661,18 @@ html, body {
   box-shadow: 0 16px 40px rgba(56, 189, 248, 0.25), 0 0 20px rgba(56, 189, 248, 0.15);
 }
 
+.dual-controller-card.dualsense-card:hover {
+  transform: translateY(-6px);
+  border-color: #818cf8;
+  box-shadow: 0 16px 40px rgba(129, 140, 248, 0.25), 0 0 20px rgba(129, 140, 248, 0.15);
+}
+
+.dual-controller-card.switch-card:hover {
+  transform: translateY(-6px);
+  border-color: #ff4b55;
+  box-shadow: 0 16px 40px rgba(255, 75, 85, 0.25), 0 0 20px rgba(255, 75, 85, 0.15);
+}
+
 .dual-controller-header {
   display: flex;
   justify-content: space-between;
@@ -1687,6 +1699,18 @@ html, body {
   background: rgba(56, 189, 248, 0.15);
   color: #38bdf8;
   border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.dual-badge.dualsense-badge {
+  background: rgba(129, 140, 248, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(129, 140, 248, 0.4);
+}
+
+.dual-badge.switch-badge {
+  background: rgba(255, 75, 85, 0.15);
+  color: #ff4b55;
+  border: 1px solid rgba(255, 75, 85, 0.4);
 }
 
 .dual-count-pill {
@@ -1726,6 +1750,45 @@ html, body {
 .ds4-card:hover .dual-controller-svg {
   transform: scale(1.05);
   filter: drop-shadow(0 12px 28px rgba(56, 189, 248, 0.35));
+}
+
+.dualsense-card:hover .dual-controller-svg {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 28px rgba(129, 140, 248, 0.35));
+}
+
+.switch-card:hover .dual-controller-svg {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 28px rgba(255, 75, 85, 0.35));
+}
+
+.driver-purpose-box.viiper {
+  border-left: 3px solid #bc8cff;
+  background: rgba(188, 140, 255, 0.05);
+}
+
+.btn-driver-download.viiper {
+  background: rgba(188, 140, 255, 0.12);
+  color: #d8b4fe;
+  border: 1px solid rgba(188, 140, 255, 0.35);
+}
+
+.btn-driver-download.viiper:hover {
+  background: rgba(188, 140, 255, 0.25);
+  border-color: #bc8cff;
+  color: #fff;
+}
+
+.driver-badge-tag.default-tag {
+  background: rgba(16, 207, 101, 0.15);
+  color: var(--xbox-neon);
+  border: 1px solid rgba(16, 207, 101, 0.35);
+}
+
+.driver-badge-tag.alternative-tag {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+  border: 1px solid rgba(88, 166, 255, 0.35);
 }
 
 .dual-controller-title {

@@ -1,4 +1,4 @@
-# j360More - Multi-Gamepad Emulator (1 to 12 Xbox 360 Controllers)
+# j360More - Multi-Gamepad Emulator (Xbox 360, PS4, PS5 & Switch 2 Pro)
 
 [📖 Leer en Español](README_es.md) | [Official Releases](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Web Documentation](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
@@ -7,7 +7,9 @@
 > Downloads & Releases: [Official Releases](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases)  
 > Web Documentation (GitHub Pages): `/docs` folder
 
-**j360More** is an advanced multi-controller virtual gamepad solution developed by **JuanJSAR**. Supporting both **VIIPER** (multiplatform USB/IP) and **ViGEmBus** backends, it features a modern bilingual interface (**English and Spanish**), an intuitive layout inspired by x360ce, support for up to **12 simultaneous virtual controllers** (**Xbox 360**, **DualShock 4**, **DualSense (PS5)**, and **Nintendo Switch 2 Pro**), and optional integration with **Nefarius HidHide** to eliminate the double-input issue in PC games and emulators.
+**j360More** is an advanced multi-controller virtual gamepad solution developed by **JuanJSAR**. Supporting both **VIIPER** (multiplatform USB/IP) and **ViGEmBus** backends, it features a modern bilingual interface (**English and Spanish**), an intuitive layout inspired by x360ce, support for up to **12 simultaneous virtual controllers** (**Xbox 360**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense**, and **Nintendo Switch 2 Pro**), and optional integration with **Nefarius HidHide** to eliminate the double-input issue in PC games and emulators.
+
+Designed with cross-platform architecture: running natively on **Windows (10/11)** with full **Linux support coming soon** powered by VIIPER and the standard USB/IP protocol!
 
 Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, generic arcade sticks, steering wheels, keyboard and mouse) to each virtual controller, calibrate analog response curves in real time, and monitor reactive input feedback directly on an interactive vector diagram.
 
@@ -18,7 +20,7 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 | Xbox 360 Mapping | DualShock 4 Mapping |
 |:---:|:---:|
 | [![Xbox 360 Mapping](assets/screenshot_main.png)](assets/screenshot_main.png) | [![DualShock 4 Mapping](assets/screenshot_main2.png)](assets/screenshot_main2.png) |
-| **Analog Sticks Calibration** | **Settings & HidHide Integration** |
+| **Analog Sticks Calibration** | **Settings & Driver Selection** |
 | [![Analog Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Settings](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
 
 ---
@@ -29,61 +31,71 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 - Adjust the number of active virtual gamepads (from 1 to 12) from the **`⚙ Settings...`** modal.
 - Dedicated, independent tabs for each player (`Controller 1` to `Controller 12`).
 
-### 2. Built-in Bilingual Interface (English & Spanish)
-- Complete, 100% localization for every menu, dialog, system prompt, device table, and hardware inspection view.
+### 2. Dual Emulation Driver Backends (VIIPER & ViGEmBus)
+- **VIIPER Driver Backend (Recommended / Default for new installs)**:
+  - Modern cross-platform architecture utilizing USB/IP.
+  - Bundled directly inside `bin/viiper.exe` — launched and managed automatically by the application.
+  - Unlocks emulation of **Xbox 360**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)**, and **Nintendo Switch 2 Pro (`ns2pro`)**.
+  - Paves the way for seamless **Linux support (coming soon)** using the Linux kernel's built-in `usbip` modules.
+- **ViGEmBus Driver Backend**:
+  - Legacy Windows kernel-mode driver supporting **Xbox 360**, **DualShock 4**, and **Mixed** modes.
+  - 100% backward-compatible: existing configuration files keep ViGEmBus automatically unless changed by the user.
+
+### 3. Multi-Console Emulation Support
+- **Xbox 360 (XInput)**: The ubiquitous PC standard for Steam, Game Pass, and modern games.
+- **PlayStation 4 (DualShock 4)**: DirectInput / Sony HID with native PlayStation button icons in supported games.
+- **PlayStation 5 (DualSense)**: Full next-gen Sony layout emulation with bumper/trigger responsiveness.
+- **Nintendo Switch 2 Pro (`ns2pro`)**: Authentic Nintendo layout (B/A, Y/X, L/ZL, R/ZR, -, +, Home), normalized $0 \dots 4095$ range with precision centering at $2048$.
+- **Mixed Mode**: Automatically emulates half as Xbox 360 and half as PlayStation/Nintendo gamepads for mixed multiplayer setups.
+
+### 4. Cross-Platform Vision: Windows & Linux (Coming Soon)
+- **Windows**: Ready out of the box with `usbip-win2` or `ViGEmBus`.
+- **Linux (Coming Soon)**: Using native Linux USB/IP kernel modules (`usbip` / `vhci-hcd`) and the Linux build of the VIIPER daemon.
+
+### 5. Smart Activation & Virtual Controller Filtering
+- **Zero Phantom Controllers**: Only assigned and enabled controller tabs spawn virtual gamepads.
+- **Self-Detection Isolation**: The device manager automatically recognizes and ignores virtual gamepads created by the emulator (Xbox 360, DS4, DualSense, Switch 2 Pro, and USB/IP endpoints), preventing accidental input loops or false physical devices.
+
+### 6. Built-in Bilingual Interface (English & Spanish)
+- Complete localization for every menu, dialog, system prompt, device table, and hardware inspection view.
 - Easily toggle languages at any time via **`⚙ Settings...`** -> **`Interface Language`**.
 
-### 3. Smart Activation & Mapping Protection
-- If a controller tab is set to `-- None / Disconnected --`:
-  - The **`[ ] Enabled`** checkbox is automatically disabled and set to `False`.
-  - All mapping inputs (comboboxes, quick-record `...` buttons, calibration curves, canvas) are **dimmed and disabled**.
-  - **No phantom controllers**: ViGEmBus only instantiates virtual gamepads on Windows that have a physical device assigned and enabled.
-  - If you attempt to start emulation without any assigned peripherals, the app notifies you and avoids creating redundant devices.
-- Selecting any physical device (Gamepad, Keyboard, or Mouse) immediately reactivates all controls and the enable checkbox.
-
-### 4. Optional Nefarius HidHide Integration (Anti Double-Input)
+### 7. Optional Nefarius HidHide Integration (Anti Double-Input)
 - **Completely Optional**: If HidHide is not installed on your system, j360More works normally for virtual controller emulation.
-- **Gentle Notification**: If HidHide is absent, a non-intrusive prompt appears with a **`[ ] Do not show this warning again`** checkbox.
-- **Custom Path**: In `⚙ Settings...`, check driver status, toggle global cloaking, or browse directly to `HidHideCLI.exe` using **`📂 Browse...`**.
-- **Management in `🎮 DirectInput Devices...`**:
-  - Device list with dedicated **`HidHide`** status column (`🚫 Cloaked` vs `👁 Visible`).
-  - **`🔒 Cloak on Emulation`** and **`🔓 Keep Visible`** toolbar buttons (safely disabled if HidHide is not installed).
-  - **Dynamic Cloaking**: Clicking **`▶ Start Emulation`** immediately cloaks selected physical devices for all Windows applications, allowing **only j360More** to read them (via automatic process whitelisting). Stopping emulation (or closing the app) instantly restores visibility system-wide.
+- **Dynamic Cloaking**: Clicking **`▶ Start Emulation`** cloaks selected physical devices for all Windows applications, allowing **only j360More** to read them (via automatic process whitelisting). Stopping emulation instantly restores visibility.
 
-### 5. Interactive Vector Diagrams (Xbox 360 & DualShock 4)
-- High-fidelity vector rendering for both **Xbox 360** (`controller_360.svg`) and **DualShock 4** (`controller_DS4.svg`) controllers.
-- Full support for **Xbox 360**, **DualShock 4**, and **Mixed** (half Xbox 360, half DS4 in even multiples: 2, 4, 6, 8, 10, 12) emulation modes.
+### 8. Interactive Vector Diagrams & Real-Time LEDs
+- High-fidelity vector rendering for both **Xbox 360** and **DualShock 4 / PS5 / Switch** layouts.
 - **Click-to-Map**: Click directly on any button or stick on the controller illustration to trigger instant button mapping.
 - **Reactive Glow LEDs**: Every button press, trigger pull, D-pad direction, or stick motion illuminates in real time.
-- **Assignment Halo**: A pulsing visual indicator highlights the exact component waiting for physical input.
 
-### 6. Specialized Analog Calibration for Triggers & Sticks
-- **`Triggers` Tab (LT / RT)**:
-  - Real-time quadratic input response curve (DirectInput vs XInput).
-  - Configurable **Dead Zone**, **Anti-Dead Zone**, **Sensitivity**, and **Invert**.
-- **`Sticks` Tab (Left & Right Sticks)**:
-  - 2D Cartesian display with grid, live green position indicator, Dead Zone circle, and Anti-Dead Zone circle.
-  - Radial sensitivity response curve visualization.
-  - Controls for **Dead Zone**, **Anti-Dead Zone**, **Sensitivity**, **Invert X Axis**, and **Invert Y Axis**.
-- **Dual Numeric & Slider Input**: All parameters support both slider adjustment and direct numeric input (including percentage values `%`).
+### 9. Specialized Analog Calibration for Triggers & Sticks
+- **`Triggers` Tab (LT / RT / ZL / ZR / L2 / R2)**: Real-time quadratic input response curves with Dead Zone, Anti-Dead Zone, Sensitivity, and Invert controls.
+- **`Sticks` Tab (Left & Right Sticks)**: 2D Cartesian display with grid, live green position indicator, Dead Zone circle, Anti-Dead Zone circle, radial sensitivity response curve, and X/Y inversion.
 
-### 7. Productivity & Utilities
-- **`...` Quick-Record Button**: Click and press the button/axis on your physical controller to assign it instantly without searching lists.
-- **`📋 Copy Mapping to...` Button**: Duplicate button configuration and calibration to another controller tab (or all controllers) without overwriting assigned physical devices.
-- **`🎮 Open joy.cpl` Button**: Direct shortcut to the native Windows Game Controllers control panel.
-- **Hardware Inspector**: View vendor name, product name, VID, PID, SDL GUID, Instance ID, and connection type (USB/BT).
+### 10. Independent Multi-Keyboard Support (Zero Cross-Talk)
+- Connect multiple physical USB/Bluetooth keyboards and map them to separate player slots without keystroke bleeding, powered by Windows Raw Input.
 
 ---
 
 ## 📋 System Requirements
 
-### Mandatory:
-- **Windows 10 or Windows 11 (64-bit)**.
-- **ViGEmBus Driver**: Required to spawn virtual Xbox 360 gamepads in Windows.
-  - Official Download: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
+### Operating System:
+- **Windows 10 / 11 (64-bit)** (Supported now)
+- **Linux (x86_64)** (*Coming soon via USB/IP*)
+
+### Driver Requirements:
+Choose one of the two supported backends:
+1. **VIIPER Backend (Default / Multiplatform)**:
+   - `bin/viiper.exe` is already bundled with the application.
+   - Requires the **usbip-win2** driver installed on Windows (`C:\Program Files\USBip`).
+   - Official Download: [usbip-win2 Releases (GitHub)](https://github.com/vadimgrn/usbip-win2/releases)
+2. **ViGEmBus Backend (Windows Only)**:
+   - Requires the **ViGEmBus** driver installed on Windows.
+   - Official Download: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
 
 ### Optional:
-- **Nefarius HidHide**: Recommended when playing games that detect generic DirectInput devices alongside virtual Xbox 360 pads, preventing double-input conflicts.
+- **Nefarius HidHide**: Prevents double-input in games when using physical DirectInput controllers.
   - Official Download: [HidHide Releases (GitHub)](https://github.com/nefarius/HidHide/releases)
 
 ---
@@ -116,13 +128,12 @@ python gui_app.py
 
 ## 📦 Building Standalone Executable (.exe)
 
-To build the standalone portable executable (`dist\j360More.exe`) with the official icon and no console flashing:
+To build the standalone portable executable (`dist\j360More.exe`) with the official icon and pre-packaged VIIPER daemon:
 
-```powershell
-pyinstaller --noconfirm --onefile --windowed --noupx --name "j360More" --icon "assets\icon.ico" --add-data "assets;assets" --collect-all "vgamepad" --collect-all "resvg_py" gui_app.py
+```cmd
+build.bat
 ```
-
-The output executable will be generated at `dist\j360More.exe`, ready to run alongside `config_mapping.json`.
+Select option `[1]` for Single Portable Executable or option `[2]` for Distributed Folder.
 
 ---
 
@@ -135,6 +146,8 @@ xbox_multi_emulator/
 │   ├── icon.ico                # Multi-resolution compiled Windows icon
 │   ├── controller.svg          # Xbox 360 vector diagram
 │   └── controller_render.png   # High-resolution render
+├── bin/                        # Auxiliary backend binaries
+│   └── viiper.exe              # VIIPER cross-platform USB/IP emulation server
 ├── docs/                       # Official GitHub Pages website (Bilingual)
 │   ├── assets/                 # Web visual assets
 │   ├── index.html              # Main landing page
@@ -144,12 +157,15 @@ xbox_multi_emulator/
 │   ├── j360More.exe            # Standalone portable executable
 │   └── config_mapping.json     # Persistent controller mapping configuration
 ├── config_mapping.json         # Base configuration in JSON
-├── driver_manager.py           # ViGEmBus and HidHide driver manager
+├── driver_manager.py           # ViGEmBus, VIIPER and HidHide driver detection
 ├── emulator.py                 # Entry point & console/test modes
-├── emulator_engine.py          # 120Hz emulation loop using vgamepad
+├── emulator_engine.py          # 120Hz hybrid emulation loop (ViGEmBus & VIIPER)
 ├── gui_app.py                  # Main Tkinter/TTK graphical user interface
 ├── i18n.py                     # Internationalization module (Spanish / English)
-├── input_devices.py            # SDL2 hotplug detection and PnP correlation
+├── input_devices.py            # SDL2 hotplug detection, PnP correlation and virtual device filtering
+├── raw_keyboard.py             # Multi-keyboard Raw Input manager (Zero Cross-Talk)
+├── viiper_backend.py           # Native VIIPER IPC/TCP client for Xbox 360, DS4, PS5 & Switch 2
+├── version_info.txt            # Executable metadata and copyright info
 └── requirements.txt            # Python dependencies
 ```
 
@@ -157,6 +173,8 @@ xbox_multi_emulator/
 
 ## 📄 License & Credits
 - **Creator & Lead Developer**: **JuanJSAR** ([@JuanJSAR93](https://github.com/JuanJSAR93))
-- Virtual gamepad emulation powered by **ViGEmBus** and **HidHide** created by Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
-- Hotplug detection and input handling provided by **pygame-ce** (SDL2).
+- **VIIPER**: Developed by Alia5 ([VIIPER on GitHub](https://github.com/Alia5/VIIPER)), enabling cross-platform virtual USB gamepad emulation via USB/IP.
+- **usbip-win2**: Developed by vadimgrn ([usbip-win2 on GitHub](https://github.com/vadimgrn/usbip-win2)).
+- **ViGEmBus & HidHide**: Created by Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
+- **pygame-ce (SDL2)**: Powering hot-plug detection and input handling.
 - Built for local multiplayer PC gaming enthusiasts worldwide.
