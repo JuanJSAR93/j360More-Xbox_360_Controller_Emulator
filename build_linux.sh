@@ -30,9 +30,11 @@ echo "[*] Instalando dependencias de Python..."
 pip3 install --upgrade pip
 pip3 install -r requirements.txt
 
-# 4. Limpiar compilaciones anteriores
+# 4. Limpiar compilaciones anteriores de Linux
 echo "[*] Limpiando carpetas temporales..."
-rm -rf build dist
+rm -rf build
+mkdir -p dist
+rm -f dist/j360More dist/*.tar.gz
 
 # 5. Compilar con PyInstaller en un solo binario
 echo "[*] Compilando ejecutable nativo de Linux (PyInstaller)..."

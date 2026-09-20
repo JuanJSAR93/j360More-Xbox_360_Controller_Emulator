@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+# Evitar prompts interactivos durante apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar dependencias para Tkinter, headers de Linux para evdev/pynput, y empaquetado
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tk8.6 \
+    libtk8.6 \
+    binutils \
+    build-essential \
+    linux-libc-dev \
+    tar \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar e instalar requirements.txt
+WORKDIR /workspace
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.txt
+
+CMD ["bash", "build_linux.sh"]

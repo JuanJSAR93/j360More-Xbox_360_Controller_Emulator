@@ -5,7 +5,12 @@ import json
 import signal
 import argparse
 from typing import Dict, List, Optional, Any
-import vgamepad as vg
+try:
+    import vgamepad as vg
+    HAS_VGAMEPAD = True
+except Exception:
+    vg = None
+    HAS_VGAMEPAD = False
 from pynput import keyboard
 
 BUTTON_MAP = {

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import json
@@ -8,6 +9,7 @@ import threading
 import subprocess
 import webbrowser
 import urllib.request
+from typing import Optional, List, Dict, Any, Tuple, Union
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
