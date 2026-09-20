@@ -394,7 +394,7 @@ class EmulatorEngine:
                     continue
 
                 dev_id = cfg.get("physical_device_id", "none")
-                joy_state = self.device_manager.read_physical_state(dev_id)
+                joy_state = self.device_manager.read_physical_state(dev_id, pump=False)
                 mappings = cfg.get("mappings", {})
                 calib = cfg.get("calibration", {})
 

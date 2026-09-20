@@ -443,9 +443,10 @@ class DeviceManager:
         except Exception as e:
             print(f"[!] Error en auto-reconexión selectiva: {e}")
 
-    def read_physical_state(self, dev_id: str) -> Dict[str, Any]:
+    def read_physical_state(self, dev_id: str, pump: bool = True) -> Dict[str, Any]:
         """Lee el estado crudo actual de botones, ejes y cruceta de un dispositivo."""
-        self.pump_events()
+        if pump:
+            self.pump_events()
         state = {
             "buttons": {},
             "axes": {},

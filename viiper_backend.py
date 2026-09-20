@@ -167,7 +167,7 @@ class ViiperClient:
             startupinfo.wShowWindow = 0 # SW_HIDE
 
         self.server_proc = subprocess.Popen(
-            [exe_path, 'server', '--log.level=warn'],
+            [exe_path, 'server', '--log.level=warn', '--usb.write-batch-flush-interval=8ms'],
             env=os.environ,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -264,62 +264,47 @@ class ViiperClient:
         }
         return True
 
-    def send_xbox360_state(self, slot: int, buttons: int, lt: int, rt: int, lx: int, ly: int, rx: int, ry: int):
+    def _send_stream_pkt(self, slot: int, pkt: bytes):
         dev = self.devices.get(slot)
         if not dev or dev.get('socket') is None:
             return
-        # VIIPER Xbox 360: 20 bytes (<IBBhhhh6s)
-        # Buttons uint32, LT uint8, RT uint8, LX, LY, RX, RY int16, Reserved 6s
-        pkt = struct.pack('<IBBhhhh6s', buttons, lt, rt, lx, ly, rx, ry, b'\x00' * 6)
+        now = time.time()
+        # Optimización crítica: Evitar saturar el bus USB/IP con paquetes idénticos.
+        # Solo retransmitir si el estado cambió o si transcurrió 1.0s (heartbeat).
+        if dev.get('last_pkt') == pkt and (now - dev.get('last_send_time', 0.0)) < 1.0:
+            return
+        dev['last_pkt'] = pkt
+        dev['last_send_time'] = now
         try:
             dev['socket'].sendall(pkt)
         except Exception:
             pass
 
+    def send_xbox360_state(self, slot: int, buttons: int, lt: int, rt: int, lx: int, ly: int, rx: int, ry: int):
+        # VIIPER Xbox 360: 20 bytes (<IBBhhhh6s)
+        pkt = struct.pack('<IBBhhhh6s', buttons, lt, rt, lx, ly, rx, ry, b'\x00' * 6)
+        self._send_stream_pkt(slot, pkt)
+
     def send_ds4_state(self, slot: int, buttons: int, dpad: int, l2: int, r2: int, lx: int, ly: int, rx: int, ry: int):
-        dev = self.devices.get(slot)
-        if not dev or dev.get('socket') is None:
-            return
         # VIIPER DS4: 31 bytes (<bbbbHBBB22s)
-        # LX, LY, RX, RY int8 (-128..127)
-        # Buttons uint16, DPad uint8 (0x01 U, 0x02 D, 0x04 L, 0x08 R), L2 uint8, R2 uint8 (0..255)
         # Default IMU AccelZ = -5023
         imu_touch = bytearray(22)
         struct.pack_into('<h', imu_touch, 16, -5023)
         pkt = struct.pack('<bbbbHBBB22s', lx, ly, rx, ry, buttons, dpad, l2, r2, bytes(imu_touch))
-        try:
-            dev['socket'].sendall(pkt)
-        except Exception:
-            pass
+        self._send_stream_pkt(slot, pkt)
 
     def send_dualsense_state(self, slot: int, buttons: int, dpad: int, l2: int, r2: int, lx: int, ly: int, rx: int, ry: int):
-        dev = self.devices.get(slot)
-        if not dev or dev.get('socket') is None:
-            return
         # VIIPER DualSense: 33 bytes (<bbbbIBBB22s)
-        # LX, LY, RX, RY int8 (-128..127)
-        # Buttons uint32, DPad uint8, L2 uint8, R2 uint8 (0..255)
         # Default IMU AccelZ = -5023
         imu_touch = bytearray(22)
         struct.pack_into('<h', imu_touch, 16, -5023)
         pkt = struct.pack('<bbbbIBBB22s', lx, ly, rx, ry, buttons, dpad, l2, r2, bytes(imu_touch))
-        try:
-            dev['socket'].sendall(pkt)
-        except Exception:
-            pass
+        self._send_stream_pkt(slot, pkt)
 
     def send_ns2pro_state(self, slot: int, buttons: int, lx: int, ly: int, rx: int, ry: int):
-        dev = self.devices.get(slot)
-        if not dev or dev.get('socket') is None:
-            return
         # VIIPER Switch 2 Pro: 24 bytes (<IHHHHhhhhhh)
-        # Buttons uint32, LX, LY, RX, RY uint16 (0..4095, center 2048)
-        # AccelX, AccelY, AccelZ (int16), GyroX, GyroY, GyroZ (int16)
         pkt = struct.pack('<IHHHHhhhhhh', buttons, lx, ly, rx, ry, 0, 0, -4096, 0, 0, 0)
-        try:
-            dev['socket'].sendall(pkt)
-        except Exception:
-            pass
+        self._send_stream_pkt(slot, pkt)
 
     def stop(self):
         self.running = False
