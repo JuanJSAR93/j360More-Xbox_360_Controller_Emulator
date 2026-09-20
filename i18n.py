@@ -19,7 +19,7 @@ SUPPORTED_LANGUAGES = {
 
 STRINGS = {
     "es": {
-        "app_title": "j360More - Multi-Gamepad (1 a 12 Mandos) - por JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Multi-Gamepad (1 a 12 Mandos) - por JuanJSAR",
         "author_credit": "Desarrollado por JuanJSAR",
         "header_title": "j360More ({count} Mandos) - por JuanJSAR",
         "btn_devices": "🎮 Dispositivos DirectInput...",
@@ -434,7 +434,7 @@ STRINGS = {
         "virtual_controller_prefix": "Virtual",
     },
     "en": {
-        "app_title": "j360More - Multi-Gamepad (1 to 12 Controllers) - by JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Multi-Gamepad (1 to 12 Controllers) - by JuanJSAR",
         "author_credit": "Developed by JuanJSAR",
         "header_title": "j360More ({count} Controllers) - by JuanJSAR",
         "btn_devices": "🎮 DirectInput Devices...",
@@ -850,7 +850,7 @@ STRINGS = {
         "virtual_controller_prefix": "Virtual",
     },
     "fr": {
-        "app_title": "j360More - Multi-Gamepad (1 à 12 Manettes) - par JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Multi-Gamepad (1 à 12 Manettes) - par JuanJSAR",
         "author_credit": "Développé par JuanJSAR",
         "header_title": "j360More ({count} Manettes) - par JuanJSAR",
         "btn_devices": "🎮 Périphériques DirectInput...",
@@ -1146,7 +1146,7 @@ STRINGS = {
         "virtual_controller_prefix": "Virtuel",
     },
     "pt_BR": {
-        "app_title": "j360More - Multi-Gamepad (1 a 12 Controles) - por JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Multi-Gamepad (1 a 12 Controles) - por JuanJSAR",
         "author_credit": "Desenvolvido por JuanJSAR",
         "header_title": "j360More ({count} Controles) - por JuanJSAR",
         "btn_devices": "🎮 Dispositivos DirectInput...",
@@ -1442,7 +1442,7 @@ STRINGS = {
         "virtual_controller_prefix": "Virtual",
     },
     "de": {
-        "app_title": "j360More - Multi-Gamepad (1 bis 12 Controller) - von JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Multi-Gamepad (1 bis 12 Controller) - von JuanJSAR",
         "author_credit": "Entwickelt von JuanJSAR",
         "header_title": "j360More ({count} Controller) - von JuanJSAR",
         "btn_devices": "🎮 DirectInput-Geräte...",
@@ -1738,7 +1738,7 @@ STRINGS = {
         "virtual_controller_prefix": "Virtuell",
     },
     "it": {
-        "app_title": "j360More - Multi-Gamepad (da 1 a 12 Controller) - di JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Multi-Gamepad (da 1 a 12 Controller) - di JuanJSAR",
         "author_credit": "Sviluppato da JuanJSAR",
         "header_title": "j360More ({count} Controller) - di JuanJSAR",
         "btn_devices": "🎮 Periferiche DirectInput...",
@@ -2034,7 +2034,7 @@ STRINGS = {
         "virtual_controller_prefix": "Virtuale",
     },
     "ru": {
-        "app_title": "j360More - Мульти-геймпад (от 1 до 12 контроллеров) - автор JuanJSAR - ViGEmBus",
+        "app_title": "j360More - Мульти-геймпад (от 1 до 12 контроллеров) - автор JuanJSAR",
         "author_credit": "Разработано JuanJSAR",
         "header_title": "j360More ({count} геймпадов) - автор JuanJSAR",
         "btn_devices": "🎮 Устройства DirectInput...",
