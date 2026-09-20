@@ -26,7 +26,7 @@ from i18n import (
     canonicalize_mapping, localize_mapping
 )
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
@@ -157,6 +157,19 @@ DS4_CANVAS_POINTS = {
 }
 
 # Retrocompatibilidad
+# Coordenadas relativas en el canvas para Switch 2 Pro (350x275)
+NS2PRO_HITBOXES = dict(XBOX_HITBOXES)
+NS2PRO_HITBOXES["A"] = XBOX_HITBOXES["B"]  # Derecha
+NS2PRO_HITBOXES["B"] = XBOX_HITBOXES["A"]  # Abajo
+NS2PRO_HITBOXES["X"] = XBOX_HITBOXES["Y"]  # Arriba
+NS2PRO_HITBOXES["Y"] = XBOX_HITBOXES["X"]  # Izquierda
+
+NS2PRO_CANVAS_POINTS = dict(XBOX_CANVAS_POINTS)
+NS2PRO_CANVAS_POINTS["A"] = XBOX_CANVAS_POINTS["B"]
+NS2PRO_CANVAS_POINTS["B"] = XBOX_CANVAS_POINTS["A"]
+NS2PRO_CANVAS_POINTS["X"] = XBOX_CANVAS_POINTS["Y"]
+NS2PRO_CANVAS_POINTS["Y"] = XBOX_CANVAS_POINTS["X"]
+
 HITBOXES = XBOX_HITBOXES
 CANVAS_POINTS = XBOX_CANVAS_POINTS
 
@@ -346,10 +359,20 @@ class J360MoreApp:
         return get_target_name(lang, target, emulated_type)
 
     def _get_hitboxes(self, pad_id: Optional[int] = None) -> dict:
-        return DS4_HITBOXES if self.get_pad_emulated_type(pad_id) == "ds4" else XBOX_HITBOXES
+        t = self.get_pad_emulated_type(pad_id)
+        if t in ("ds4", "dualsense"):
+            return DS4_HITBOXES
+        elif t == "ns2pro":
+            return NS2PRO_HITBOXES
+        return XBOX_HITBOXES
 
     def _get_canvas_points(self, pad_id: Optional[int] = None) -> dict:
-        return DS4_CANVAS_POINTS if self.get_pad_emulated_type(pad_id) == "ds4" else XBOX_CANVAS_POINTS
+        t = self.get_pad_emulated_type(pad_id)
+        if t in ("ds4", "dualsense"):
+            return DS4_CANVAS_POINTS
+        elif t == "ns2pro":
+            return NS2PRO_CANVAS_POINTS
+        return XBOX_CANVAS_POINTS
 
     @property
     def current_lang(self) -> str:
@@ -542,7 +565,7 @@ class J360MoreApp:
 
     def _update_active_assets(self):
         emulated_type = self.config.get("emulated_type", "xbox360").lower()
-        if emulated_type == "ds4" and self.ctrl_ds4_base is not None:
+        if emulated_type in ("ds4", "dualsense") and self.ctrl_ds4_base is not None:
             self.controller_pil_hires = self.ctrl_ds4_hires
             self.controller_pil_base = self.ctrl_ds4_base
             self.controller_img_tk = self.ctrl_ds4_tk
@@ -556,15 +579,27 @@ class J360MoreApp:
             try:
                 with open(CONFIG_FILE, "r", encoding="utf-8-sig") as f:
                     data = json.load(f)
+                    # Regla de backend de drivers:
+                    if sys.platform != "win32":
+                        data["driver_backend"] = "viiper"
+                    elif "driver_backend" not in data or data["driver_backend"] != "viiper":
+                        data["driver_backend"] = "vigem"
+
+                    # Si está en ViGEmBus, solo se permiten xbox360, ds4 o mixed
+                    if data.get("driver_backend") == "vigem" and data.get("emulated_type") in ("dualsense", "ns2pro"):
+                        data["emulated_type"] = "xbox360"
+
                     if "language" not in data:
                         data["language"] = "es"
                     if "author" not in data:
                         data["author"] = "JuanJSAR"
                     if "max_controllers" not in data:
                         data["max_controllers"] = 8
+                    if "controllers" not in data or not isinstance(data["controllers"], dict):
+                        data["controllers"] = {}
                     for i in range(1, 13):
                         str_i = str(i)
-                        if str_i in data.get("controllers", {}):
+                        if str_i in data["controllers"]:
                             if "calibration" not in data["controllers"][str_i]:
                                 data["controllers"][str_i]["calibration"] = json.loads(json.dumps(DEFAULT_CALIBRATION))
                         else:
@@ -581,7 +616,17 @@ class J360MoreApp:
             except Exception as e:
                 print(f"[!] Error leyendo {CONFIG_FILE}: {e}")
 
-        cfg = {"version": "2.0", "author": "JuanJSAR", "language": "es", "max_controllers": 8, "games": [], "controllers": {}}
+        # Sin archivo previo (instalación limpia): por defecto VIIPER
+        cfg = {
+            "version": "2.0",
+            "author": "JuanJSAR",
+            "language": "es",
+            "max_controllers": 8,
+            "driver_backend": "viiper",
+            "emulated_type": "xbox360",
+            "games": [],
+            "controllers": {}
+        }
         for i in range(1, 13):
             cfg["controllers"][str(i)] = {
                 "name": f"Jugador {i}",
@@ -706,12 +751,20 @@ class J360MoreApp:
         for i in range(1, count + 1):
             tab = ttk.Frame(self.notebook, padding=4)
             base_text = self.t("tab_control", i=i)
+            pad_type = self.get_pad_emulated_type(i)
             if is_mixed:
-                pad_type = self.get_pad_emulated_type(i)
                 badge = "[Xbox]" if pad_type == "xbox360" else "[DS4]"
                 tab_text = f"{base_text} {badge}"
             else:
-                tab_text = base_text
+                if pad_type == "dualsense":
+                    badge = "[PS5]"
+                elif pad_type == "ns2pro":
+                    badge = "[Switch 2]"
+                elif pad_type == "ds4":
+                    badge = "[DS4]"
+                else:
+                    badge = ""
+                tab_text = f"{base_text} {badge}".strip() if badge else base_text
             self.notebook.add(tab, text=f" {tab_text} ")
             self.tab_frames[i] = tab
             self._build_tab_content(i, tab)
@@ -808,17 +861,38 @@ class J360MoreApp:
             widgets["combos"][target_name] = cb
             widgets["buttons"][target_name] = btn
 
-        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
+        pad_type = self.get_pad_emulated_type(pad_id)
+        is_ps = pad_type in ("ds4", "dualsense")
+        is_switch = (pad_type == "ns2pro")
 
         # Columna Izquierda
-        sec_left_title = self.t("sec_left_controls_ds4") if is_ds4 else self.t("sec_left_controls")
-        ttk.Label(left_col, text=sec_left_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
-
-        row_lt_lbl = self.t("row_left_trigger_ds4") if is_ds4 else self.t("row_left_trigger")
-        row_lb_lbl = self.t("row_left_shoulder_ds4") if is_ds4 else self.t("row_left_shoulder")
-        row_back_lbl = self.t("row_back_ds4") if is_ds4 else self.t("row_back")
-        row_start_lbl = self.t("row_start_ds4") if is_ds4 else self.t("row_start")
-        row_guide_lbl = self.t("row_guide_ds4") if is_ds4 else self.t("row_guide")
+        if is_ps:
+            sec_left_title = self.t("sec_left_controls_ds4")
+            row_lt_lbl = self.t("row_left_trigger_ds4")
+            row_lb_lbl = self.t("row_left_shoulder_ds4")
+            row_back_lbl = self.t("row_back_ds4")
+            row_start_lbl = self.t("row_start_ds4")
+            row_guide_lbl = self.t("row_guide_ds4")
+            sec_ls_title = self.t("sec_left_stick_ds4")
+            row_ls_btn_lbl = self.t("row_stick_button_l_ds4")
+        elif is_switch:
+            sec_left_title = self.t("sec_left_controls_ns2pro")
+            row_lt_lbl = self.t("row_left_trigger_ns2pro")
+            row_lb_lbl = self.t("row_left_shoulder_ns2pro")
+            row_back_lbl = self.t("row_back_ns2pro")
+            row_start_lbl = self.t("row_start_ns2pro")
+            row_guide_lbl = self.t("row_guide_ns2pro")
+            sec_ls_title = self.t("sec_left_stick_ns2pro")
+            row_ls_btn_lbl = self.t("row_stick_button_l_ns2pro")
+        else:
+            sec_left_title = self.t("sec_left_controls")
+            row_lt_lbl = self.t("row_left_trigger")
+            row_lb_lbl = self.t("row_left_shoulder")
+            row_back_lbl = self.t("row_back")
+            row_start_lbl = self.t("row_start")
+            row_guide_lbl = self.t("row_guide")
+            sec_ls_title = self.t("sec_left_stick")
+            row_ls_btn_lbl = self.t("row_stick_button")
 
         make_row(left_col, row_lt_lbl, "LEFT_TRIGGER")
         make_row(left_col, row_lb_lbl, "LEFT_SHOULDER")
@@ -827,8 +901,6 @@ class J360MoreApp:
         make_row(left_col, row_guide_lbl, "GUIDE")
         ttk.Separator(left_col, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=2)
 
-        sec_ls_title = self.t("sec_left_stick_ds4") if is_ds4 else self.t("sec_left_stick")
-        row_ls_btn_lbl = self.t("row_stick_button_l_ds4") if is_ds4 else self.t("row_stick_button")
         ttk.Label(left_col, text=sec_ls_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
         make_row(left_col, self.t("row_stick_axis_x"), "LEFT_STICK_X")
         make_row(left_col, self.t("row_stick_axis_y"), "LEFT_STICK_Y")
@@ -844,7 +916,7 @@ class J360MoreApp:
         canvas.pack(pady=2)
         widgets["canvas"] = canvas
 
-        pad_img = self.ctrl_ds4_tk if (is_ds4 and self.ctrl_ds4_tk) else self.ctrl_360_tk
+        pad_img = self.ctrl_ds4_tk if (is_ps and self.ctrl_ds4_tk) else self.ctrl_360_tk
         if pad_img:
             canvas.create_image(c_w // 2, c_h // 2, image=pad_img)
 
@@ -882,15 +954,36 @@ class J360MoreApp:
         make_row(dpad_frame, self.t("row_dpad_right"), "DPAD_RIGHT", label_anchor="center", lbl_width=14)
 
         # Columna Derecha
-        sec_right_title = self.t("sec_right_controls_ds4") if is_ds4 else self.t("sec_right_controls")
-        ttk.Label(right_col, text=sec_right_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
-
-        row_rt_lbl = self.t("row_right_trigger_ds4") if is_ds4 else self.t("row_right_trigger")
-        row_rb_lbl = self.t("row_right_shoulder_ds4") if is_ds4 else self.t("row_right_shoulder")
-        row_y_lbl = self.t("row_btn_y_ds4") if is_ds4 else self.t("row_btn_y")
-        row_x_lbl = self.t("row_btn_x_ds4") if is_ds4 else self.t("row_btn_x")
-        row_b_lbl = self.t("row_btn_b_ds4") if is_ds4 else self.t("row_btn_b")
-        row_a_lbl = self.t("row_btn_a_ds4") if is_ds4 else self.t("row_btn_a")
+        if is_ps:
+            sec_right_title = self.t("sec_right_controls_ds4")
+            row_rt_lbl = self.t("row_right_trigger_ds4")
+            row_rb_lbl = self.t("row_right_shoulder_ds4")
+            row_y_lbl = self.t("row_btn_y_ds4")
+            row_x_lbl = self.t("row_btn_x_ds4")
+            row_b_lbl = self.t("row_btn_b_ds4")
+            row_a_lbl = self.t("row_btn_a_ds4")
+            sec_rs_title = self.t("sec_right_stick_ds4")
+            row_rs_btn_lbl = self.t("row_stick_button_r_ds4")
+        elif is_switch:
+            sec_right_title = self.t("sec_right_controls_ns2pro")
+            row_rt_lbl = self.t("row_right_trigger_ns2pro")
+            row_rb_lbl = self.t("row_right_shoulder_ns2pro")
+            row_y_lbl = self.t("row_btn_y_ns2pro")
+            row_x_lbl = self.t("row_btn_x_ns2pro")
+            row_b_lbl = self.t("row_btn_b_ns2pro")
+            row_a_lbl = self.t("row_btn_a_ns2pro")
+            sec_rs_title = self.t("sec_right_stick_ns2pro")
+            row_rs_btn_lbl = self.t("row_stick_button_r_ns2pro")
+        else:
+            sec_right_title = self.t("sec_right_controls")
+            row_rt_lbl = self.t("row_right_trigger")
+            row_rb_lbl = self.t("row_right_shoulder")
+            row_y_lbl = self.t("row_btn_y")
+            row_x_lbl = self.t("row_btn_x")
+            row_b_lbl = self.t("row_btn_b")
+            row_a_lbl = self.t("row_btn_a")
+            sec_rs_title = self.t("sec_right_stick")
+            row_rs_btn_lbl = self.t("row_stick_button")
 
         make_row(right_col, row_rt_lbl, "RIGHT_TRIGGER")
         make_row(right_col, row_rb_lbl, "RIGHT_SHOULDER")
@@ -900,8 +993,6 @@ class J360MoreApp:
         make_row(right_col, row_a_lbl, "A")
         ttk.Separator(right_col, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=2)
 
-        sec_rs_title = self.t("sec_right_stick_ds4") if is_ds4 else self.t("sec_right_stick")
-        row_rs_btn_lbl = self.t("row_stick_button_r_ds4") if is_ds4 else self.t("row_stick_button")
         ttk.Label(right_col, text=sec_rs_title, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
         make_row(right_col, self.t("row_stick_axis_x"), "RIGHT_STICK_X")
         make_row(right_col, self.t("row_stick_axis_y"), "RIGHT_STICK_Y")
@@ -919,9 +1010,11 @@ class J360MoreApp:
 
     def _find_target_at_pos(self, click_x: float, click_y: float, pad_id: Optional[int] = None) -> str:
         """Determina qué botón o parte interactiva fue clickeada (excluyendo el Fondo)."""
-        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
+        pad_type = self.get_pad_emulated_type(pad_id)
+        is_ps = pad_type in ("ds4", "dualsense")
+        is_switch = (pad_type == "ns2pro")
 
-        if is_ds4:
+        if is_ps:
             # 1. Comprobar cruceta D-Pad (DS4: cx=70.0, cy=126.5)
             dpad_cx, dpad_cy = 70.0, 126.5
             dx = click_x - dpad_cx
@@ -967,7 +1060,7 @@ class J360MoreApp:
                 if d <= br:
                     return btn_name
         else:
-            # 1. Comprobar cruceta D-Pad (Xbox: cx=122.5, cy=189.6)
+            # 1. Comprobar cruceta D-Pad (Xbox / Switch: cx=122.5, cy=189.6)
             dpad_cx, dpad_cy = 122.5, 189.6
             dx = click_x - dpad_cx
             dy = click_y - dpad_cy
@@ -978,7 +1071,7 @@ class J360MoreApp:
                 else:
                     return "DPAD_LEFT" if dx < 0 else "DPAD_RIGHT"
 
-            # 2. Comprobar Stick Izquierdo (Xbox: cx=63.9, cy=140.2)
+            # 2. Comprobar Stick Izquierdo (Xbox / Switch: cx=63.9, cy=140.2)
             ls_cx, ls_cy = 63.9, 140.2
             dx_ls = click_x - ls_cx
             dy_ls = click_y - ls_cy
@@ -992,7 +1085,7 @@ class J360MoreApp:
                     else:
                         return "LEFT_STICK_LEFT" if dx_ls < 0 else "LEFT_STICK_RIGHT"
 
-            # 3. Comprobar Stick Derecho (Xbox: cx=224.4, cy=189.6)
+            # 3. Comprobar Stick Derecho (Xbox / Switch: cx=224.4, cy=189.6)
             rs_cx, rs_cy = 224.4, 189.6
             dx_rs = click_x - rs_cx
             dy_rs = click_y - rs_cy
@@ -1006,8 +1099,9 @@ class J360MoreApp:
                     else:
                         return "RIGHT_STICK_LEFT" if dx_rs < 0 else "RIGHT_STICK_RIGHT"
 
-            # 4. Comprobar los demás botones individuales de Xbox
-            for btn_name, (bx, by, br) in XBOX_HITBOXES.items():
+            # 4. Comprobar los demás botones individuales de Xbox / Switch
+            hitbox_map = NS2PRO_HITBOXES if is_switch else XBOX_HITBOXES
+            for btn_name, (bx, by, br) in hitbox_map.items():
                 d = math.sqrt((click_x - bx) ** 2 + (click_y - by) ** 2)
                 if d <= br:
                     return btn_name
@@ -1162,9 +1256,16 @@ class J360MoreApp:
                 "inv_var": inv_var
             }
 
-        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
-        t_lt = self.t("title_left_trigger_ds4") if is_ds4 else self.t("title_left_trigger")
-        t_rt = self.t("title_right_trigger_ds4") if is_ds4 else self.t("title_right_trigger")
+        pad_type = self.get_pad_emulated_type(pad_id)
+        if pad_type in ("ds4", "dualsense"):
+            t_lt = self.t("title_left_trigger_ds4")
+            t_rt = self.t("title_right_trigger_ds4")
+        elif pad_type == "ns2pro":
+            t_lt = self.t("title_left_trigger_ns2pro")
+            t_rt = self.t("title_right_trigger_ns2pro")
+        else:
+            t_lt = self.t("title_left_trigger")
+            t_rt = self.t("title_right_trigger")
         make_trigger_panel(parent, "left_trigger", t_lt)
         make_trigger_panel(parent, "right_trigger", t_rt)
 
@@ -1237,9 +1338,16 @@ class J360MoreApp:
                 "inv_y_var": inv_y_var
             }
 
-        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
-        t_ls = self.t("title_left_stick_ds4") if is_ds4 else self.t("title_left_stick")
-        t_rs = self.t("title_right_stick_ds4") if is_ds4 else self.t("title_right_stick")
+        pad_type = self.get_pad_emulated_type(pad_id)
+        if pad_type in ("ds4", "dualsense"):
+            t_ls = self.t("title_left_stick_ds4")
+            t_rs = self.t("title_right_stick_ds4")
+        elif pad_type == "ns2pro":
+            t_ls = self.t("title_left_stick_ns2pro")
+            t_rs = self.t("title_right_stick_ns2pro")
+        else:
+            t_ls = self.t("title_left_stick")
+            t_rs = self.t("title_right_stick")
         make_stick_box(parent, "left_stick", t_ls)
         make_stick_box(parent, "right_stick", t_rs)
 
@@ -1688,13 +1796,26 @@ class J360MoreApp:
         messagebox.showinfo(self.t("preset_title"), self.t("preset_restored", i=cur_pad_id))
 
     def _check_system_drivers(self):
-        """Verifica la disponibilidad de ViGEmBus e HidHide al arrancar la aplicación."""
-        # 1. ViGEmBus es obligatorio
-        if not self.driver_manager.is_vigem_installed():
-            messagebox.showerror(
-                self.t("vigem_missing_title"),
-                self.t("vigem_missing_msg")
-            )
+        """Verifica la disponibilidad de drivers según el backend configurado."""
+        driver_backend = self.config.get("driver_backend", "vigem")
+        if driver_backend == "vigem":
+            if not self.driver_manager.is_vigem_installed():
+                messagebox.showerror(
+                    self.t("vigem_missing_title"),
+                    self.t("vigem_missing_msg")
+                )
+        else:
+            from viiper_backend import is_usbip_installed, get_viiper_binary_path
+            if not get_viiper_binary_path():
+                messagebox.showwarning(
+                    self.t("viiper_missing_title"),
+                    self.t("viiper_binary_missing_msg")
+                )
+            elif sys.platform == "win32" and not is_usbip_installed():
+                messagebox.showwarning(
+                    self.t("usbip_missing_title"),
+                    self.t("usbip_missing_msg")
+                )
 
         # 2. HidHide es opcional con aviso leve y checkbox 'No volver a preguntar'
         suppress_hidhide = self.config.get("suppress_hidhide_warning", False)
@@ -1794,13 +1915,13 @@ class J360MoreApp:
         """Ventana modal de configuración con Idioma, Slider (1 a 12 mandos) y ruta de HidHide."""
         dlg = tk.Toplevel(self.root)
         dlg.title(self.t("set_dlg_title"))
-        dlg.geometry("520x540")
+        dlg.geometry("540x620")
         dlg.resizable(False, False)
         self._setup_modal_dialog(dlg)
 
-        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 260)
-        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 270)
-        dlg.geometry(f"+{x}+{y}")
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 270)
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 310)
+        dlg.geometry(f"540x620+{x}+{y}")
 
         frame = ttk.Frame(dlg, padding=16)
         frame.pack(fill=tk.BOTH, expand=True)
@@ -1818,11 +1939,46 @@ class J360MoreApp:
         lang_combo = ttk.Combobox(box_lang, textvariable=lang_var, values=list(SUPPORTED_LANGUAGES.values()), state="readonly", width=25)
         lang_combo.pack(anchor="w", padx=4, pady=2)
 
-        # SECCION 2: Tipo de mando virtual emulado
+        # SECCION 2: Backend de Driver Virtual (VIIPER vs ViGEmBus)
+        box_driver = ttk.LabelFrame(frame, text="⚡ " + self.t("set_driver_title"), padding=8)
+        box_driver.pack(fill=tk.X, pady=(0, 8))
+
+        cur_driver = self.config.get("driver_backend", "vigem")
+        if sys.platform != "win32":
+            cur_driver = "viiper"
+        driver_var = tk.StringVar(value=cur_driver)
+
+        driver_row = ttk.Frame(box_driver)
+        driver_row.pack(fill=tk.X, padx=4, pady=2)
+
+        def on_driver_changed():
+            d = driver_var.get()
+            if d == "vigem":
+                rb_ps5.configure(state="disabled")
+                rb_ns2.configure(state="disabled")
+                if type_var.get() in ("dualsense", "ns2pro"):
+                    type_var.set("xbox360")
+                    on_type_changed()
+            else:
+                rb_ps5.configure(state="normal")
+                rb_ns2.configure(state="normal")
+
+        rb_viiper = ttk.Radiobutton(driver_row, text=self.t("set_driver_viiper"), variable=driver_var, value="viiper", command=on_driver_changed)
+        rb_viiper.pack(anchor="w", pady=1)
+
+        vigem_state = "normal" if sys.platform == "win32" else "disabled"
+        rb_vigem = ttk.Radiobutton(driver_row, text=self.t("set_driver_vigem"), variable=driver_var, value="vigem", state=vigem_state, command=on_driver_changed)
+        rb_vigem.pack(anchor="w", pady=1)
+
+        ttk.Label(box_driver, text=self.t("set_driver_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=480).pack(anchor="w", padx=4, pady=(2, 0))
+
+        # SECCION 3: Tipo de mando virtual emulado
         box_type = ttk.LabelFrame(frame, text="🎮 " + self.t("set_emulated_type_title"), padding=8)
         box_type.pack(fill=tk.X, pady=(0, 8))
 
         cur_type = self.config.get("emulated_type", "xbox360").lower()
+        if driver_var.get() == "vigem" and cur_type in ("dualsense", "ns2pro"):
+            cur_type = "xbox360"
         type_var = tk.StringVar(value=cur_type)
 
         def get_ctrl_label(cnt):
@@ -1856,11 +2012,19 @@ class J360MoreApp:
 
         type_row = ttk.Frame(box_type)
         type_row.pack(fill=tk.X, padx=4, pady=2)
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 16))
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 16))
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 10))
+        rb_ps5 = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_dualsense"), variable=type_var, value="dualsense", command=on_type_changed)
+        rb_ps5.pack(side=tk.LEFT, padx=(0, 10))
+        rb_ns2 = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ns2pro"), variable=type_var, value="ns2pro", command=on_type_changed)
+        rb_ns2.pack(side=tk.LEFT, padx=(0, 10))
         ttk.Radiobutton(type_row, text=self.t("set_emulated_type_mixed"), variable=type_var, value="mixed", command=on_type_changed).pack(side=tk.LEFT)
 
-        ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=460).pack(anchor="w", padx=4, pady=(2, 0))
+        if driver_var.get() == "vigem":
+            rb_ps5.configure(state="disabled")
+            rb_ns2.configure(state="disabled")
+
+        ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=480).pack(anchor="w", padx=4, pady=(2, 0))
 
         # SECCION 3: Mandos virtuales a emular
         box_mandos = ttk.LabelFrame(frame, text=self.t("set_mandos_title"), padding=10)
@@ -1949,13 +2113,21 @@ class J360MoreApp:
             self.config["language"] = new_lang
             self.config["author"] = "JuanJSAR"
 
-            # 2. Aplicar tipo de mando emulado
+            # 2. Aplicar driver backend
+            old_driver = self.config.get("driver_backend", "vigem")
+            new_driver = driver_var.get()
+            driver_changed = (new_driver != old_driver)
+            self.config["driver_backend"] = new_driver
+
+            # 3. Aplicar tipo de mando emulado
             old_type = self.config.get("emulated_type", "xbox360").lower()
             new_type = type_var.get().lower()
+            if new_driver == "vigem" and new_type in ("dualsense", "ns2pro"):
+                new_type = "xbox360"
             type_changed = (new_type != old_type)
             self.config["emulated_type"] = new_type
 
-            # 3. Aplicar mandos
+            # 4. Aplicar mandos
             old_count = self.config.get("max_controllers", 8)
             new_count = val_var.get()
             if new_type in ("mixed", "mixto") and new_count % 2 != 0:
@@ -1963,7 +2135,7 @@ class J360MoreApp:
             count_changed = (new_count != old_count)
             self.config["max_controllers"] = new_count
 
-            # 4. Aplicar configuración de HidHide
+            # 5. Aplicar configuración de HidHide
             cli_path = path_var.get().strip()
             self.config["hidhide_cli_path"] = cli_path
             self.config["suppress_hidhide_warning"] = not show_warn_var.get()
@@ -1973,7 +2145,7 @@ class J360MoreApp:
                 self.driver_manager.set_cloak_active(cloak_active_var.get())
                 self.driver_manager.ensure_process_whitelisted()
 
-            if type_changed or count_changed:
+            if driver_changed or type_changed or count_changed:
                 self._update_active_assets()
                 if self.engine.is_running():
                     self.engine.stop()
@@ -2500,15 +2672,23 @@ class J360MoreApp:
         center_frame = ttk.Frame(dlg, padding="10 2 10 2")
         center_frame.pack(fill=tk.X)
 
-        is_ds4 = (self.get_pad_emulated_type(pad_id) == "ds4")
-        pad_badge = "DualShock 4" if is_ds4 else "Xbox 360"
+        pad_type = self.get_pad_emulated_type(pad_id)
+        is_ps = pad_type in ("ds4", "dualsense")
+        if pad_type == "dualsense":
+            pad_badge = "DualSense (PS5)"
+        elif pad_type == "ds4":
+            pad_badge = "DualShock 4"
+        elif pad_type == "ns2pro":
+            pad_badge = "Switch 2 Pro"
+        else:
+            pad_badge = "Xbox 360"
         left_box = ttk.LabelFrame(center_frame, text=f" {self.t('subtab_general')} - {pad_badge} ", padding=2)
         left_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 6))
 
         cv_main = tk.Canvas(left_box, width=350, height=275, bg="#ffffff", highlightthickness=1, highlightbackground="#d0d0d0")
         cv_main.pack(anchor="center", pady=2)
 
-        pad_img = self.ctrl_ds4_tk if (is_ds4 and self.ctrl_ds4_tk) else self.ctrl_360_tk
+        pad_img = self.ctrl_ds4_tk if (is_ps and self.ctrl_ds4_tk) else self.ctrl_360_tk
         if pad_img:
             cv_main.create_image(175, 137, image=pad_img)
 
@@ -2590,7 +2770,7 @@ class J360MoreApp:
             cv_main.itemconfig(main_core, fill="#ffaa00", state="normal")
 
             cv_zoom.delete("all")
-            source_img = (self.ctrl_ds4_hires or self.ctrl_ds4_base) if is_ds4 else (self.ctrl_360_hires or self.ctrl_360_base)
+            source_img = (self.ctrl_ds4_hires or self.ctrl_ds4_base) if is_ps else (self.ctrl_360_hires or self.ctrl_360_base)
             if source_img:
                 try:
                     scale_x = source_img.width / 350.0

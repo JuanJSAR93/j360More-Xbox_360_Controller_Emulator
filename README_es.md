@@ -7,7 +7,7 @@
 > Descargas y Versiones: [Releases Oficiales](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases)  
 > Documentación Web (GitHub Pages): Carpeta `/docs`
 
-**j360More** es una solución avanzada de emulación multi-mando para Windows desarrollada por **JuanJSAR** sobre el controlador kernel **ViGEmBus**, con soporte bilingüe (**Español e Inglés**), interfaz gráfica moderna inspirada en x360ce, soporte para hasta **12 mandos virtuales de Xbox 360** simultáneos e integración opcional con **Nefarius HidHide** para erradicar el molesto problema de "doble entrada" (doble mando) en juegos de PC y emuladores.
+**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte tanto para el backend multiplataforma **VIIPER** (USB/IP) como para **ViGEmBus**, ofrece interfaz bilingüe (**Español e Inglés**), diseño moderno inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **DualShock 4**, **DualSense (PS5)** y **Nintendo Switch 2 Pro**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
 
 Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput/XInput, joysticks genéricos, volantes, teclado y ratón) a cada mando virtual, calibrar curvas analógicas en tiempo real y probar la respuesta reactiva directamente sobre un diagrama vectorial interactivo.
 

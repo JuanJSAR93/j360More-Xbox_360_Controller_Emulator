@@ -1,7 +1,8 @@
 import os
+import sys
 import time
 import ctypes
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import Dict, List, Optional, Tuple, Any, Set, Callable
 
 # Permitir ejecucion de pygame sin crear ventana grafica propia
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -29,6 +30,8 @@ KNOWN_VENDORS = {
 
 def _get_present_pnp_device_instance_paths() -> List[str]:
     """Obtiene la lista de rutas de instancia de dispositivos PnP actualmente presentes en Windows."""
+    if sys.platform != "win32":
+        return []
     try:
         cfgmgr32 = ctypes.windll.cfgmgr32
         buf_len = ctypes.c_ulong()
@@ -63,15 +66,27 @@ class DeviceManager:
     def __init__(self, driver_manager: Optional[DriverManager] = None):
         self.driver_manager = driver_manager or DriverManager()
         self.keyboard_manager = RawKeyboardManager.get_instance()
-        self.keyboard_manager.start()
-        self.joysticks: Dict[int, pygame.joystick.Joystick] = {}
-        self._cancel_capture = False
-        self._physical_map: Dict[str, int] = {}  # Mapea 'joy_0', 'joy_1' al índice SDL real
-        self._device_cache: List[Dict[str, Any]] = []
-        self._on_devices_changed_callbacks = []
+        self.joysticks: Dict[str, pygame.joystick.Joystick] = {}
+        self._physical_map: Dict[str, str] = {}
+        self._on_devices_changed_callbacks: List[Callable[[List[Dict[str, Any]]], None]] = []
+        self._auto_reconnect_job = None
         self._pending_hotplug_check = False
         self._last_hotplug_event_time = 0.0
-        self.refresh_devices()
+
+        try:
+            if not pygame.get_init():
+                pygame.init()
+            if not pygame.joystick.get_init():
+                pygame.joystick.init()
+        except Exception as e:
+            print(f"[!] Error inicializando subsistema de joystick de Pygame: {e}")
+
+        # Iniciar captura de teclado Raw Input en segundo plano
+        if self.keyboard_manager:
+            try:
+                self.keyboard_manager.start()
+            except Exception as e:
+                print(f"[!] No se pudo iniciar el gestor de teclados Raw Input: {e}")
 
     def add_on_devices_changed_callback(self, callback):
         """Registra una función callback a invocar cuando se detecta reconexión/cambio de mandos."""
@@ -94,7 +109,7 @@ class DeviceManager:
             self.keyboard_manager.stop()
 
     def _is_virtual_gamepad(self, joy: pygame.joystick.Joystick) -> bool:
-        """Determina si un joystick es un mando virtual creado por ViGEmBus."""
+        """Determina si un joystick es un mando virtual creado por ViGEmBus o VIIPER."""
         try:
             name = joy.get_name().strip()
             guid = joy.get_guid()
@@ -104,17 +119,27 @@ class DeviceManager:
                 vid = (guid[10:12] + guid[8:10]).upper()
                 pid = (guid[18:20] + guid[16:18]).upper()
 
-            # ViGEmBus emula exactamente 'Xbox 360 Controller' con VID 045E y PID 028E
-            # y en SDL el GUID común es 0300b9695e0400008e02000000007200
-            if vid == "045E" and pid == "028E" and ("xbox 360" in name.lower() or "xinput" in name.lower()):
+            name_l = name.lower()
+            if any(x in name_l for x in ("usbip", "viiper", "vigem", "nefarius", "vgamepad")):
                 return True
 
-            # ViGEmBus emula 'DualShock 4 Controller' con VID 054C y PID 05C4
-            # y en SDL el GUID común es 03008fe54c050000c405000000016800 y nombre 'PS4 Controller' / 'Wireless Controller'
-            if vid == "054C" and pid == "05C4":
-                name_l = name.lower()
+            # Xbox 360 virtual (ViGEmBus o VIIPER)
+            if vid == "045E" and pid == "028E" and ("xbox 360" in name_l or "xinput" in name_l or "controller" in name_l):
+                return True
+
+            # DualShock 4 virtual (ViGEmBus o VIIPER)
+            if vid == "054C" and pid in ("05C4", "09CC"):
                 if any(x in name_l for x in ("ps4", "playstation", "wireless controller", "dualshock", "compatible con hid", "sony")):
                     return True
+
+            # DualSense virtual (VIIPER)
+            if vid == "054C" and pid in ("0CE6", "0DF2"):
+                if any(x in name_l for x in ("dualsense", "wireless controller", "playstation", "sony")):
+                    return True
+
+            # Switch 2 Pro virtual (VIIPER)
+            if (vid == "057E" and pid == "2069") or ("switch 2" in name_l) or ("ns2pro" in name_l):
+                return True
         except Exception:
             pass
         return False
@@ -188,14 +213,29 @@ class DeviceManager:
         import re
         candidates_by_vid_pid: Dict[Tuple[str, str], List[str]] = {}
 
+        def _is_virtual_path(pth: str) -> bool:
+            u = pth.upper()
+            if any(x in u for x in (
+                "VID_045E&PID_028E",
+                "VID_054C&PID_05C4",
+                "VID_054C&PID_09CC",
+                "VID_054C&PID_0CE6",
+                "VID_054C&PID_0DF2",
+                "VID_057E&PID_2069",
+            )):
+                return True
+            if any(x in u for x in ("USBIP", "VIGEM", "VIIPER")):
+                return True
+            return False
+
         # 1. Prioridad: rutas directas de mandos reportadas por HidHide (dev-gaming)
         gaming_devices = self.driver_manager.get_gaming_devices_info()
         for g in gaming_devices:
             p = g.get("instance_path", "").strip()
             if p:
-                up = p.upper()
-                if "VID_045E&PID_028E" in up or "VID_054C&PID_05C4" in up:
+                if _is_virtual_path(p):
                     continue
+                up = p.upper()
                 m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', up)
                 m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', up)
                 if m_vid and m_pid:
@@ -204,9 +244,9 @@ class DeviceManager:
 
         # 2. Complementar con rutas PnP presentes de clase HID
         for p in present_pnp_paths:
-            up = p.upper()
-            if "VID_045E&PID_028E" in up or "VID_054C&PID_05C4" in up:
+            if _is_virtual_path(p):
                 continue
+            up = p.upper()
             if up.startswith("HID\\"):
                 m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', up)
                 m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', up)
@@ -218,9 +258,9 @@ class DeviceManager:
 
         # 3. Fallback USB si no hay rutas HID para ese dispositivo
         for p in present_pnp_paths:
-            up = p.upper()
-            if "VID_045E&PID_028E" in up or "VID_054C&PID_05C4" in up:
+            if _is_virtual_path(p):
                 continue
+            up = p.upper()
             if up.startswith("USB\\"):
                 m_vid = re.search(r'VID[_\&]([0-9A-F]{4})', up)
                 m_pid = re.search(r'PID[_\&]([0-9A-F]{4})', up)

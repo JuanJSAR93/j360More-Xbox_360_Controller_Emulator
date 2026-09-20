@@ -54,6 +54,7 @@ if "%BUILD_MODE%"=="1" (
         --icon "assets\icon.ico" ^
         --version-file "version_info.txt" ^
         --add-data "assets;assets" ^
+        --add-data "bin;bin" ^
         --collect-all "vgamepad" ^
         --collect-all "resvg_py" ^
         gui_app.py
@@ -64,8 +65,9 @@ if "%BUILD_MODE%"=="1" (
         exit /b 1
     )
     
-    echo [*] Copiando config_mapping.json junto al ejecutable único...
+    echo [*] Copiando config_mapping.json y binarios auxiliares junto al ejecutable...
     if exist "config_mapping.json" copy /y "config_mapping.json" "dist\" >nul
+    if exist "bin" xcopy /e /i /y "bin" "dist\bin" >nul
     
     echo.
     echo =======================================================
@@ -83,6 +85,7 @@ if "%BUILD_MODE%"=="1" (
         --icon "assets\icon.ico" ^
         --version-file "version_info.txt" ^
         --add-data "assets;assets" ^
+        --add-data "bin;bin" ^
         --collect-all "vgamepad" ^
         --collect-all "resvg_py" ^
         gui_app.py
@@ -96,6 +99,7 @@ if "%BUILD_MODE%"=="1" (
     echo [*] Copiando archivos de configuración a dist\j360More...
     if exist "config_mapping.json" copy /y "config_mapping.json" "dist\j360More\" >nul
     if exist "assets" xcopy /e /i /y "assets" "dist\j360More\assets" >nul
+    if exist "bin" xcopy /e /i /y "bin" "dist\j360More\bin" >nul
     attrib +h "dist\j360More\_internal" >nul 2>&1
     
     echo.

@@ -1,60 +1,93 @@
+import os
+import sys
 import time
 import math
 import threading
 from typing import Dict, Any, Optional, Set, Tuple
-import vgamepad as vg
+
+try:
+    import vgamepad as vg
+    HAS_VGAMEPAD = True
+except Exception:
+    vg = None
+    HAS_VGAMEPAD = False
+
+import viiper_backend
+from viiper_backend import (
+    ViiperClient,
+    XBOX_BUTTONS,
+    DS4_BUTTONS,
+    DUALSENSE_BUTTONS,
+    NS2PRO_BUTTONS
+)
+
 from input_devices import DeviceManager
 from i18n import canonicalize_mapping, is_none_mapping
 
-BUTTON_VG_MAP = {
-    "DPAD_UP": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP,
-    "DPAD_DOWN": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN,
-    "DPAD_LEFT": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT,
-    "DPAD_RIGHT": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT,
-    "START": vg.XUSB_BUTTON.XUSB_GAMEPAD_START,
-    "BACK": vg.XUSB_BUTTON.XUSB_GAMEPAD_BACK,
-    "LEFT_THUMB": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_THUMB,
-    "RIGHT_THUMB": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_THUMB,
-    "LEFT_SHOULDER": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER,
-    "RIGHT_SHOULDER": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER,
-    "GUIDE": vg.XUSB_BUTTON.XUSB_GAMEPAD_GUIDE,
-    "A": vg.XUSB_BUTTON.XUSB_GAMEPAD_A,
-    "B": vg.XUSB_BUTTON.XUSB_GAMEPAD_B,
-    "X": vg.XUSB_BUTTON.XUSB_GAMEPAD_X,
-    "Y": vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
-}
+if HAS_VGAMEPAD and vg is not None:
+    BUTTON_VG_MAP = {
+        "DPAD_UP": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP,
+        "DPAD_DOWN": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN,
+        "DPAD_LEFT": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT,
+        "DPAD_RIGHT": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT,
+        "START": vg.XUSB_BUTTON.XUSB_GAMEPAD_START,
+        "BACK": vg.XUSB_BUTTON.XUSB_GAMEPAD_BACK,
+        "LEFT_THUMB": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_THUMB,
+        "RIGHT_THUMB": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_THUMB,
+        "LEFT_SHOULDER": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER,
+        "RIGHT_SHOULDER": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER,
+        "GUIDE": vg.XUSB_BUTTON.XUSB_GAMEPAD_GUIDE,
+        "A": vg.XUSB_BUTTON.XUSB_GAMEPAD_A,
+        "B": vg.XUSB_BUTTON.XUSB_GAMEPAD_B,
+        "X": vg.XUSB_BUTTON.XUSB_GAMEPAD_X,
+        "Y": vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
+    }
 
-DS4_BUTTON_VG_MAP = {
-    "A": vg.DS4_BUTTONS.DS4_BUTTON_CROSS,
-    "B": vg.DS4_BUTTONS.DS4_BUTTON_CIRCLE,
-    "X": vg.DS4_BUTTONS.DS4_BUTTON_SQUARE,
-    "Y": vg.DS4_BUTTONS.DS4_BUTTON_TRIANGLE,
-    "LEFT_SHOULDER": vg.DS4_BUTTONS.DS4_BUTTON_SHOULDER_LEFT,
-    "RIGHT_SHOULDER": vg.DS4_BUTTONS.DS4_BUTTON_SHOULDER_RIGHT,
-    "START": vg.DS4_BUTTONS.DS4_BUTTON_OPTIONS,
-    "BACK": vg.DS4_BUTTONS.DS4_BUTTON_SHARE,
-    "LEFT_THUMB": vg.DS4_BUTTONS.DS4_BUTTON_THUMB_LEFT,
-    "RIGHT_THUMB": vg.DS4_BUTTONS.DS4_BUTTON_THUMB_RIGHT,
-}
+    DS4_BUTTON_VG_MAP = {
+        "A": vg.DS4_BUTTONS.DS4_BUTTON_CROSS,
+        "B": vg.DS4_BUTTONS.DS4_BUTTON_CIRCLE,
+        "X": vg.DS4_BUTTONS.DS4_BUTTON_SQUARE,
+        "Y": vg.DS4_BUTTONS.DS4_BUTTON_TRIANGLE,
+        "LEFT_SHOULDER": vg.DS4_BUTTONS.DS4_BUTTON_SHOULDER_LEFT,
+        "RIGHT_SHOULDER": vg.DS4_BUTTONS.DS4_BUTTON_SHOULDER_RIGHT,
+        "START": vg.DS4_BUTTONS.DS4_BUTTON_OPTIONS,
+        "BACK": vg.DS4_BUTTONS.DS4_BUTTON_SHARE,
+        "LEFT_THUMB": vg.DS4_BUTTONS.DS4_BUTTON_THUMB_LEFT,
+        "RIGHT_THUMB": vg.DS4_BUTTONS.DS4_BUTTON_THUMB_RIGHT,
+    }
 
-def get_ds4_dpad_direction(up: bool, down: bool, left: bool, right: bool):
-    if up and right:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTHEAST
-    if up and left:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTHWEST
-    if down and right:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTHEAST
-    if down and left:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTHWEST
-    if up:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTH
-    if down:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTH
-    if left:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_WEST
-    if right:
-        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_EAST
-    return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NONE
+    def get_ds4_dpad_direction(up: bool, down: bool, left: bool, right: bool):
+        if up and right:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTHEAST
+        if up and left:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTHWEST
+        if down and right:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTHEAST
+        if down and left:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTHWEST
+        if up:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NORTH
+        if down:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_SOUTH
+        if left:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_WEST
+        if right:
+            return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_EAST
+        return vg.DS4_DPAD_DIRECTIONS.DS4_BUTTON_DPAD_NONE
+else:
+    BUTTON_VG_MAP = {
+        "DPAD_UP": 1, "DPAD_DOWN": 2, "DPAD_LEFT": 4, "DPAD_RIGHT": 8,
+        "START": 16, "BACK": 32, "LEFT_THUMB": 64, "RIGHT_THUMB": 128,
+        "LEFT_SHOULDER": 256, "RIGHT_SHOULDER": 512, "GUIDE": 1024,
+        "A": 4096, "B": 8192, "X": 16384, "Y": 32768,
+    }
+    DS4_BUTTON_VG_MAP = {
+        "A": 1, "B": 2, "X": 4, "Y": 8,
+        "LEFT_SHOULDER": 16, "RIGHT_SHOULDER": 32,
+        "START": 64, "BACK": 128, "LEFT_THUMB": 256, "RIGHT_THUMB": 512
+    }
+    def get_ds4_dpad_direction(up: bool, down: bool, left: bool, right: bool):
+        return 0
 
 def apply_axis_calibration(val: float, deadzone_pct: float, anti_deadzone_pct: float, sensitivity_pct: float, invert: bool = False) -> float:
     """Aplica zona muerta, anti-deadzone, sensibilidad exponencial e inversion a un eje [-1.0, 1.0]."""
@@ -109,10 +142,10 @@ def apply_trigger_calibration(val: float, deadzone_pct: float, anti_deadzone_pct
     return max(0.0, min(1.0, res))
 
 def get_pad_emulated_type(config: dict, pad_id: int) -> str:
-    """Determina si un pad_id debe ser emulado como 'xbox360' o 'ds4'."""
+    """Determina si un pad_id debe ser emulado como 'xbox360', 'ds4', 'dualsense' o 'ns2pro'."""
     mode = config.get("emulated_type", "xbox360").lower()
-    if mode == "ds4":
-        return "ds4"
+    if mode in ("ds4", "dualsense", "ns2pro"):
+        return mode
     elif mode in ("mixed", "mixto"):
         max_ctrls = config.get("max_controllers", 8)
         half = max_ctrls // 2
@@ -123,7 +156,9 @@ class EmulatorEngine:
     def __init__(self, device_manager: DeviceManager):
         self.device_manager = device_manager
         self.config: Dict[str, Any] = {}
-        self.gamepads: Dict[int, vg.VX360Gamepad] = {}
+        self.gamepads: Dict[int, Any] = {}
+        self.viiper_client: Optional[ViiperClient] = None
+        self.driver_backend: str = "vigem"
         self.running = False
         self.thread: Optional[threading.Thread] = None
         self.lock = threading.Lock()
@@ -161,32 +196,60 @@ class EmulatorEngine:
                 ctrl_type_name = f"Mixto ({half}x Xbox 360 + {half}x DS4)"
             elif emulated_type == "ds4":
                 ctrl_type_name = "DualShock 4"
+            elif emulated_type == "dualsense":
+                ctrl_type_name = "DualSense (PS5)"
+            elif emulated_type == "ns2pro":
+                ctrl_type_name = "Switch 2 Pro"
             else:
                 ctrl_type_name = "Xbox 360"
 
-            print(f"[*] Iniciando motor de emulacion {ctrl_type_name} (hasta {max_ctrls} mandos)...")
-            # Crear los mandos virtuales en ViGEmBus únicamente si tienen periférico físico asignado
-            for i in range(1, max_ctrls + 1):
-                cfg = self.config.get("controllers", {}).get(str(i), {})
-                p_dev = cfg.get("physical_device_id", "none")
-                if cfg.get("enabled", True) and p_dev and p_dev != "none":
-                    pad_type = get_pad_emulated_type(self.config, i)
-                    try:
-                        if pad_type == "ds4":
-                            pad = vg.VDS4Gamepad()
-                        else:
-                            pad = vg.VX360Gamepad()
-                        pad.reset()
-                        pad.update()
-                        self.gamepads[i] = pad
-                    except Exception as e:
-                        pad_label = "DualShock 4" if pad_type == "ds4" else "Xbox 360"
-                        print(f"  [!] Error creando mando virtual #{i} ({pad_label}): {e}")
+            backend = self.config.get("driver_backend", "vigem" if sys.platform == "win32" else "viiper").lower()
+            if sys.platform != "win32":
+                backend = "viiper"
+            self.driver_backend = backend
+
+            print(f"[*] Iniciando motor de emulacion {ctrl_type_name} usando backend [{self.driver_backend.upper()}] (hasta {max_ctrls} mandos)...")
+
+            if self.driver_backend == "viiper":
+                self.viiper_client = ViiperClient()
+                if not self.viiper_client.start_bus():
+                    print("[!] Error: No se pudo iniciar el bus de VIIPER.")
+                    return
+                for i in range(1, max_ctrls + 1):
+                    cfg = self.config.get("controllers", {}).get(str(i), {})
+                    p_dev = cfg.get("physical_device_id", "none")
+                    if cfg.get("enabled", True) and p_dev and p_dev != "none":
+                        pad_type = get_pad_emulated_type(self.config, i)
+                        if not self.viiper_client.add_device(i, pad_type):
+                            pad_label = pad_type.upper()
+                            print(f"  [!] Error creando mando virtual #{i} ({pad_label}) en VIIPER.")
+                active_count = len(self.viiper_client.devices)
+            else:
+                if not HAS_VGAMEPAD or vg is None:
+                    print("[!] Error: ViGEmBus/vgamepad no está disponible en este sistema.")
+                    return
+                for i in range(1, max_ctrls + 1):
+                    cfg = self.config.get("controllers", {}).get(str(i), {})
+                    p_dev = cfg.get("physical_device_id", "none")
+                    if cfg.get("enabled", True) and p_dev and p_dev != "none":
+                        pad_type = get_pad_emulated_type(self.config, i)
+                        try:
+                            if pad_type == "ds4":
+                                pad = vg.VDS4Gamepad()
+                            else:
+                                pad = vg.VX360Gamepad()
+                            pad.reset()
+                            pad.update()
+                            self.gamepads[i] = pad
+                        except Exception as e:
+                            pad_label = "DualShock 4" if pad_type == "ds4" else "Xbox 360"
+                            print(f"  [!] Error creando mando virtual #{i} ({pad_label}): {e}")
+                active_count = len(self.gamepads)
 
             self.running = True
             self.thread = threading.Thread(target=self._loop, daemon=True)
             self.thread.start()
-            print(f"[+] Motor de emulacion iniciado con {len(self.gamepads)} mandos activos ({ctrl_type_name}).")
+            print(f"[+] Motor de emulacion iniciado con {active_count} mandos activos ({ctrl_type_name}) [{self.driver_backend.upper()}].")
 
     def stop(self):
         with self.lock:
@@ -198,13 +261,21 @@ class EmulatorEngine:
             self.thread.join(timeout=1.0)
 
         with self.lock:
-            for i, pad in list(self.gamepads.items()):
+            if self.driver_backend == "viiper" and self.viiper_client:
                 try:
-                    pad.reset()
-                    pad.update()
-                except Exception:
-                    pass
-            self.gamepads.clear()
+                    self.viiper_client.stop()
+                except Exception as e:
+                    print(f"[!] Error deteniendo VIIPER: {e}")
+                self.viiper_client = None
+            else:
+                for i, pad in list(self.gamepads.items()):
+                    try:
+                        pad.reset()
+                        pad.update()
+                    except Exception:
+                        pass
+                self.gamepads.clear()
+
             for i in range(1, 13):
                 self.active_states[i] = {
                     "buttons": set(),
@@ -311,9 +382,13 @@ class EmulatorEngine:
 
             with self.lock:
                 controllers_cfg = self.config.get("controllers", {})
-                active_gamepads = list(self.gamepads.items())
+                is_viiper = (self.driver_backend == "viiper" and self.viiper_client is not None)
+                if is_viiper:
+                    active_pad_ids = list(self.viiper_client.devices.keys())
+                else:
+                    active_pad_ids = list(self.gamepads.keys())
 
-            for pad_id, pad in active_gamepads:
+            for pad_id in active_pad_ids:
                 cfg = controllers_cfg.get(str(pad_id), {})
                 if not cfg.get("enabled", True):
                     continue
@@ -330,46 +405,31 @@ class EmulatorEngine:
                 c_rs = calib.get("right_stick", {})
 
                 pressed_buttons = set()
-
-                is_ds4 = isinstance(pad, vg.VDS4Gamepad)
+                pad_type = get_pad_emulated_type(self.config, pad_id)
+                is_ds4 = (pad_type in ("ds4", "dualsense"))
+                is_ns2pro = (pad_type == "ns2pro")
+                pad = self.gamepads.get(pad_id) if not is_viiper else None
 
                 # 1. Botones Digitales
-                if is_ds4:
-                    for btn_name, vg_code in DS4_BUTTON_VG_MAP.items():
-                        map_str = mappings.get(btn_name, "")
-                        is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
-                        if is_pressed:
-                            pressed_buttons.add(btn_name)
-                            pad.press_button(button=vg_code)
-                        else:
-                            pad.release_button(button=vg_code)
+                for btn_name in ("A", "B", "X", "Y", "START", "BACK", "LEFT_THUMB", "RIGHT_THUMB", "LEFT_SHOULDER", "RIGHT_SHOULDER"):
+                    map_str = mappings.get(btn_name, "")
+                    is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
+                    if is_pressed:
+                        pressed_buttons.add(btn_name)
 
-                    guide_map = mappings.get("GUIDE", "")
-                    is_guide, _ = self._eval_mapping(guide_map, joy_state, dev_id)
-                    if is_guide:
-                        pressed_buttons.add("GUIDE")
-                        pad.press_special_button(special_button=vg.DS4_SPECIAL_BUTTONS.DS4_SPECIAL_BUTTON_PS)
-                    else:
-                        pad.release_special_button(special_button=vg.DS4_SPECIAL_BUTTONS.DS4_SPECIAL_BUTTON_PS)
+                guide_map = mappings.get("GUIDE", "")
+                is_guide, _ = self._eval_mapping(guide_map, joy_state, dev_id)
+                if is_guide:
+                    pressed_buttons.add("GUIDE")
 
-                    is_d_up, _ = self._eval_mapping(mappings.get("DPAD_UP", ""), joy_state, dev_id)
-                    is_d_down, _ = self._eval_mapping(mappings.get("DPAD_DOWN", ""), joy_state, dev_id)
-                    is_d_left, _ = self._eval_mapping(mappings.get("DPAD_LEFT", ""), joy_state, dev_id)
-                    is_d_right, _ = self._eval_mapping(mappings.get("DPAD_RIGHT", ""), joy_state, dev_id)
-                    if is_d_up: pressed_buttons.add("DPAD_UP")
-                    if is_d_down: pressed_buttons.add("DPAD_DOWN")
-                    if is_d_left: pressed_buttons.add("DPAD_LEFT")
-                    if is_d_right: pressed_buttons.add("DPAD_RIGHT")
-                    pad.directional_pad(direction=get_ds4_dpad_direction(is_d_up, is_d_down, is_d_left, is_d_right))
-                else:
-                    for btn_name, vg_code in BUTTON_VG_MAP.items():
-                        map_str = mappings.get(btn_name, "")
-                        is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
-                        if is_pressed:
-                            pressed_buttons.add(btn_name)
-                            pad.press_button(button=vg_code)
-                        else:
-                            pad.release_button(button=vg_code)
+                is_d_up, _ = self._eval_mapping(mappings.get("DPAD_UP", ""), joy_state, dev_id)
+                is_d_down, _ = self._eval_mapping(mappings.get("DPAD_DOWN", ""), joy_state, dev_id)
+                is_d_left, _ = self._eval_mapping(mappings.get("DPAD_LEFT", ""), joy_state, dev_id)
+                is_d_right, _ = self._eval_mapping(mappings.get("DPAD_RIGHT", ""), joy_state, dev_id)
+                if is_d_up: pressed_buttons.add("DPAD_UP")
+                if is_d_down: pressed_buttons.add("DPAD_DOWN")
+                if is_d_left: pressed_buttons.add("DPAD_LEFT")
+                if is_d_right: pressed_buttons.add("DPAD_RIGHT")
 
                 # 2. Gatillo Izquierdo (LT)
                 lt_map = canonicalize_mapping(mappings.get("LEFT_TRIGGER", ""))
@@ -387,12 +447,6 @@ class EmulatorEngine:
                     invert=c_lt.get("invert", False)
                 )
                 lt_byte = int(lt_calib * 255)
-                pad.left_trigger(value=lt_byte)
-                if is_ds4:
-                    if lt_byte > 10:
-                        pad.press_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_LEFT)
-                    else:
-                        pad.release_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_LEFT)
 
                 # Gatillo Derecho (RT)
                 rt_map = canonicalize_mapping(mappings.get("RIGHT_TRIGGER", ""))
@@ -410,14 +464,8 @@ class EmulatorEngine:
                     invert=c_rt.get("invert", False)
                 )
                 rt_byte = int(rt_calib * 255)
-                pad.right_trigger(value=rt_byte)
-                if is_ds4:
-                    if rt_byte > 10:
-                        pad.press_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_RIGHT)
-                    else:
-                        pad.release_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_RIGHT)
 
-                # 3. Stick Izquierdo (LS) - Soporta tanto ejes analogicos como teclas/botones por direccion
+                # 3. Stick Izquierdo (LS)
                 _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state, dev_id)
                 _, ly_axis = self._eval_mapping(mappings.get("LEFT_STICK_Y", ""), joy_state, dev_id)
 
@@ -451,17 +499,8 @@ class EmulatorEngine:
                     sensitivity_pct=c_ls.get("sensitivity", 0),
                     invert=c_ls.get("invert_y", False)
                 )
-                if is_ds4:
-                    lx_byte = max(0, min(255, 128 + int(lx_calib * 127)))
-                    ly_byte = max(0, min(255, 128 + int(ly_calib * 127)))
-                    pad.left_joystick(x_value=lx_byte, y_value=ly_byte)
-                else:
-                    # Xbox Y: arriba es positivo; Pygame Y: arriba es negativo
-                    lx_int = int(lx_calib * 32767)
-                    ly_int = int(-ly_calib * 32767)
-                    pad.left_joystick(x_value=lx_int, y_value=ly_int)
 
-                # 4. Stick Derecho (RS) - Soporta tanto ejes analogicos como teclas/botones por direccion
+                # 4. Stick Derecho (RS)
                 _, rx_axis = self._eval_mapping(mappings.get("RIGHT_STICK_X", ""), joy_state, dev_id)
                 _, ry_axis = self._eval_mapping(mappings.get("RIGHT_STICK_Y", ""), joy_state, dev_id)
 
@@ -495,17 +534,95 @@ class EmulatorEngine:
                     sensitivity_pct=c_rs.get("sensitivity", 0),
                     invert=c_rs.get("invert_y", False)
                 )
-                if is_ds4:
-                    rx_byte = max(0, min(255, 128 + int(rx_calib * 127)))
-                    ry_byte = max(0, min(255, 128 + int(ry_calib * 127)))
-                    pad.right_joystick(x_value=rx_byte, y_value=ry_byte)
-                else:
-                    rx_int = int(rx_calib * 32767)
-                    ry_int = int(-ry_calib * 32767)
-                    pad.right_joystick(x_value=rx_int, y_value=ry_int)
 
-                # Enviar reporte a ViGEmBus
-                pad.update()
+                # 5. Envio al backend correspondiente
+                if is_viiper:
+                    if pad_type == "xbox360":
+                        btn_mask = 0
+                        for b in pressed_buttons:
+                            btn_mask |= XBOX_BUTTONS.get(b, 0)
+                        lx_int = int(lx_calib * 32767)
+                        ly_int = int(-ly_calib * 32767)
+                        rx_int = int(rx_calib * 32767)
+                        ry_int = int(-ry_calib * 32767)
+                        self.viiper_client.send_xbox360_state(pad_id, btn_mask, lt_byte, rt_byte, lx_int, ly_int, rx_int, ry_int)
+                    elif pad_type == "ds4":
+                        btn_mask = 0
+                        for b in pressed_buttons:
+                            btn_mask |= DS4_BUTTONS.get(b, 0)
+                        dpad_mask = (1 if is_d_up else 0) | (2 if is_d_down else 0) | (4 if is_d_left else 0) | (8 if is_d_right else 0)
+                        lx_b = max(-128, min(127, int(lx_calib * 127)))
+                        ly_b = max(-128, min(127, int(ly_calib * 127)))
+                        rx_b = max(-128, min(127, int(rx_calib * 127)))
+                        ry_b = max(-128, min(127, int(ry_calib * 127)))
+                        self.viiper_client.send_ds4_state(pad_id, btn_mask, dpad_mask, lt_byte, rt_byte, lx_b, ly_b, rx_b, ry_b)
+                    elif pad_type == "dualsense":
+                        btn_mask = 0
+                        for b in pressed_buttons:
+                            btn_mask |= DUALSENSE_BUTTONS.get(b, 0)
+                        dpad_mask = (1 if is_d_up else 0) | (2 if is_d_down else 0) | (4 if is_d_left else 0) | (8 if is_d_right else 0)
+                        lx_b = max(-128, min(127, int(lx_calib * 127)))
+                        ly_b = max(-128, min(127, int(ly_calib * 127)))
+                        rx_b = max(-128, min(127, int(rx_calib * 127)))
+                        ry_b = max(-128, min(127, int(ry_calib * 127)))
+                        self.viiper_client.send_dualsense_state(pad_id, btn_mask, dpad_mask, lt_byte, rt_byte, lx_b, ly_b, rx_b, ry_b)
+                    elif pad_type == "ns2pro":
+                        btn_mask = 0
+                        for b in pressed_buttons:
+                            btn_mask |= NS2PRO_BUTTONS.get(b, 0)
+                        if lt_byte > 40:
+                            btn_mask |= NS2PRO_BUTTONS.get("ZL", 0)
+                        if rt_byte > 40:
+                            btn_mask |= NS2PRO_BUTTONS.get("ZR", 0)
+                        lx_u = max(0, min(4095, int(2048 + lx_calib * 2047)))
+                        ly_u = max(0, min(4095, int(2048 + ly_calib * 2047)))
+                        rx_u = max(0, min(4095, int(2048 + rx_calib * 2047)))
+                        ry_u = max(0, min(4095, int(2048 + ry_calib * 2047)))
+                        self.viiper_client.send_ns2pro_state(pad_id, btn_mask, lx_u, ly_u, rx_u, ry_u)
+                elif pad is not None:
+                    # Modo ViGEmBus
+                    if is_ds4:
+                        for btn_name, vg_code in DS4_BUTTON_VG_MAP.items():
+                            if btn_name in pressed_buttons:
+                                pad.press_button(button=vg_code)
+                            else:
+                                pad.release_button(button=vg_code)
+                        if "GUIDE" in pressed_buttons:
+                            pad.press_special_button(special_button=vg.DS4_SPECIAL_BUTTONS.DS4_SPECIAL_BUTTON_PS)
+                        else:
+                            pad.release_special_button(special_button=vg.DS4_SPECIAL_BUTTONS.DS4_SPECIAL_BUTTON_PS)
+                        pad.directional_pad(direction=get_ds4_dpad_direction(is_d_up, is_d_down, is_d_left, is_d_right))
+                        pad.left_trigger(value=lt_byte)
+                        if lt_byte > 10:
+                            pad.press_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_LEFT)
+                        else:
+                            pad.release_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_LEFT)
+                        pad.right_trigger(value=rt_byte)
+                        if rt_byte > 10:
+                            pad.press_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_RIGHT)
+                        else:
+                            pad.release_button(button=vg.DS4_BUTTONS.DS4_BUTTON_TRIGGER_RIGHT)
+                        lx_byte = max(0, min(255, 128 + int(lx_calib * 127)))
+                        ly_byte = max(0, min(255, 128 + int(ly_calib * 127)))
+                        pad.left_joystick(x_value=lx_byte, y_value=ly_byte)
+                        rx_byte = max(0, min(255, 128 + int(rx_calib * 127)))
+                        ry_byte = max(0, min(255, 128 + int(ry_calib * 127)))
+                        pad.right_joystick(x_value=rx_byte, y_value=ry_byte)
+                    else:
+                        for btn_name, vg_code in BUTTON_VG_MAP.items():
+                            if btn_name in pressed_buttons:
+                                pad.press_button(button=vg_code)
+                            else:
+                                pad.release_button(button=vg_code)
+                        pad.left_trigger(value=lt_byte)
+                        pad.right_trigger(value=rt_byte)
+                        lx_int = int(lx_calib * 32767)
+                        ly_int = int(-ly_calib * 32767)
+                        pad.left_joystick(x_value=lx_int, y_value=ly_int)
+                        rx_int = int(rx_calib * 32767)
+                        ry_int = int(-ry_calib * 32767)
+                        pad.right_joystick(x_value=rx_int, y_value=ry_int)
+                    pad.update()
 
                 # Actualizar estado de visualizacion para la GUI
                 with self.lock:

@@ -14,35 +14,54 @@ import hashlib
 import logging
 import os
 import re
+import sys
 import threading
 import time
 from typing import Callable, Dict, List, Optional, Set, Tuple
-import winreg
 
 logger = logging.getLogger("j360More.RawKeyboard")
 
-user32 = ctypes.windll.user32
-kernel32 = ctypes.windll.kernel32
-hid = ctypes.windll.hid
+if sys.platform != "win32":
+    class RawKeyboardManager:
+        _instance = None
+        @classmethod
+        def get_instance(cls) -> "RawKeyboardManager":
+            if cls._instance is None:
+                cls._instance = RawKeyboardManager()
+            return cls._instance
+        def __init__(self):
+            self.running = False
+        def start(self): pass
+        def stop(self): pass
+        def refresh_devices(self) -> List[Dict]: return []
+        def get_available_keyboards(self) -> List[Dict]: return []
+        def get_pressed_keys(self, dev_id: str) -> Set[str]: return set()
+        def start_capture(self, dev_id: str, callback: Callable[[str], None]): pass
+        def cancel_capture(self): pass
+else:
+    import winreg
+    user32 = ctypes.windll.user32
+    kernel32 = ctypes.windll.kernel32
+    hid = ctypes.windll.hid
 
-hid.HidD_GetProductString.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.ULONG]
-hid.HidD_GetProductString.restype = wintypes.BOOLEAN
+    hid.HidD_GetProductString.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.ULONG]
+    hid.HidD_GetProductString.restype = wintypes.BOOLEAN
 
-hid.HidD_GetManufacturerString.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.ULONG]
-hid.HidD_GetManufacturerString.restype = wintypes.BOOLEAN
+    hid.HidD_GetManufacturerString.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.ULONG]
+    hid.HidD_GetManufacturerString.restype = wintypes.BOOLEAN
 
-LRESULT = ctypes.c_ssize_t
-user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
-user32.DefWindowProcW.restype = LRESULT
+    LRESULT = ctypes.c_ssize_t
+    user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user32.DefWindowProcW.restype = LRESULT
 
-WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+    WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
 
-# Estructuras Win32
-class WNDCLASSEXW(ctypes.Structure):
-    _fields_ = [
-        ("cbSize", wintypes.UINT),
-        ("style", wintypes.UINT),
-        ("lpfnWndProc", WNDPROC),
+    # Estructuras Win32
+    class WNDCLASSEXW(ctypes.Structure):
+        _fields_ = [
+            ("cbSize", wintypes.UINT),
+            ("style", wintypes.UINT),
+            ("lpfnWndProc", WNDPROC),
         ("cbClsExtra", ctypes.c_int),
         ("cbWndExtra", ctypes.c_int),
         ("hInstance", wintypes.HINSTANCE),
