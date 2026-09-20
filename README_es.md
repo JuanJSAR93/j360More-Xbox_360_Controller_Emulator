@@ -94,6 +94,12 @@ Elige uno de los dos controladores soportados:
    - Requiere el controlador **ViGEmBus** instalado en Windows.
    - Descarga oficial: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
 
+> **❓ ¿Por qué es obligatorio instalar usbip-win2 o ViGEmBus?**  
+> Windows no permite que las aplicaciones creen dispositivos de entrada virtuales sin un controlador firmado a nivel de sistema.  
+> - **Si usas VIIPER (predeterminado)**: necesitas el driver **usbip-win2** para comunicar y exponer los mandos por USB/IP (soportando Xbox 360, DualShock 4, DualSense y Switch 2 Pro).  
+> - **Si usas ViGEmBus (alternativo tradicional)**: necesitas el driver **ViGEmBus** (soportando Xbox 360 y DualShock 4).  
+> Sin al menos uno de ellos instalado, Windows no podrá instanciar los mandos virtuales para tus juegos.
+
 ### Opcional:
 - **Nefarius HidHide**: Evita la doble entrada en juegos cuando se utilizan periféricos físicos DirectInput.
   - Descarga oficial: [HidHide Releases (GitHub)](https://github.com/nefarius/HidHide/releases)

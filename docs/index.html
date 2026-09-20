@@ -777,9 +777,9 @@
 
     <div class="faq-grid">
       <div class="faq-item">
-        <div class="faq-question" data-i18n="faq_q1">¿Por qué es obligatorio instalar ViGEmBus?</div>
+        <div class="faq-question" data-i18n="faq_q1">¿Por qué es obligatorio instalar usbip-win2 o ViGEmBus?</div>
         <div class="faq-answer" data-i18n="faq_a1">
-          Windows no permite crear dispositivos de control virtual sin un driver de kernel firmado. ViGEmBus es el estándar de oro de código abierto que actúa como puente para crear mandos virtuales Xbox 360 totalmente indistinguibles de un mando oficial con cable.
+          Windows no permite crear dispositivos de control virtual sin un controlador firmado del sistema. Si utilizas el motor predeterminado VIIPER, requieres el driver complementario usbip-win2 para comunicar los mandos por USB/IP (soportando Xbox 360, PS4, PS5 y Switch 2 Pro). Si optas por el motor clásico alternativo, necesitas ViGEmBus. Sin al menos uno de ellos instalado, el sistema no puede crear los mandos virtuales reconocibles por tus juegos.
         </div>
       </div>
 
@@ -826,13 +826,15 @@
           j360More
         </h4>
         <p data-i18n="footer_desc">
-          Emulador de mandos virtuales Xbox 360 para Windows. Diseñado y desarrollado por <strong>JuanJSAR</strong> para ofrecer la máxima velocidad, estabilidad y flexibilidad en entornos multijugador de 1 a 12 participantes.
+          Emulador de mandos virtuales para Windows y Linux (próximamente). Diseñado y desarrollado por <strong>JuanJSAR</strong> para ofrecer la máxima velocidad, estabilidad y flexibilidad en entornos multijugador de 1 a 12 participantes.
         </p>
       </div>
 
       <div class="footer-col">
         <h5 data-i18n="footer_drivers_title">Controladores</h5>
         <ul>
+          <li><a href="https://github.com/vadimgrn/usbip-win2/releases" target="_blank" rel="noopener">usbip-win2 Releases</a></li>
+          <li><a href="https://github.com/Alia5/VIIPER" target="_blank" rel="noopener">VIIPER Daemon</a></li>
           <li><a href="https://github.com/nefarius/ViGEmBus/releases" target="_blank" rel="noopener">ViGEmBus Releases</a></li>
           <li><a href="https://github.com/nefarius/HidHide/releases/" target="_blank" rel="noopener">HidHide Releases</a></li>
           <li><a href="https://nefarius.at/" target="_blank" rel="noopener">Nefarius Software</a></li>
@@ -852,7 +854,7 @@
 
     <div class="footer-bottom">
       <div>&copy; 2026 <strong>j360More</strong>. Código abierto bajo licencia MIT.</div>
-      <div>Desarrollado con ViGEmBus & SDL2.</div>
+      <div>Desarrollado con VIIPER, ViGEmBus & SDL2.</div>
     </div>
   </footer>
 

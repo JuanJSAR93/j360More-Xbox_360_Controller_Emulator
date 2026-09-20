@@ -94,6 +94,12 @@ Choose one of the two supported backends:
    - Requires the **ViGEmBus** driver installed on Windows.
    - Official Download: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
 
+> **❓ Why is it mandatory to install usbip-win2 or ViGEmBus?**  
+> Windows does not permit applications to spawn virtual input devices without a signed system-level driver.  
+> - **If using VIIPER (default)**: you need the **usbip-win2** driver to bridge and expose gamepads via USB/IP (supporting Xbox 360, DualShock 4, DualSense, and Switch 2 Pro).  
+> - **If using ViGEmBus (classic alternative)**: you need the **ViGEmBus** driver (supporting Xbox 360 and DualShock 4).  
+> Without at least one of these installed, Windows cannot instantiate virtual controllers for your games.
+
 ### Optional:
 - **Nefarius HidHide**: Prevents double-input in games when using physical DirectInput controllers.
   - Official Download: [HidHide Releases (GitHub)](https://github.com/nefarius/HidHide/releases)
