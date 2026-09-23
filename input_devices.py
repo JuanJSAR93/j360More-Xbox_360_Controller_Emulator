@@ -10,6 +10,7 @@ import threading
 import pygame
 from driver_manager import DriverManager
 from raw_keyboard import RawKeyboardManager
+import web_gamepad_server
 
 # Inicializar subsistema de joystick de pygame
 pygame.init()
@@ -87,6 +88,14 @@ class DeviceManager:
                 self.keyboard_manager.start()
             except Exception as e:
                 print(f"[!] No se pudo iniciar el gestor de teclados Raw Input: {e}")
+
+        # Conectar callbacks del servidor AirPad para auto-detección y reconexión
+        try:
+            srv = web_gamepad_server.get_server_instance()
+            srv.on_client_connected_cb = lambda slot, client: self._perform_selective_reconnect()
+            srv.on_client_disconnected_cb = lambda slot: self._perform_selective_reconnect()
+        except Exception:
+            pass
 
     def add_on_devices_changed_callback(self, callback):
         """Registra una función callback a invocar cuando se detecta reconexión/cambio de mandos."""
@@ -351,6 +360,29 @@ class DeviceManager:
             except Exception as e:
                 print(f"[!] Error inicializando joystick {i}: {e}")
 
+        # Dispositivos móviles AirPad conectados (phone_1..phone_12)
+        try:
+            srv = web_gamepad_server.get_server_instance()
+            for c in srv.get_clients_info():
+                if c.get("connected"):
+                    p_name = c.get("name") or f"Teléfono {c['slot_num']}"
+                    p_model = c.get("model") or "Móvil Web"
+                    p_ip = c.get("ip", "")
+                    device_list.append({
+                        "id": c["slot_id"],
+                        "name": f"📱 {p_name} [{p_model}] ({p_ip})",
+                        "type": "phone",
+                        "vendor_name": "AirPad Virtual",
+                        "product_name": f"{p_model} ({p_ip})",
+                        "instance_id": f"AIRPAD{c['slot_num']}",
+                        "conn_type": "Wi-Fi",
+                        "num_buttons": 11,
+                        "num_axes": 6,
+                        "num_hats": 1
+                    })
+        except Exception:
+            pass
+
         self._device_cache = list(device_list)
         return device_list
 
@@ -481,6 +513,12 @@ class DeviceManager:
                 for k in self.keyboard_manager.get_available_keyboards():
                     all_k.update(self.keyboard_manager.get_pressed_keys(k["id"]))
                 state["keys"] = all_k
+        elif dev_id.startswith("phone_"):
+            try:
+                srv = web_gamepad_server.get_server_instance()
+                return srv.get_physical_state(dev_id)
+            except Exception:
+                return state
 
         return state
 
@@ -494,6 +532,38 @@ class DeviceManager:
 
         self._cancel_capture = False
         start_time = time.time()
+
+        # Captura de entradas para mandos móviles AirPad
+        if dev_id.startswith("phone_"):
+            srv = web_gamepad_server.get_server_instance()
+            base_st = srv.get_physical_state(dev_id)
+            base_btns = {b for b, v in base_st["buttons"].items() if v}
+            base_axes = dict(base_st["axes"])
+            base_hats = dict(base_st["hats"])
+
+            while time.time() - start_time < timeout:
+                if self._cancel_capture:
+                    return None
+                time.sleep(0.01)
+                st = srv.get_physical_state(dev_id)
+                # 1. Botones
+                for b, v in st["buttons"].items():
+                    if v and b not in base_btns:
+                        return f"Button {b + 1}"
+                # 2. Hats / D-Pad
+                hx, hy = st["hats"].get(0, (0, 0))
+                bhx, bhy = base_hats.get(0, (0, 0))
+                if (hx, hy) != (0, 0) and (hx, hy) != (bhx, bhy):
+                    if hy > 0: return "POV 1 Up"
+                    if hy < 0: return "POV 1 Down"
+                    if hx < 0: return "POV 1 Left"
+                    if hx > 0: return "POV 1 Right"
+                # 3. Ejes
+                for a, val in st["axes"].items():
+                    b_val = base_axes.get(a, 0.0)
+                    if abs(val - b_val) > 0.35:
+                        return f"Axis {a + 1}"
+            return None
 
         # Captura de teclas para teclado físico específico o global
         if dev_id.startswith("kbd_") or dev_id == "keyboard":

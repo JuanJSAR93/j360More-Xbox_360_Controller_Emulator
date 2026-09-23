@@ -19,6 +19,13 @@ try:
 except ImportError:
     resvg_py = None
 
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
+
+import web_gamepad_server
+
 from driver_manager import DriverManager
 from input_devices import DeviceManager
 from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration, get_pad_emulated_type
@@ -304,6 +311,38 @@ DEFAULT_CALIBRATION = {
     "right_stick": {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "invert_x": False, "invert_y": False}
 }
 
+DEFAULT_PHONE_MAPPINGS = {
+    "LEFT_TRIGGER": "Axis 3",
+    "LEFT_SHOULDER": "Button 5",
+    "BACK": "Button 7",
+    "START": "Button 8",
+    "GUIDE": "Button 11",
+    "LEFT_STICK_X": "Axis 1",
+    "LEFT_STICK_Y": "Axis 2",
+    "LEFT_STICK_UP": "-- Ninguno --",
+    "LEFT_STICK_DOWN": "-- Ninguno --",
+    "LEFT_STICK_LEFT": "-- Ninguno --",
+    "LEFT_STICK_RIGHT": "-- Ninguno --",
+    "LEFT_THUMB": "Button 9",
+    "RIGHT_TRIGGER": "Axis 6",
+    "RIGHT_SHOULDER": "Button 6",
+    "Y": "Button 4",
+    "X": "Button 3",
+    "B": "Button 2",
+    "A": "Button 1",
+    "RIGHT_STICK_X": "Axis 4",
+    "RIGHT_STICK_Y": "Axis 5",
+    "RIGHT_STICK_UP": "-- Ninguno --",
+    "RIGHT_STICK_DOWN": "-- Ninguno --",
+    "RIGHT_STICK_LEFT": "-- Ninguno --",
+    "RIGHT_STICK_RIGHT": "-- Ninguno --",
+    "RIGHT_THUMB": "Button 10",
+    "DPAD_UP": "POV 1 Up",
+    "DPAD_DOWN": "POV 1 Down",
+    "DPAD_LEFT": "POV 1 Left",
+    "DPAD_RIGHT": "POV 1 Right"
+}
+
 class J360MoreApp:
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -335,6 +374,14 @@ class J360MoreApp:
         self._build_ui()
         self._refresh_all_devices()
         self.device_manager.add_on_devices_changed_callback(lambda devs: self.root.after(0, self._on_devices_hotplugged, devs))
+
+        # Servidor AirPad para smartphones
+        self.airpad_server = web_gamepad_server.get_server_instance()
+        self.airpad_server.port = self.config.get("airpad_server_port", 8080)
+        self.airpad_server.haptics_enabled = self.config.get("airpad_haptics_enabled", True)
+        self.airpad_server.max_slots = self.config.get("max_controllers", 8)
+        if self.config.get("airpad_server_enabled", True):
+            self.airpad_server.start()
 
         # Comprobar estado de drivers (ViGEmBus y aviso leve de HidHide)
         self.root.after(200, self._check_system_drivers)
@@ -540,6 +587,8 @@ class J360MoreApp:
             self.btn_devices.config(text=self.t("btn_devices"))
         if hasattr(self, "btn_settings"):
             self.btn_settings.config(text=self.t("btn_settings"))
+        if hasattr(self, "btn_airpad"):
+            self.btn_airpad.config(text=self.t("btn_airpad_main"))
         if hasattr(self, "btn_joy_cpl"):
             self.btn_joy_cpl.config(text=self.t("btn_joy_cpl"))
         if hasattr(self, "btn_hidhide"):
@@ -808,6 +857,9 @@ class J360MoreApp:
 
         self.btn_settings = ttk.Button(header_frame, text=self.t("btn_settings"), command=self._open_settings_dialog)
         self.btn_settings.pack(side=tk.LEFT, padx=4)
+
+        self.btn_airpad = ttk.Button(header_frame, text=self.t("btn_airpad_main"), command=lambda: self._open_settings_dialog(initial_tab=1))
+        self.btn_airpad.pack(side=tk.LEFT, padx=4)
 
         status_container = ttk.Frame(header_frame)
         status_container.pack(side=tk.RIGHT)
@@ -1538,7 +1590,11 @@ class J360MoreApp:
     def _on_devices_hotplugged(self, new_devices: List[Dict[str, Any]]):
         """Manejador ejecutado en el hilo de la UI cuando el DeviceManager auto-reconecta mandos."""
         try:
+            old_dev_ids = {d["id"] for d in getattr(self, "available_devices", []) if d["id"] != "none"}
             self.available_devices = new_devices
+            current_dev_ids = {d["id"] for d in new_devices if d["id"] != "none"}
+            newly_added_ids = current_dev_ids - old_dev_ids
+
             dev_names = []
             kbd_count = 0
             for d in self.available_devices:
@@ -1547,6 +1603,9 @@ class J360MoreApp:
                     dev_names.append(self.get_device_display_name(d, kbd_count))
                 else:
                     dev_names.append(self.get_device_display_name(d))
+
+            auto_usb = self.config.get("auto_assign_usb", True)
+            auto_phone = self.config.get("airpad_auto_assign", True)
 
             for pad_id, widgets in self.tab_widgets.items():
                 cb = widgets["dev_combo"]
@@ -1564,6 +1623,46 @@ class J360MoreApp:
 
                 has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
                 self._update_tab_state(pad_id, has_dev)
+
+            # Auto-asignación de dispositivos nuevos a ranuras libres
+            if newly_added_ids and (auto_usb or auto_phone):
+                assigned_now = {
+                    cfg.get("physical_device_id")
+                    for cfg in self.config.get("controllers", {}).values()
+                    if cfg.get("physical_device_id") and cfg.get("physical_device_id") != "none"
+                }
+
+                for new_id in newly_added_ids:
+                    if new_id in assigned_now:
+                        continue
+                    is_usb = new_id.startswith("joy_")
+                    is_phone = new_id.startswith("phone_")
+                    if (is_usb and auto_usb) or (is_phone and auto_phone):
+                        for pad_id in sorted(self.tab_widgets.keys()):
+                            widgets = self.tab_widgets[pad_id]
+                            cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+                            cur_p_id = cfg.get("physical_device_id", "none")
+                            if cur_p_id == "none":
+                                cfg["physical_device_id"] = new_id
+                                assigned_now.add(new_id)
+
+                                if is_phone:
+                                    cur_maps = cfg.get("mappings", {})
+                                    all_none = all(is_none_mapping(v) for v in cur_maps.values())
+                                    if all_none or not cur_maps:
+                                        cfg["mappings"] = dict(DEFAULT_PHONE_MAPPINGS)
+                                        for target, t_cb in widgets.get("combos", {}).items():
+                                            t_cb.set(self.localize_mapping(DEFAULT_PHONE_MAPPINGS.get(target, "-- Ninguno --")))
+
+                                for idx, dev in enumerate(self.available_devices):
+                                    if dev["id"] == new_id:
+                                        widgets["dev_combo"].current(idx)
+                                        break
+                                self._update_tab_state(pad_id, True)
+                                break
+
+                self._sync_ui_to_config()
+                self.engine.set_config(self.config)
         except Exception:
             pass
 
@@ -1576,6 +1675,14 @@ class J360MoreApp:
             if str(pad_id) not in self.config["controllers"]:
                 self.config["controllers"][str(pad_id)] = {}
             self.config["controllers"][str(pad_id)]["physical_device_id"] = dev_id
+
+            if dev_id.startswith("phone_"):
+                cur_maps = self.config["controllers"][str(pad_id)].get("mappings", {})
+                all_none = all(is_none_mapping(v) for v in cur_maps.values())
+                if all_none or not cur_maps:
+                    self.config["controllers"][str(pad_id)]["mappings"] = dict(DEFAULT_PHONE_MAPPINGS)
+                    for target, cb in widgets.get("combos", {}).items():
+                        cb.set(self.localize_mapping(DEFAULT_PHONE_MAPPINGS.get(target, "-- Ninguno --")))
 
             has_dev = (dev_id != "none")
             self._update_tab_state(pad_id, has_dev)
@@ -2005,24 +2112,31 @@ class J360MoreApp:
         btn_box.pack(fill=tk.X, side=tk.BOTTOM)
         ttk.Button(btn_box, text=self.t("hidhide_warn_btn"), command=on_accept).pack(side=tk.RIGHT, padx=4)
 
-    def _open_settings_dialog(self):
-        """Ventana modal de configuración con Idioma, Slider (1 a 12 mandos) y ruta de HidHide."""
+    def _open_settings_dialog(self, initial_tab: int = 0):
+        """Ventana modal de configuración con pestañas General (Emulación/HidHide/Auto-asignación) y Mandos Móviles AirPad."""
         dlg = tk.Toplevel(self.root)
         dlg.title(self.t("set_dlg_title"))
-        dlg.geometry("540x620")
+        dlg.geometry("750x710")
         dlg.resizable(False, False)
         self._setup_modal_dialog(dlg)
 
-        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 270)
-        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 310)
-        dlg.geometry(f"540x620+{x}+{y}")
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 375)
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 355)
+        dlg.geometry(f"750x710+{x}+{y}")
 
-        frame = ttk.Frame(dlg, padding=16)
-        frame.pack(fill=tk.BOTH, expand=True)
+        main_box = ttk.Frame(dlg, padding=8)
+        main_box.pack(fill=tk.BOTH, expand=True)
+
+        notebook_settings = ttk.Notebook(main_box)
+        notebook_settings.pack(fill=tk.BOTH, expand=True, padx=4, pady=(4, 8))
+
+        # ==================== PESTAÑA 1: GENERAL & EMULACIÓN ====================
+        tab_general = ttk.Frame(notebook_settings, padding=10)
+        notebook_settings.add(tab_general, text=self.t("set_tab_general"))
 
         # SECCION 1: Idioma / Language
-        box_lang = ttk.LabelFrame(frame, text="🌐 " + self.t("set_language_label"), padding=8)
-        box_lang.pack(fill=tk.X, pady=(0, 8))
+        box_lang = ttk.LabelFrame(tab_general, text="🌐 " + self.t("set_language_label"), padding=8)
+        box_lang.pack(fill=tk.X, pady=(0, 6))
 
         cur_lang_code = self.config.get("language", "es")
         if cur_lang_code not in SUPPORTED_LANGUAGES:
@@ -2034,8 +2148,8 @@ class J360MoreApp:
         lang_combo.pack(anchor="w", padx=4, pady=2)
 
         # SECCION 2: Backend de Driver Virtual (VIIPER vs ViGEmBus)
-        box_driver = ttk.LabelFrame(frame, text="⚡ " + self.t("set_driver_title"), padding=8)
-        box_driver.pack(fill=tk.X, pady=(0, 8))
+        box_driver = ttk.LabelFrame(tab_general, text="⚡ " + self.t("set_driver_title"), padding=8)
+        box_driver.pack(fill=tk.X, pady=(0, 6))
 
         cur_driver = self.config.get("driver_backend", "vigem")
         if sys.platform != "win32":
@@ -2064,11 +2178,11 @@ class J360MoreApp:
         rb_vigem = ttk.Radiobutton(driver_row, text=self.t("set_driver_vigem"), variable=driver_var, value="vigem", state=vigem_state, command=on_driver_changed)
         rb_vigem.pack(anchor="w", pady=1)
 
-        ttk.Label(box_driver, text=self.t("set_driver_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=480).pack(anchor="w", padx=4, pady=(2, 0))
+        ttk.Label(box_driver, text=self.t("set_driver_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=660).pack(anchor="w", padx=4, pady=(2, 0))
 
         # SECCION 3: Tipo de mando virtual emulado
-        box_type = ttk.LabelFrame(frame, text="🎮 " + self.t("set_emulated_type_title"), padding=8)
-        box_type.pack(fill=tk.X, pady=(0, 8))
+        box_type = ttk.LabelFrame(tab_general, text="🎮 " + self.t("set_emulated_type_title"), padding=8)
+        box_type.pack(fill=tk.X, pady=(0, 6))
 
         cur_type = self.config.get("emulated_type", "xbox360").lower()
         if driver_var.get() == "vigem" and cur_type in ("dualsense", "ns2pro"):
@@ -2118,11 +2232,11 @@ class J360MoreApp:
             rb_ps5.configure(state="disabled")
             rb_ns2.configure(state="disabled")
 
-        ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=480).pack(anchor="w", padx=4, pady=(2, 0))
+        ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=660).pack(anchor="w", padx=4, pady=(2, 0))
 
-        # SECCION 3: Mandos virtuales a emular
-        box_mandos = ttk.LabelFrame(frame, text=self.t("set_mandos_title"), padding=10)
-        box_mandos.pack(fill=tk.X, pady=(0, 8))
+        # SECCION 4: Mandos virtuales a emular (Slider 1 a 12)
+        box_mandos = ttk.LabelFrame(tab_general, text=self.t("set_mandos_title"), padding=8)
+        box_mandos.pack(fill=tk.X, pady=(0, 6))
 
         current_val = self.config.get("max_controllers", 8)
         if cur_type in ("mixed", "mixto") and current_val % 2 != 0:
@@ -2158,21 +2272,19 @@ class J360MoreApp:
         ttk.Label(ticks_frame, text=self.t("set_6_controllers"), font=("Segoe UI", 8)).pack(side=tk.LEFT, expand=True)
         ttk.Label(ticks_frame, text=self.t("set_12_controllers"), font=("Segoe UI", 8)).pack(side=tk.RIGHT)
 
-        # SECCION 4: Integración con HidHide (Opcional)
-        box_hidhide = ttk.LabelFrame(frame, text=self.t("set_hidhide_title"), padding=10)
-        box_hidhide.pack(fill=tk.X, pady=(0, 8))
+        # SECCION 5: Integración con HidHide (Opcional)
+        box_hidhide = ttk.LabelFrame(tab_general, text=self.t("set_hidhide_title"), padding=8)
+        box_hidhide.pack(fill=tk.X, pady=(0, 6))
 
         is_installed = self.driver_manager.is_hidhide_installed()
         status_text = self.t("set_status_installed") if is_installed else self.t("set_status_missing")
         status_color = "#16a34a" if is_installed else "#d97706"
 
         status_lbl = ttk.Label(box_hidhide, text=self.t("set_status_lbl", status=status_text), font=("Segoe UI", 8, "bold"), foreground=status_color)
-        status_lbl.pack(anchor="w", pady=(0, 4))
-
-        ttk.Label(box_hidhide, text=self.t("set_hidhide_path"), font=("Segoe UI", 8)).pack(anchor="w")
+        status_lbl.pack(anchor="w", pady=(0, 2))
 
         path_row = ttk.Frame(box_hidhide)
-        path_row.pack(fill=tk.X, pady=(2, 4))
+        path_row.pack(fill=tk.X, pady=(2, 2))
 
         current_path = self.driver_manager.get_hidhide_cli_path() or ""
         path_var = tk.StringVar(value=current_path)
@@ -2190,15 +2302,272 @@ class J360MoreApp:
         btn_browse = ttk.Button(path_row, text=self.t("set_btn_browse"), command=on_browse_hidhide)
         btn_browse.pack(side=tk.RIGHT)
 
-        # Opciones adicionales de HidHide
         cloak_active_var = tk.BooleanVar(value=self.driver_manager.is_cloak_active() if is_installed else True)
         chk_cloak = ttk.Checkbutton(box_hidhide, text=self.t("set_chk_cloak"), variable=cloak_active_var)
-        chk_cloak.pack(anchor="w", pady=2)
+        chk_cloak.pack(anchor="w", pady=1)
 
         warn_suppressed = self.config.get("suppress_hidhide_warning", False)
         show_warn_var = tk.BooleanVar(value=not warn_suppressed)
         chk_warn = ttk.Checkbutton(box_hidhide, text=self.t("set_chk_warn"), variable=show_warn_var)
-        chk_warn.pack(anchor="w", pady=2)
+        chk_warn.pack(anchor="w", pady=1)
+
+        # SECCION 6: Auto-asignación para mandos USB
+        auto_assign_usb_var = tk.BooleanVar(value=self.config.get("auto_assign_usb", True))
+        chk_auto_usb = ttk.Checkbutton(tab_general, text=self.t("set_auto_assign_usb"), variable=auto_assign_usb_var)
+        chk_auto_usb.pack(anchor="w", padx=4, pady=(4, 2))
+
+
+        # ==================== PESTAÑA 2: MANDOS MÓVILES (AIRPAD) ====================
+        tab_airpad = ttk.Frame(notebook_settings, padding=10)
+        notebook_settings.add(tab_airpad, text=self.t("set_tab_airpad"))
+        if initial_tab == 1:
+            notebook_settings.select(tab_airpad)
+
+        srv = web_gamepad_server.get_server_instance()
+
+        # Fila superior de control del servidor
+        top_ctrls = ttk.Frame(tab_airpad)
+        top_ctrls.pack(fill=tk.X, pady=(0, 10))
+
+        airpad_srv_enabled_var = tk.BooleanVar(value=srv.running)
+        port_var = tk.StringVar(value=str(getattr(srv, "port", self.config.get("airpad_server_port", 8080))))
+
+        def update_srv_status_label():
+            if srv.running:
+                lbl_srv_status.config(
+                    text=self.t("airpad_server_active", url=srv.get_url()),
+                    foreground="#16a34a"
+                )
+                btn_toggle_srv.config(text=self.t("airpad_btn_turn_off"))
+            else:
+                lbl_srv_status.config(
+                    text=self.t("airpad_server_stopped"),
+                    foreground="#dc2626"
+                )
+                btn_toggle_srv.config(text=self.t("airpad_btn_turn_on"))
+
+        def toggle_server_state():
+            if srv.running:
+                srv.stop()
+                airpad_srv_enabled_var.set(False)
+                self.config["airpad_server_enabled"] = False
+            else:
+                try:
+                    srv.port = int(port_var.get().strip())
+                except Exception:
+                    srv.port = 8080
+                srv.start()
+                airpad_srv_enabled_var.set(True)
+                self.config["airpad_server_enabled"] = True
+            self.save_config(silent=True)
+            update_srv_status_label()
+            update_qr_code()
+
+        def restart_airpad():
+            try:
+                p = int(port_var.get().strip())
+                srv.port = p
+            except Exception:
+                p = 8080
+                port_var.set("8080")
+                srv.port = 8080
+            srv.stop()
+            if airpad_srv_enabled_var.get():
+                srv.start()
+            self.config["airpad_server_port"] = srv.port
+            self.save_config(silent=True)
+            update_srv_status_label()
+            update_qr_code()
+
+        btn_toggle_srv = ttk.Button(top_ctrls, text=self.t("airpad_btn_turn_on"), command=toggle_server_state)
+        btn_toggle_srv.pack(side=tk.LEFT, padx=(0, 10))
+
+        lbl_srv_status = ttk.Label(top_ctrls, text="", font=("Segoe UI", 9, "bold"))
+        lbl_srv_status.pack(side=tk.LEFT, padx=(0, 10))
+
+        port_box = ttk.Frame(top_ctrls)
+        port_box.pack(side=tk.RIGHT)
+        ttk.Label(port_box, text=self.t("airpad_port_label"), font=("Segoe UI", 8)).pack(side=tk.LEFT, padx=(0, 4))
+        entry_port = ttk.Entry(port_box, textvariable=port_var, width=6, font=("Segoe UI", 8))
+        entry_port.pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(port_box, text=self.t("airpad_btn_restart"), command=restart_airpad).pack(side=tk.LEFT)
+
+        # Panel Superior: QR y URL (Escanea este código QR con la cámara de tu smartphone...)
+        qr_box = ttk.LabelFrame(tab_airpad, text="📷 " + self.t("airpad_scan_qr_desc"), padding=8)
+        qr_box.pack(fill=tk.X, pady=(0, 6))
+
+        # Marco con tamaño fijo para que la caja no cambie de tamaño entre QR y mensaje de apagado
+        qr_frame = tk.Frame(qr_box, width=170, height=170, bg="white", relief="solid", borderwidth=1)
+        qr_frame.pack(side=tk.LEFT, padx=(4, 14), pady=2)
+        qr_frame.pack_propagate(False)
+
+        lbl_qr = tk.Label(qr_frame, bg="white")
+        lbl_qr.pack(fill=tk.BOTH, expand=True)
+
+        qr_info_box = ttk.Frame(qr_box)
+        qr_info_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
+
+        lbl_hint = ttk.Label(qr_info_box, text=self.t("airpad_scan_hint"), wraplength=470, font=("Segoe UI", 9))
+        lbl_hint.pack(anchor="w", pady=(4, 6))
+
+        entry_url = ttk.Entry(qr_info_box, font=("Segoe UI", 9, "bold"), justify="center")
+        entry_url.pack(fill=tk.X, pady=(0, 6))
+
+        btn_url_row = ttk.Frame(qr_info_box)
+        btn_url_row.pack(fill=tk.X, pady=(0, 6))
+
+        def copy_url_to_clipboard():
+            url = srv.get_url()
+            self.root.clipboard_clear()
+            self.root.clipboard_append(url)
+            btn_copy.config(text=self.t("airpad_url_copied"))
+            dlg.after(2000, lambda: btn_copy.config(text=self.t("airpad_btn_copy_url")))
+
+        btn_copy = ttk.Button(btn_url_row, text=self.t("airpad_btn_copy_url"), command=copy_url_to_clipboard)
+        btn_copy.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
+
+        btn_open = ttk.Button(btn_url_row, text=self.t("airpad_btn_open_browser"), command=lambda: webbrowser.open(srv.get_url()))
+        btn_open.pack(side=tk.RIGHT, expand=True, fill=tk.X)
+
+        lbl_subhint = ttk.Label(qr_info_box, text="⚡ Conexión instantánea sin apps • Compatible con iOS Safari y Android Chrome", font=("Segoe UI", 8), foreground="#555555")
+        lbl_subhint.pack(anchor="w", pady=(2, 0))
+
+        def update_qr_code():
+            if not srv.running:
+                lbl_qr.config(image="", text=self.t("airpad_srv_off_box"), font=("Segoe UI", 9, "bold"), fg="#dc2626", justify="center")
+                lbl_qr.image = None
+                entry_url.config(state="normal")
+                entry_url.delete(0, tk.END)
+                entry_url.insert(0, self.t("airpad_disabled_url"))
+                entry_url.config(state="readonly")
+                btn_copy.config(state="disabled")
+                btn_open.config(state="disabled")
+            else:
+                url = srv.get_url()
+                entry_url.config(state="normal")
+                entry_url.delete(0, tk.END)
+                entry_url.insert(0, url)
+                entry_url.config(state="readonly")
+                btn_copy.config(state="normal")
+                btn_open.config(state="normal")
+
+                qr_done = False
+                if qrcode:
+                    try:
+                        qr = qrcode.QRCode(box_size=4, border=2)
+                        qr.add_data(url)
+                        qr.make(fit=True)
+                        qr_img = qr.make_image(fill_color="black", back_color="white")
+                        qr_img = qr_img.resize((165, 165), Image.Resampling.NEAREST)
+                        qr_photo = ImageTk.PhotoImage(qr_img)
+                        lbl_qr.config(image=qr_photo, text="")
+                        lbl_qr.image = qr_photo
+                        qr_done = True
+                    except Exception as ex:
+                        logger.warning(f"Error renderizando código QR: {ex}")
+                if not qr_done:
+                    lbl_qr.config(image="", text=url, font=("Segoe UI", 8), fg="black", justify="center")
+                    lbl_qr.image = None
+
+        update_srv_status_label()
+        update_qr_code()
+
+        # Panel Inferior: Tabla scrollable de ranuras (igual al número de mandos virtuales a emular)
+        devices_box = ttk.LabelFrame(tab_airpad, text="📱 " + self.t("airpad_devices_title"), padding=8)
+        devices_box.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
+
+        tree_frame = ttk.Frame(devices_box)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+
+        scroll_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        cols = ("slot", "device", "assigned")
+        tree_devices = ttk.Treeview(tree_frame, columns=cols, show="headings", height=5, yscrollcommand=scroll_y.set, selectmode="browse")
+        scroll_y.config(command=tree_devices.yview)
+        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        tree_devices.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        tree_devices.heading("slot", text="#")
+        tree_devices.heading("device", text="Dispositivo / IP")
+        tree_devices.heading("assigned", text="Asignado")
+        tree_devices.column("slot", width=36, anchor="center", stretch=False)
+        tree_devices.column("device", width=420, anchor="w")
+        tree_devices.column("assigned", width=120, anchor="center")
+
+        right_bot_row = ttk.Frame(devices_box)
+        right_bot_row.pack(fill=tk.X)
+
+        def kick_selected_phone():
+            sel = tree_devices.selection()
+            if sel:
+                slot_id = sel[0]
+                srv.kick_client(slot_id)
+                refresh_airpad_tree()
+
+        btn_kick = ttk.Button(right_bot_row, text="❌ " + self.t("airpad_btn_kick"), command=kick_selected_phone)
+        btn_kick.pack(side=tk.RIGHT, padx=2)
+
+        # Opciones inferiores de la pestaña AirPad
+        bot_options = ttk.Frame(tab_airpad)
+        bot_options.pack(fill=tk.X, pady=(2, 0))
+
+        airpad_auto_assign_var = tk.BooleanVar(value=self.config.get("airpad_auto_assign", True))
+        chk_auto_phone = ttk.Checkbutton(bot_options, text=self.t("airpad_chk_auto_assign"), variable=airpad_auto_assign_var)
+        chk_auto_phone.pack(anchor="w", pady=2)
+
+        airpad_haptics_var = tk.BooleanVar(value=self.config.get("airpad_haptics_enabled", True))
+        chk_haptics = ttk.Checkbutton(bot_options, text=self.t("airpad_chk_haptics"), variable=airpad_haptics_var)
+        chk_haptics.pack(anchor="w", pady=2)
+
+        # Actualización en vivo de la lista de teléfonos mientras el diálogo esté abierto
+        timer_active = [True]
+
+        def refresh_airpad_tree():
+            if not timer_active[0]:
+                return
+            try:
+                selected_item = tree_devices.selection()
+                sel_slot = selected_item[0] if selected_item else None
+
+                tree_devices.delete(*tree_devices.get_children())
+
+                assigned_map = {}
+                for p_id, p_cfg in self.config.get("controllers", {}).items():
+                    p_dev = p_cfg.get("physical_device_id", "")
+                    if p_dev.startswith("phone_"):
+                        assigned_map[p_dev] = f"Mando {p_id}"
+
+                cur_limit = val_var.get()
+                devices_box.config(text=f"📱 {self.t('airpad_devices_title')} ({cur_limit})")
+
+                for c in srv.get_clients_info(limit_count=cur_limit):
+                    s_id = c["slot_id"]
+                    s_num = c["slot_num"]
+                    if c["connected"]:
+                        dev_text = f"🟢 {c['name']} [{c['model']}]"
+                        if c["ip"]:
+                            dev_text += f" ({c['ip']})"
+                        assigned_text = assigned_map.get(s_id, self.t("airpad_not_assigned"))
+                    else:
+                        dev_text = self.t("airpad_slot_status_free")
+                        assigned_text = "--"
+
+                    tree_devices.insert("", tk.END, iid=s_id, values=(f"{s_num}", dev_text, assigned_text))
+
+                if sel_slot and tree_devices.exists(sel_slot):
+                    tree_devices.selection_set(sel_slot)
+            except Exception:
+                pass
+
+            if timer_active[0]:
+                dlg.after(1000, refresh_airpad_tree)
+
+        refresh_airpad_tree()
+
+        def on_dlg_close():
+            timer_active[0] = False
+            dlg.destroy()
+
+        dlg.protocol("WM_DELETE_WINDOW", on_dlg_close)
 
         def apply_settings():
             # 1. Aplicar idioma
@@ -2239,6 +2608,27 @@ class J360MoreApp:
                 self.driver_manager.set_cloak_active(cloak_active_var.get())
                 self.driver_manager.ensure_process_whitelisted()
 
+            # 6. Guardar opciones de auto-asignación y AirPad
+            self.config["auto_assign_usb"] = auto_assign_usb_var.get()
+            self.config["airpad_server_enabled"] = airpad_srv_enabled_var.get()
+            try:
+                p_val = int(port_var.get().strip())
+            except Exception:
+                p_val = 8080
+            self.config["airpad_server_port"] = p_val
+            self.config["airpad_auto_assign"] = airpad_auto_assign_var.get()
+            self.config["airpad_haptics_enabled"] = airpad_haptics_var.get()
+
+            srv.haptics_enabled = airpad_haptics_var.get()
+            srv.port = p_val
+            srv.max_slots = new_count
+            if airpad_srv_enabled_var.get():
+                if not srv.running:
+                    srv.start()
+            else:
+                if srv.running:
+                    srv.stop()
+
             if driver_changed or type_changed or count_changed:
                 self._update_active_assets()
                 if self.engine.is_running():
@@ -2250,14 +2640,16 @@ class J360MoreApp:
             self._rebuild_tabs(new_count)
             self.save_config(silent=True)
             self._update_ui_texts()
+
+            timer_active[0] = False
             dlg.destroy()
             messagebox.showinfo(self.t("set_dlg_title"), self.t("set_saved"))
 
-        btn_box = ttk.Frame(frame)
-        btn_box.pack(fill=tk.X, side=tk.BOTTOM, pady=(8, 0))
+        btn_box = ttk.Frame(main_box)
+        btn_box.pack(fill=tk.X, side=tk.BOTTOM, pady=(4, 0))
 
         ttk.Button(btn_box, text="✔ " + self.t("set_btn_save"), command=apply_settings).pack(side=tk.RIGHT, padx=4)
-        ttk.Button(btn_box, text=self.t("set_btn_cancel"), command=dlg.destroy).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(btn_box, text=self.t("set_btn_cancel"), command=on_dlg_close).pack(side=tk.RIGHT, padx=4)
 
     def _open_devices_dialog(self):
         """Ventana modal estilo x360ce para listar y administrar DirectInput Devices."""
@@ -3707,6 +4099,11 @@ class J360MoreApp:
             messagebox.showerror(self.t("msg_error"), self.t("game_launch_error", e=e))
 
     def _on_close(self):
+        if hasattr(self, "airpad_server") and self.airpad_server:
+            try:
+                self.airpad_server.stop()
+            except Exception:
+                pass
         if self.engine.is_running():
             self.engine.stop()
             self._unhide_emulation_devices()

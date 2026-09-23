@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#121212">
+  <title>j360More AirPad</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Barra Superior de Estado y Controles -->
+  <header id="top-bar">
+    <div class="status-group">
+      <span id="conn-dot" class="dot disconnected"></span>
+      <span id="conn-text">Conectando...</span>
+      <span id="player-badge" class="badge">--</span>
+      <span id="ping-text">0 ms</span>
+    </div>
+    <div class="actions-group">
+      <button id="btn-theme" class="icon-btn" title="Cambiar tema Xbox / PS">🎮</button>
+      <button id="btn-fullscreen" class="icon-btn" title="Pantalla completa">⛶</button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal del Gamepad -->
+  <main id="gamepad-surface">
+
+    <!-- Zona Superior: Gatillos y Bumpers -->
+    <section class="shoulders-row">
+      <div class="shoulder-group left">
+        <button id="btn-lt" class="shoulder-btn trigger-btn" data-btn="LT">
+          <span class="btn-lbl">LT</span>
+          <div class="trigger-bar" id="lt-meter"></div>
+        </button>
+        <button id="btn-lb" class="shoulder-btn bumper-btn" data-btn="LB">LB</button>
+      </div>
+
+      <div class="center-buttons">
+        <button id="btn-back" class="nav-btn" data-btn="BACK">SELECT</button>
+        <button id="btn-guide" class="nav-btn guide-btn" data-btn="GUIDE">
+          <span class="guide-logo">●</span>
+        </button>
+        <button id="btn-start" class="nav-btn" data-btn="START">START</button>
+      </div>
+
+      <div class="shoulder-group right">
+        <button id="btn-rb" class="shoulder-btn bumper-btn" data-btn="RB">RB</button>
+        <button id="btn-rt" class="shoulder-btn trigger-btn" data-btn="RT">
+          <span class="btn-lbl">RT</span>
+          <div class="trigger-bar" id="rt-meter"></div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Zona Inferior: Sticks, D-Pad y Botones de Acción -->
+    <section class="controls-grid">
+
+      <!-- Lado Izquierdo: Joystick Izquierdo (LS) y D-Pad -->
+      <div class="grid-column left-column">
+        <div class="joystick-container" id="stick-left-zone">
+          <div class="joystick-base" id="stick-left-base">
+            <div class="joystick-knob" id="stick-left-knob">
+              <span class="stick-lbl">LS</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dpad-container" id="dpad">
+          <button class="dpad-btn dpad-up" data-btn="UP">▲</button>
+          <button class="dpad-btn dpad-left" data-btn="LEFT">◀</button>
+          <div class="dpad-center"></div>
+          <button class="dpad-btn dpad-right" data-btn="RIGHT">▶</button>
+          <button class="dpad-btn dpad-down" data-btn="DOWN">▼</button>
+        </div>
+      </div>
+
+      <!-- Lado Derecho: Botones ABXY y Joystick Derecho (RS) -->
+      <div class="grid-column right-column">
+        <div class="abxy-container" id="action-buttons">
+          <button class="action-btn btn-y" data-btn="Y"><span class="btn-text">Y</span></button>
+          <button class="action-btn btn-x" data-btn="X"><span class="btn-text">X</span></button>
+          <button class="action-btn btn-b" data-btn="B"><span class="btn-text">B</span></button>
+          <button class="action-btn btn-a" data-btn="A"><span class="btn-text">A</span></button>
+        </div>
+
+        <div class="joystick-container" id="stick-right-zone">
+          <div class="joystick-base" id="stick-right-base">
+            <div class="joystick-knob" id="stick-right-knob">
+              <span class="stick-lbl">RS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

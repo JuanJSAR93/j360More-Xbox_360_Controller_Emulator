@@ -23,6 +23,7 @@ from viiper_backend import (
 
 from input_devices import DeviceManager
 from i18n import canonicalize_mapping, is_none_mapping
+import web_gamepad_server
 
 if HAS_VGAMEPAD and vg is not None:
     BUTTON_VG_MAP = {
@@ -241,6 +242,18 @@ class EmulatorEngine:
                             pad.reset()
                             pad.update()
                             self.gamepads[i] = pad
+
+                            # Reenvío de vibración háptica a smartphone AirPad
+                            if p_dev.startswith("phone_"):
+                                try:
+                                    def _make_rumble_cb(target_phone):
+                                        def _rcb(client, target, large_motor, small_motor, led_number):
+                                            srv = web_gamepad_server.get_server_instance()
+                                            srv.send_rumble(target_phone, large_motor * 256, small_motor * 256)
+                                        return _rcb
+                                    pad.register_notification(callback_function=_make_rumble_cb(p_dev))
+                                except Exception:
+                                    pass
                         except Exception as e:
                             pad_label = "DualShock 4" if pad_type == "ds4" else "Xbox 360"
                             print(f"  [!] Error creando mando virtual #{i} ({pad_label}): {e}")
@@ -482,8 +495,11 @@ class EmulatorEngine:
                 dig_lx = (1.0 if is_l_right else 0.0) - (1.0 if is_l_left else 0.0)
                 dig_ly = (1.0 if is_l_down else 0.0) - (1.0 if is_l_up else 0.0)
 
-                lx_raw = dig_lx if abs(dig_lx) > 0.0 else lx_axis
-                ly_raw = dig_ly if abs(dig_ly) > 0.0 else ly_axis
+                # Si el eje analógico tiene entrada activa (lx_axis / ly_axis != 0.0),
+                # la entrada analógica prevalece para conservar la respuesta gradual continua de 0% a 100%.
+                # Solo si el eje analógico está inactivo (0.0) se adopta la entrada digital secundaria (teclado/dpad).
+                lx_raw = lx_axis if abs(lx_axis) > 0.0 else dig_lx
+                ly_raw = ly_axis if abs(ly_axis) > 0.0 else dig_ly
 
                 lx_calib = apply_axis_calibration(
                     lx_raw,
@@ -517,8 +533,8 @@ class EmulatorEngine:
                 dig_rx = (1.0 if is_r_right else 0.0) - (1.0 if is_r_left else 0.0)
                 dig_ry = (1.0 if is_r_down else 0.0) - (1.0 if is_r_up else 0.0)
 
-                rx_raw = dig_rx if abs(dig_rx) > 0.0 else rx_axis
-                ry_raw = dig_ry if abs(dig_ry) > 0.0 else ry_axis
+                rx_raw = rx_axis if abs(rx_axis) > 0.0 else dig_rx
+                ry_raw = ry_axis if abs(ry_axis) > 0.0 else dig_ry
 
                 rx_calib = apply_axis_calibration(
                     rx_raw,
@@ -703,8 +719,8 @@ class EmulatorEngine:
         dig_lx = (1.0 if is_l_right else 0.0) - (1.0 if is_l_left else 0.0)
         dig_ly = (1.0 if is_l_down else 0.0) - (1.0 if is_l_up else 0.0)
 
-        lx_raw = dig_lx if abs(dig_lx) > 0.0 else lx_axis
-        ly_raw = dig_ly if abs(dig_ly) > 0.0 else ly_axis
+        lx_raw = lx_axis if abs(lx_axis) > 0.0 else dig_lx
+        ly_raw = ly_axis if abs(ly_axis) > 0.0 else dig_ly
 
         lx_calib = apply_axis_calibration(lx_raw, c_ls.get("deadzone", 8), c_ls.get("anti_deadzone", 0), c_ls.get("sensitivity", 0), c_ls.get("invert_x", False))
         ly_calib = apply_axis_calibration(ly_raw, c_ls.get("deadzone", 8), c_ls.get("anti_deadzone", 0), c_ls.get("sensitivity", 0), c_ls.get("invert_y", False))
@@ -725,8 +741,8 @@ class EmulatorEngine:
         dig_rx = (1.0 if is_r_right else 0.0) - (1.0 if is_r_left else 0.0)
         dig_ry = (1.0 if is_r_down else 0.0) - (1.0 if is_r_up else 0.0)
 
-        rx_raw = dig_rx if abs(dig_rx) > 0.0 else rx_axis
-        ry_raw = dig_ry if abs(dig_ry) > 0.0 else ry_axis
+        rx_raw = rx_axis if abs(rx_axis) > 0.0 else dig_rx
+        ry_raw = ry_axis if abs(ry_axis) > 0.0 else dig_ry
 
         rx_calib = apply_axis_calibration(rx_raw, c_rs.get("deadzone", 8), c_rs.get("anti_deadzone", 0), c_rs.get("sensitivity", 0), c_rs.get("invert_x", False))
         ry_calib = apply_axis_calibration(ry_raw, c_rs.get("deadzone", 8), c_rs.get("anti_deadzone", 0), c_rs.get("sensitivity", 0), c_rs.get("invert_y", False))
