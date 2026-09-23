@@ -100,17 +100,244 @@ html, body {
   border: 1px solid var(--btn-border);
   color: var(--text-main);
   border-radius: 6px;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
-.icon-btn:active {
+.icon-btn:active, .icon-btn.active {
   background: var(--btn-border);
+  border-color: var(--accent-color);
+}
+
+/* Barra de herramientas para el modo edición de controles */
+.layout-toolbar {
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 30, 36, 0.96);
+  border: 1px solid var(--accent-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 200;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  max-width: 95vw;
+}
+
+.layout-toolbar.hidden {
+  display: none !important;
+}
+
+.layout-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.layout-toolbar-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layout-scale-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.scale-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-color);
+  min-width: 40px;
+  text-align: center;
+}
+
+.layout-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.toolbar-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toolbar-btn.icon {
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.toolbar-btn.primary {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.toolbar-btn.danger {
+  background: #cb2027;
+  border-color: #cb2027;
+}
+
+.toolbar-btn:active {
+  transform: scale(0.95);
+}
+
+/* Modal de Exportar / Importar */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.85);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--btn-border);
+  padding-bottom: 6px;
+}
+
+.modal-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+.modal-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+#modal-textarea {
+  width: 100%;
+  height: 130px;
+  background: #111317;
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  color: #00e676;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  padding: 8px;
+  resize: vertical;
+  outline: none;
+}
+
+#modal-textarea:focus {
+  border-color: var(--accent-color);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Estilos de elementos movibles y escalables en modo edición */
+.layout-item {
+  position: relative;
+  touch-action: none;
+  transform-origin: center center;
+  transition: box-shadow 0.15s;
+}
+
+body.layout-editing .layout-item {
+  outline: 1px dashed rgba(255, 255, 255, 0.4) !important;
+  outline-offset: 4px;
+  cursor: move !important;
+}
+
+body.layout-editing .layout-item.selected {
+  outline: 2px solid var(--accent-color) !important;
+  box-shadow: 0 0 12px var(--accent-color) !important;
+}
+
+body.layout-editing .layout-item.selected::after {
+  content: '✥ Activo';
+  position: absolute;
+  top: -12px;
+  right: -8px;
+  background: var(--accent-color);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 10;
 }
 
 /* Superficie Principal del Gamepad */
@@ -129,12 +356,12 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .shoulder-group {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
 }
 
@@ -145,14 +372,15 @@ html, body {
   background: var(--btn-bg);
   border: 2px solid var(--btn-border);
   color: var(--text-main);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   border-radius: 10px;
-  padding: 12px 20px;
-  min-width: 68px;
+  padding: 10px 14px;
+  min-width: 52px;
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  touch-action: none;
 }
 
 .shoulder-btn.active, .shoulder-btn:active {
@@ -162,7 +390,7 @@ html, body {
 }
 
 .trigger-btn {
-  padding-bottom: 16px;
+  padding-bottom: 14px;
 }
 
 .trigger-bar {
@@ -175,10 +403,24 @@ html, body {
   transition: width 0.05s linear;
 }
 
+/* StickButtons dedicados (LS / RS) al lado de los gatillos */
+.stick-btn {
+  background: #1c212a;
+  border: 2px dashed #414d60;
+  color: var(--text-dim);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.stick-btn.active, .stick-btn:active {
+  border-style: solid;
+  color: #fff;
+}
+
 /* Botones Centrales */
 .center-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -191,6 +433,7 @@ html, body {
   border-radius: 6px;
   padding: 8px 10px;
   letter-spacing: 0.5px;
+  touch-action: none;
 }
 
 .nav-btn.active, .nav-btn:active {
@@ -200,14 +443,15 @@ html, body {
 
 .guide-btn {
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   font-size: 18px;
   color: var(--accent-color);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--btn-border);
+  touch-action: none;
 }
 
 .guide-btn.active, .guide-btn:active {
@@ -253,6 +497,7 @@ html, body {
   justify-content: center;
   position: relative;
   box-shadow: inset 0 3px 6px rgba(0,0,0,0.5);
+  touch-action: none;
 }
 
 .joystick-knob {
@@ -280,7 +525,7 @@ html, body {
   background: var(--accent-color);
 }
 
-/* D-Pad Circular / Cruz */
+/* D-Pad Circular / Cruz Deslizable */
 .dpad-container {
   width: 124px;
   height: 124px;
@@ -289,6 +534,8 @@ html, body {
   grid-template-rows: 40px 44px 40px;
   align-items: center;
   justify-items: center;
+  position: relative;
+  touch-action: none;
 }
 
 .dpad-btn {
@@ -301,16 +548,20 @@ html, body {
   justify-content: center;
   width: 100%;
   height: 100%;
+  touch-action: none;
+  pointer-events: none; /* Los eventos son procesados por el contenedor .dpad-container */
+  transition: background-color 0.08s, color 0.08s;
 }
 
-.dpad-btn.active, .dpad-btn:active {
+.dpad-btn.active {
   background: var(--accent-color);
   color: #fff;
+  border-color: #fff;
 }
 
 .dpad-up { grid-column: 2; grid-row: 1; border-radius: 8px 8px 0 0; }
 .dpad-left { grid-column: 1; grid-row: 2; border-radius: 8px 0 0 8px; }
-.dpad-center { grid-column: 2; grid-row: 2; width: 100%; height: 100%; background: var(--btn-bg); }
+.dpad-center { grid-column: 2; grid-row: 2; width: 100%; height: 100%; background: var(--btn-bg); pointer-events: none; }
 .dpad-right { grid-column: 3; grid-row: 2; border-radius: 0 8px 8px 0; }
 .dpad-down { grid-column: 2; grid-row: 3; border-radius: 0 0 8px 8px; }
 
@@ -337,6 +588,7 @@ html, body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+  touch-action: none;
 }
 
 .action-btn.active, .action-btn:active {

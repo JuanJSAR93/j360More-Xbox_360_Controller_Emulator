@@ -377,9 +377,11 @@ class J360MoreApp:
 
         # Servidor AirPad para smartphones
         self.airpad_server = web_gamepad_server.get_server_instance()
+        self.airpad_server.preferred_ip = self.config.get("airpad_bind_ip", None)
         self.airpad_server.port = self.config.get("airpad_server_port", 8080)
         self.airpad_server.haptics_enabled = self.config.get("airpad_haptics_enabled", True)
         self.airpad_server.max_slots = self.config.get("max_controllers", 8)
+        self.airpad_server.on_input_event = self.engine.trigger_input_event
         if self.config.get("airpad_server_enabled", True):
             self.airpad_server.start()
 
@@ -2392,6 +2394,37 @@ class J360MoreApp:
         entry_port.pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(port_box, text=self.t("airpad_btn_restart"), command=restart_airpad).pack(side=tk.LEFT)
 
+        # Selector de Interfaz de Red / IP
+        ip_row = ttk.Frame(tab_airpad)
+        ip_row.pack(fill=tk.X, pady=(0, 6))
+
+        all_ip_data = web_gamepad_server.get_all_local_ips()
+        ip_choices = [item["ip"] if isinstance(item, dict) else str(item) for item in all_ip_data]
+        if not ip_choices:
+            ip_choices = ["127.0.0.1"]
+        default_ip = srv.preferred_ip or self.config.get("airpad_bind_ip") or ip_choices[0]
+        if default_ip not in ip_choices:
+            ip_choices.insert(0, default_ip)
+
+        ip_var = tk.StringVar(value=default_ip)
+
+        ttk.Label(ip_row, text=self.t("airpad_ip_label"), font=("Segoe UI", 9)).pack(side=tk.LEFT, padx=(0, 6))
+        combo_ip = ttk.Combobox(ip_row, textvariable=ip_var, values=ip_choices, state="readonly", width=18, font=("Segoe UI", 9))
+        combo_ip.pack(side=tk.LEFT, padx=(0, 8))
+
+        def on_ip_selected(event=None):
+            chosen_ip = ip_var.get()
+            srv.preferred_ip = chosen_ip
+            self.config["airpad_bind_ip"] = chosen_ip
+            self.save_config(silent=True)
+            update_srv_status_label()
+            update_qr_code()
+
+        combo_ip.bind("<<ComboboxSelected>>", on_ip_selected)
+
+        lbl_ip_hint = ttk.Label(ip_row, text=self.t("airpad_ip_hint"), font=("Segoe UI", 8), foreground="#666666")
+        lbl_ip_hint.pack(side=tk.LEFT)
+
         # Panel Superior: QR y URL (Escanea este código QR con la cámara de tu smartphone...)
         qr_box = ttk.LabelFrame(tab_airpad, text="📷 " + self.t("airpad_scan_qr_desc"), padding=8)
         qr_box.pack(fill=tk.X, pady=(0, 6))
@@ -2611,6 +2644,9 @@ class J360MoreApp:
             # 6. Guardar opciones de auto-asignación y AirPad
             self.config["auto_assign_usb"] = auto_assign_usb_var.get()
             self.config["airpad_server_enabled"] = airpad_srv_enabled_var.get()
+            chosen_ip = ip_var.get()
+            self.config["airpad_bind_ip"] = chosen_ip
+            srv.preferred_ip = chosen_ip
             try:
                 p_val = int(port_var.get().strip())
             except Exception:
@@ -4099,17 +4135,29 @@ class J360MoreApp:
             messagebox.showerror(self.t("msg_error"), self.t("game_launch_error", e=e))
 
     def _on_close(self):
-        if hasattr(self, "airpad_server") and self.airpad_server:
-            try:
+        try:
+            if hasattr(self, "airpad_server") and self.airpad_server:
                 self.airpad_server.stop()
-            except Exception:
-                pass
-        if self.engine.is_running():
-            self.engine.stop()
-            self._unhide_emulation_devices()
-        if hasattr(self.device_manager, "stop"):
-            self.device_manager.stop()
-        self.root.destroy()
+        except Exception as e:
+            print(f"[!] Error deteniendo AirPad server al cerrar: {e}")
+
+        try:
+            if hasattr(self, "engine") and self.engine and self.engine.is_running():
+                self.engine.stop()
+                self._unhide_emulation_devices()
+        except Exception as e:
+            print(f"[!] Error deteniendo motor de emulación al cerrar: {e}")
+
+        try:
+            if hasattr(self, "device_manager") and hasattr(self.device_manager, "stop"):
+                self.device_manager.stop()
+        except Exception as e:
+            print(f"[!] Error deteniendo gestor de dispositivos al cerrar: {e}")
+
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
 
 def run_gui():
     root = tk.Tk()

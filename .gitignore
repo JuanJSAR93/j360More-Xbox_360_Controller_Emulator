@@ -17,3 +17,6 @@ dist/
 .venv/
 env/
 venv/
+GEMINI.md
+AGENTS.md
+RULES.md

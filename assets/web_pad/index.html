@@ -20,25 +20,65 @@
       <span id="ping-text">0 ms</span>
     </div>
     <div class="actions-group">
+      <button id="btn-layout" class="icon-btn" title="Editar / Mover controles">📐</button>
       <button id="btn-theme" class="icon-btn" title="Cambiar tema Xbox / PS">🎮</button>
       <button id="btn-fullscreen" class="icon-btn" title="Pantalla completa">⛶</button>
     </div>
   </header>
 
+  <!-- Barra flotante de edición de disposición -->
+  <div id="layout-toolbar" class="layout-toolbar hidden">
+    <div class="layout-toolbar-row">
+      <span id="layout-toolbar-title" class="layout-toolbar-title">Toca un control para moverlo o escalarlo</span>
+      <div class="layout-scale-controls">
+        <button id="btn-scale-down" class="toolbar-btn icon" title="Reducir tamaño">−</button>
+        <span id="lbl-scale-val" class="scale-label">100%</span>
+        <button id="btn-scale-up" class="toolbar-btn icon" title="Aumentar tamaño">+</button>
+      </div>
+    </div>
+    <div class="layout-toolbar-actions">
+      <button id="btn-layout-export" class="toolbar-btn">📥 Exportar</button>
+      <button id="btn-layout-import" class="toolbar-btn">📤 Importar</button>
+      <button id="btn-layout-reset" class="toolbar-btn danger">↺ Reset</button>
+      <button id="btn-layout-save" class="toolbar-btn primary">💾 Guardar</button>
+      <button id="btn-layout-cancel" class="toolbar-btn">✕ Salir</button>
+    </div>
+  </div>
+
+  <!-- Modal de Exportar / Importar Disposición -->
+  <div id="layout-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Exportar Disposición</h3>
+        <button id="btn-modal-close" class="modal-close">&times;</button>
+      </div>
+      <p id="modal-desc" class="modal-desc">Copia el siguiente código o guárdalo como archivo para usar tu disposición en otros dispositivos:</p>
+      <textarea id="modal-textarea" rows="7" spellcheck="false"></textarea>
+      <div class="modal-actions">
+        <input type="file" id="modal-file-input" accept=".json,application/json" class="hidden">
+        <button id="modal-btn-copy" class="toolbar-btn">📋 Copiar</button>
+        <button id="modal-btn-download" class="toolbar-btn">💾 Descargar .json</button>
+        <button id="modal-btn-upload" class="toolbar-btn">📂 Cargar archivo</button>
+        <button id="modal-btn-apply" class="toolbar-btn primary hidden">✓ Aplicar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Contenedor Principal del Gamepad -->
   <main id="gamepad-surface">
 
-    <!-- Zona Superior: Gatillos y Bumpers -->
+    <!-- Zona Superior: Gatillos, Bumpers y StickButtons -->
     <section class="shoulders-row">
       <div class="shoulder-group left">
-        <button id="btn-lt" class="shoulder-btn trigger-btn" data-btn="LT">
+        <button id="btn-ls-shoulder" class="shoulder-btn stick-btn layout-item" data-btn="LS" data-layout-id="btn-ls">LS</button>
+        <button id="btn-lb" class="shoulder-btn bumper-btn layout-item" data-btn="LB" data-layout-id="btn-lb">LB</button>
+        <button id="btn-lt" class="shoulder-btn trigger-btn layout-item" data-btn="LT" data-layout-id="btn-lt">
           <span class="btn-lbl">LT</span>
           <div class="trigger-bar" id="lt-meter"></div>
         </button>
-        <button id="btn-lb" class="shoulder-btn bumper-btn" data-btn="LB">LB</button>
       </div>
 
-      <div class="center-buttons">
+      <div class="center-buttons layout-item" id="center-buttons-zone" data-layout-id="center-buttons">
         <button id="btn-back" class="nav-btn" data-btn="BACK">SELECT</button>
         <button id="btn-guide" class="nav-btn guide-btn" data-btn="GUIDE">
           <span class="guide-logo">●</span>
@@ -47,11 +87,12 @@
       </div>
 
       <div class="shoulder-group right">
-        <button id="btn-rb" class="shoulder-btn bumper-btn" data-btn="RB">RB</button>
-        <button id="btn-rt" class="shoulder-btn trigger-btn" data-btn="RT">
+        <button id="btn-rt" class="shoulder-btn trigger-btn layout-item" data-btn="RT" data-layout-id="btn-rt">
           <span class="btn-lbl">RT</span>
           <div class="trigger-bar" id="rt-meter"></div>
         </button>
+        <button id="btn-rb" class="shoulder-btn bumper-btn layout-item" data-btn="RB" data-layout-id="btn-rb">RB</button>
+        <button id="btn-rs-shoulder" class="shoulder-btn stick-btn layout-item" data-btn="RS" data-layout-id="btn-rs">RS</button>
       </div>
     </section>
 
@@ -60,7 +101,7 @@
 
       <!-- Lado Izquierdo: Joystick Izquierdo (LS) y D-Pad -->
       <div class="grid-column left-column">
-        <div class="joystick-container" id="stick-left-zone">
+        <div class="joystick-container layout-item" id="stick-left-zone" data-layout-id="stick-left">
           <div class="joystick-base" id="stick-left-base">
             <div class="joystick-knob" id="stick-left-knob">
               <span class="stick-lbl">LS</span>
@@ -68,7 +109,7 @@
           </div>
         </div>
 
-        <div class="dpad-container" id="dpad">
+        <div class="dpad-container layout-item" id="dpad" data-layout-id="dpad">
           <button class="dpad-btn dpad-up" data-btn="UP">▲</button>
           <button class="dpad-btn dpad-left" data-btn="LEFT">◀</button>
           <div class="dpad-center"></div>
@@ -79,14 +120,14 @@
 
       <!-- Lado Derecho: Botones ABXY y Joystick Derecho (RS) -->
       <div class="grid-column right-column">
-        <div class="abxy-container" id="action-buttons">
+        <div class="abxy-container layout-item" id="action-buttons" data-layout-id="action-buttons">
           <button class="action-btn btn-y" data-btn="Y"><span class="btn-text">Y</span></button>
           <button class="action-btn btn-x" data-btn="X"><span class="btn-text">X</span></button>
           <button class="action-btn btn-b" data-btn="B"><span class="btn-text">B</span></button>
           <button class="action-btn btn-a" data-btn="A"><span class="btn-text">A</span></button>
         </div>
 
-        <div class="joystick-container" id="stick-right-zone">
+        <div class="joystick-container layout-item" id="stick-right-zone" data-layout-id="stick-right">
           <div class="joystick-base" id="stick-right-base">
             <div class="joystick-knob" id="stick-right-knob">
               <span class="stick-lbl">RS</span>

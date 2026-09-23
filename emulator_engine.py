@@ -153,6 +153,80 @@ def get_pad_emulated_type(config: dict, pad_id: int) -> str:
         return "xbox360" if pad_id <= half else "ds4"
     return "xbox360"
 
+def compile_mapping(mapping_str: str) -> Tuple:
+    """Precompila un string de mapeo en una tupla rápida para evitar split/lower en el bucle principal."""
+    if not mapping_str or is_none_mapping(mapping_str):
+        return ("none",)
+    clean = canonicalize_mapping(mapping_str.strip())
+    low = clean.lower()
+    if low.startswith("tecla: ") or low.startswith("key: "):
+        k = clean.split(":", 1)[1].strip().lower()
+        return ("key", k)
+    if clean.startswith("Button "):
+        try:
+            b_idx = int(clean.split()[1]) - 1
+            return ("button", b_idx)
+        except Exception:
+            return ("none",)
+    if clean.startswith("POV "):
+        parts = clean.split()
+        try:
+            h_idx = int(parts[1]) - 1
+            dir_str = parts[2].lower()
+            return ("pov", h_idx, dir_str)
+        except Exception:
+            return ("none",)
+    if "Axis" in clean:
+        inverted = clean.startswith("I")
+        clean_no_i = clean[1:] if inverted else clean
+        try:
+            parts = clean_no_i.split()
+            a_idx_str = parts[1]
+            half_pos = a_idx_str.endswith("+")
+            half_neg = a_idx_str.endswith("-")
+            a_idx = int(a_idx_str.replace("+", "").replace("-", "")) - 1
+            is_bipolar = not (half_pos or half_neg)
+            return ("axis", a_idx, inverted, half_pos, half_neg, is_bipolar)
+        except Exception:
+            return ("none",)
+    return ("none",)
+
+def eval_compiled(compiled: Tuple, joy_state: Dict[str, Any], dev_id: str = "", pressed_keys: Optional[Set[str]] = None) -> Tuple[bool, float]:
+    """Evalúa un mapeo precompilado con latencia mínima."""
+    kind = compiled[0]
+    if kind == "none":
+        return False, 0.0
+    if kind == "button":
+        pressed = joy_state["buttons"].get(compiled[1], False)
+        return pressed, (1.0 if pressed else 0.0)
+    if kind == "pov":
+        _, h_idx, dir_str = compiled
+        hx, hy = joy_state["hats"].get(h_idx, (0, 0))
+        if dir_str == "up": pressed = hy > 0
+        elif dir_str == "down": pressed = hy < 0
+        elif dir_str == "left": pressed = hx < 0
+        elif dir_str == "right": pressed = hx > 0
+        else: pressed = False
+        return pressed, (1.0 if pressed else 0.0)
+    if kind == "axis":
+        _, a_idx, inverted, half_pos, half_neg, _ = compiled
+        val = joy_state["axes"].get(a_idx, 0.0)
+        if inverted: val = -val
+        if half_pos: val = max(0.0, val)
+        elif half_neg: val = max(0.0, -val)
+        return val > 0.45, val
+    if kind == "key":
+        k = compiled[1]
+        kbd_keys = joy_state.get("keys", set())
+        pressed = any(
+            k == (pk.split(":", 1)[1].strip().lower() if ":" in pk else pk.lower())
+            for pk in kbd_keys
+        )
+        if not pressed and not dev_id.startswith("kbd_") and pressed_keys:
+            pressed = k in pressed_keys
+        return pressed, (1.0 if pressed else 0.0)
+    return False, 0.0
+
 class EmulatorEngine:
     def __init__(self, device_manager: DeviceManager):
         self.device_manager = device_manager
@@ -163,6 +237,8 @@ class EmulatorEngine:
         self.running = False
         self.thread: Optional[threading.Thread] = None
         self.lock = threading.Lock()
+        self.input_event = threading.Event()
+        self.compiled_mappings: Dict[int, Dict[str, Tuple]] = {}
 
         # Almacena el estado activo en tiempo real para reflejarlo en la GUI
         self.active_states: Dict[int, Dict[str, Any]] = {
@@ -184,6 +260,25 @@ class EmulatorEngine:
     def set_config(self, config: Dict[str, Any]):
         with self.lock:
             self.config = config
+            self._recompile_mappings()
+        self.trigger_input_event()
+
+    def _recompile_mappings(self):
+        new_compiled = {}
+        for p_id_str, p_cfg in self.config.get("controllers", {}).items():
+            try:
+                p_id = int(p_id_str)
+            except Exception:
+                continue
+            m_dict = {}
+            for target_btn, map_str in p_cfg.get("mappings", {}).items():
+                m_dict[target_btn] = compile_mapping(map_str)
+            new_compiled[p_id] = m_dict
+        self.compiled_mappings = new_compiled
+
+    def trigger_input_event(self):
+        """Despierta el bucle de emulacion reactivamente ante nueva entrada."""
+        self.input_event.set()
 
     def start(self):
         with self.lock:
@@ -269,6 +364,7 @@ class EmulatorEngine:
             if not self.running:
                 return
             self.running = False
+            self.input_event.set()
 
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=1.0)
@@ -314,80 +410,11 @@ class EmulatorEngine:
                 self.pressed_keys.add(key_name.lower())
             else:
                 self.pressed_keys.discard(key_name.lower())
+        self.trigger_input_event()
 
     def _eval_mapping(self, mapping_str: str, joy_state: Dict[str, Any], dev_id: str = "") -> Tuple[bool, float]:
-        if not mapping_str or is_none_mapping(mapping_str):
-            return False, 0.0
-
-        mapping_str = canonicalize_mapping(mapping_str.strip())
-
-        # 1. Mapeo a Teclado
-        if mapping_str.lower().startswith("tecla: ") or mapping_str.lower().startswith("key: "):
-            k = mapping_str.split(":", 1)[1].strip().lower()
-            kbd_keys = joy_state.get("keys", set())
-            pressed = any(
-                k == pk.split(":", 1)[1].strip().lower() if ":" in pk else k == pk.lower()
-                for pk in kbd_keys
-            )
-            if not pressed and not dev_id.startswith("kbd_") and hasattr(self, "pressed_keys"):
-                pressed = k in self.pressed_keys
-            return pressed, (1.0 if pressed else 0.0)
-
-        # 2. Mapeo a Boton de Joystick
-        if mapping_str.startswith("Button "):
-            try:
-                b_idx = int(mapping_str.split()[1]) - 1
-                pressed = joy_state["buttons"].get(b_idx, False)
-                return pressed, (1.0 if pressed else 0.0)
-            except Exception:
-                pass
-
-        # 3. Mapeo a POV / D-Pad
-        if mapping_str.startswith("POV "):
-            parts = mapping_str.split()
-            try:
-                h_idx = int(parts[1]) - 1
-                dir_str = parts[2].lower()
-                hx, hy = joy_state["hats"].get(h_idx, (0, 0))
-                pressed = False
-                if dir_str == "up":
-                    pressed = hy > 0
-                elif dir_str == "down":
-                    pressed = hy < 0
-                elif dir_str == "left":
-                    pressed = hx < 0
-                elif dir_str == "right":
-                    pressed = hx > 0
-                return pressed, (1.0 if pressed else 0.0)
-            except Exception:
-                pass
-
-        # 4. Mapeo a Eje analogico
-        if "Axis" in mapping_str:
-            inverted = mapping_str.startswith("I")
-            clean_str = mapping_str[1:] if inverted else mapping_str
-            try:
-                parts = clean_str.split()
-                a_idx_str = parts[1]
-                half_positive = a_idx_str.endswith("+")
-                half_negative = a_idx_str.endswith("-")
-                a_idx = int(a_idx_str.replace("+", "").replace("-", "")) - 1
-
-                val = joy_state["axes"].get(a_idx, 0.0)
-                if inverted:
-                    val = -val
-
-                if half_positive:
-                    val = max(0.0, val)
-                elif half_negative:
-                    val = max(0.0, -val)
-
-                pressed = val > 0.45
-                return pressed, val
-            except Exception:
-                pass
-
-        return False, 0.0
+        compiled = compile_mapping(mapping_str)
+        return eval_compiled(compiled, joy_state, dev_id, getattr(self, "pressed_keys", None))
 
     def _loop(self):
         while self.running:
@@ -408,7 +435,6 @@ class EmulatorEngine:
 
                 dev_id = cfg.get("physical_device_id", "none")
                 joy_state = self.device_manager.read_physical_state(dev_id, pump=False)
-                mappings = cfg.get("mappings", {})
                 calib = cfg.get("calibration", {})
 
                 # Calibraciones
@@ -422,35 +448,32 @@ class EmulatorEngine:
                 is_ds4 = (pad_type in ("ds4", "dualsense"))
                 is_ns2pro = (pad_type == "ns2pro")
                 pad = self.gamepads.get(pad_id) if not is_viiper else None
+                p_comp = self.compiled_mappings.get(pad_id, {})
 
                 # 1. Botones Digitales
-                for btn_name in ("A", "B", "X", "Y", "START", "BACK", "LEFT_THUMB", "RIGHT_THUMB", "LEFT_SHOULDER", "RIGHT_SHOULDER"):
-                    map_str = mappings.get(btn_name, "")
-                    is_pressed, _ = self._eval_mapping(map_str, joy_state, dev_id)
+                for btn_name in ("A", "B", "X", "Y", "START", "BACK", "LEFT_THUMB", "RIGHT_THUMB", "LEFT_SHOULDER", "RIGHT_SHOULDER", "GUIDE"):
+                    comp = p_comp.get(btn_name, ("none",))
+                    is_pressed, _ = eval_compiled(comp, joy_state, dev_id, self.pressed_keys)
                     if is_pressed:
                         pressed_buttons.add(btn_name)
 
-                guide_map = mappings.get("GUIDE", "")
-                is_guide, _ = self._eval_mapping(guide_map, joy_state, dev_id)
-                if is_guide:
-                    pressed_buttons.add("GUIDE")
-
-                is_d_up, _ = self._eval_mapping(mappings.get("DPAD_UP", ""), joy_state, dev_id)
-                is_d_down, _ = self._eval_mapping(mappings.get("DPAD_DOWN", ""), joy_state, dev_id)
-                is_d_left, _ = self._eval_mapping(mappings.get("DPAD_LEFT", ""), joy_state, dev_id)
-                is_d_right, _ = self._eval_mapping(mappings.get("DPAD_RIGHT", ""), joy_state, dev_id)
+                is_d_up, _ = eval_compiled(p_comp.get("DPAD_UP", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_d_down, _ = eval_compiled(p_comp.get("DPAD_DOWN", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_d_left, _ = eval_compiled(p_comp.get("DPAD_LEFT", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_d_right, _ = eval_compiled(p_comp.get("DPAD_RIGHT", ("none",)), joy_state, dev_id, self.pressed_keys)
                 if is_d_up: pressed_buttons.add("DPAD_UP")
                 if is_d_down: pressed_buttons.add("DPAD_DOWN")
                 if is_d_left: pressed_buttons.add("DPAD_LEFT")
                 if is_d_right: pressed_buttons.add("DPAD_RIGHT")
 
                 # 2. Gatillo Izquierdo (LT)
-                lt_map = canonicalize_mapping(mappings.get("LEFT_TRIGGER", ""))
-                is_lt_pressed, lt_raw = self._eval_mapping(lt_map, joy_state, dev_id)
-                if is_lt_pressed and lt_raw == 1.0 and "Axis" not in lt_map:
+                lt_comp = p_comp.get("LEFT_TRIGGER", ("none",))
+                is_lt_pressed, lt_raw = eval_compiled(lt_comp, joy_state, dev_id, self.pressed_keys)
+                if is_lt_pressed and lt_raw == 1.0 and lt_comp[0] != "axis":
                     lt_norm = 1.0
                 else:
-                    lt_norm = max(0.0, min(1.0, (lt_raw + 1.0) / 2.0 if ("Axis" in lt_map and not ("+" in lt_map or "-" in lt_map)) else lt_raw))
+                    is_bipolar = (lt_comp[0] == "axis" and len(lt_comp) > 5 and lt_comp[5])
+                    lt_norm = max(0.0, min(1.0, (lt_raw + 1.0) / 2.0 if is_bipolar else lt_raw))
 
                 lt_calib = apply_trigger_calibration(
                     lt_norm,
@@ -462,12 +485,13 @@ class EmulatorEngine:
                 lt_byte = int(lt_calib * 255)
 
                 # Gatillo Derecho (RT)
-                rt_map = canonicalize_mapping(mappings.get("RIGHT_TRIGGER", ""))
-                is_rt_pressed, rt_raw = self._eval_mapping(rt_map, joy_state, dev_id)
-                if is_rt_pressed and rt_raw == 1.0 and "Axis" not in rt_map:
+                rt_comp = p_comp.get("RIGHT_TRIGGER", ("none",))
+                is_rt_pressed, rt_raw = eval_compiled(rt_comp, joy_state, dev_id, self.pressed_keys)
+                if is_rt_pressed and rt_raw == 1.0 and rt_comp[0] != "axis":
                     rt_norm = 1.0
                 else:
-                    rt_norm = max(0.0, min(1.0, (rt_raw + 1.0) / 2.0 if ("Axis" in rt_map and not ("+" in rt_map or "-" in rt_map)) else rt_raw))
+                    is_bipolar = (rt_comp[0] == "axis" and len(rt_comp) > 5 and rt_comp[5])
+                    rt_norm = max(0.0, min(1.0, (rt_raw + 1.0) / 2.0 if is_bipolar else rt_raw))
 
                 rt_calib = apply_trigger_calibration(
                     rt_norm,
@@ -479,13 +503,13 @@ class EmulatorEngine:
                 rt_byte = int(rt_calib * 255)
 
                 # 3. Stick Izquierdo (LS)
-                _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state, dev_id)
-                _, ly_axis = self._eval_mapping(mappings.get("LEFT_STICK_Y", ""), joy_state, dev_id)
+                _, lx_axis = eval_compiled(p_comp.get("LEFT_STICK_X", ("none",)), joy_state, dev_id, self.pressed_keys)
+                _, ly_axis = eval_compiled(p_comp.get("LEFT_STICK_Y", ("none",)), joy_state, dev_id, self.pressed_keys)
 
-                is_l_up, _ = self._eval_mapping(mappings.get("LEFT_STICK_UP", ""), joy_state, dev_id)
-                is_l_down, _ = self._eval_mapping(mappings.get("LEFT_STICK_DOWN", ""), joy_state, dev_id)
-                is_l_left, _ = self._eval_mapping(mappings.get("LEFT_STICK_LEFT", ""), joy_state, dev_id)
-                is_l_right, _ = self._eval_mapping(mappings.get("LEFT_STICK_RIGHT", ""), joy_state, dev_id)
+                is_l_up, _ = eval_compiled(p_comp.get("LEFT_STICK_UP", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_l_down, _ = eval_compiled(p_comp.get("LEFT_STICK_DOWN", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_l_left, _ = eval_compiled(p_comp.get("LEFT_STICK_LEFT", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_l_right, _ = eval_compiled(p_comp.get("LEFT_STICK_RIGHT", ("none",)), joy_state, dev_id, self.pressed_keys)
 
                 if is_l_up: pressed_buttons.add("LEFT_STICK_UP")
                 if is_l_down: pressed_buttons.add("LEFT_STICK_DOWN")
@@ -517,13 +541,13 @@ class EmulatorEngine:
                 )
 
                 # 4. Stick Derecho (RS)
-                _, rx_axis = self._eval_mapping(mappings.get("RIGHT_STICK_X", ""), joy_state, dev_id)
-                _, ry_axis = self._eval_mapping(mappings.get("RIGHT_STICK_Y", ""), joy_state, dev_id)
+                _, rx_axis = eval_compiled(p_comp.get("RIGHT_STICK_X", ("none",)), joy_state, dev_id, self.pressed_keys)
+                _, ry_axis = eval_compiled(p_comp.get("RIGHT_STICK_Y", ("none",)), joy_state, dev_id, self.pressed_keys)
 
-                is_r_up, _ = self._eval_mapping(mappings.get("RIGHT_STICK_UP", ""), joy_state, dev_id)
-                is_r_down, _ = self._eval_mapping(mappings.get("RIGHT_STICK_DOWN", ""), joy_state, dev_id)
-                is_r_left, _ = self._eval_mapping(mappings.get("RIGHT_STICK_LEFT", ""), joy_state, dev_id)
-                is_r_right, _ = self._eval_mapping(mappings.get("RIGHT_STICK_RIGHT", ""), joy_state, dev_id)
+                is_r_up, _ = eval_compiled(p_comp.get("RIGHT_STICK_UP", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_r_down, _ = eval_compiled(p_comp.get("RIGHT_STICK_DOWN", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_r_left, _ = eval_compiled(p_comp.get("RIGHT_STICK_LEFT", ("none",)), joy_state, dev_id, self.pressed_keys)
+                is_r_right, _ = eval_compiled(p_comp.get("RIGHT_STICK_RIGHT", ("none",)), joy_state, dev_id, self.pressed_keys)
 
                 if is_r_up: pressed_buttons.add("RIGHT_STICK_UP")
                 if is_r_down: pressed_buttons.add("RIGHT_STICK_DOWN")
@@ -652,7 +676,10 @@ class EmulatorEngine:
                         "ry_raw": ry_raw, "ry": ry_calib
                     }
 
-            time.sleep(0.008)  # ~120 Hz de refresco
+            # Despertar reactivo con límite de espera de 8 ms (~120 Hz)
+            # para sincronizar con VIIPER write-batch sin demora
+            self.input_event.wait(timeout=0.008)
+            self.input_event.clear()
 
     def compute_controller_state(self, pad_id: int) -> dict:
         """Lee el estado del periferico fisico en tiempo real aunque la emulacion no este activa."""

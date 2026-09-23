@@ -3,6 +3,8 @@ web_gamepad_server.py
 Servidor HTTP y WebSocket multicliente embebido (puro Python) para j360More.
 Permite conectar hasta 12 smartphones (iOS / Android) por Wi-Fi como mandos virtuales AirPad.
 Zero-Install: Los jugadores solo necesitan escanear el código QR en el navegador de su teléfono.
+Incluye parser incremental RFC 6455 con buffer por cliente, protocolo binario v1,
+cola FIFO para botones fiables, snapshots analógicos atómicos y selector multi-IP.
 """
 
 import os
@@ -20,8 +22,73 @@ from typing import Dict, List, Any, Optional, Callable
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_AIRPAD_CLIENTS = 12
 
-def get_local_ip() -> str:
-    """Obtiene la direccion IP de la interfaz local activa (Wi-Fi / Ethernet)."""
+BUTTON_BITS = {
+    "A": 1 << 0,
+    "B": 1 << 1,
+    "X": 1 << 2,
+    "Y": 1 << 3,
+    "LB": 1 << 4,
+    "RB": 1 << 5,
+    "BACK": 1 << 6,
+    "START": 1 << 7,
+    "GUIDE": 1 << 8,
+    "LS": 1 << 9,
+    "RS": 1 << 10,
+    "UP": 1 << 11,
+    "DOWN": 1 << 12,
+    "LEFT": 1 << 13,
+    "RIGHT": 1 << 14,
+}
+BIT_TO_BUTTON = {bit: name for name, bit in BUTTON_BITS.items()}
+
+# Protocolo Binario Versión 1 (Little-endian):
+# uint8(ver=1) + uint8(type=1) + uint32(seq) + uint16(buttons) + uint8(lt) + uint8(rt) + int16(lx) + int16(ly) + int16(rx) + int16(ry) + uint32(client_time_ms)
+STRUCT_BIN_V1_22 = struct.Struct("<BBIHBBhhhhI")  # 22 bytes con client_time_ms
+STRUCT_BIN_V1_18 = struct.Struct("<BBIHBBhhhh")   # 18 bytes sin client_time_ms
+
+
+def get_all_local_ips() -> List[Dict[str, str]]:
+    """
+    Obtiene todas las direcciones IPv4 locales disponibles de los adaptadores de red.
+    Retorna lista de dicts: [{'ip': '192.168.1.14', 'label': '192.168.1.14 (Wi-Fi/LAN)'}, ...]
+    """
+    ips = []
+    seen = set()
+
+    # 1. Ruta primaria saliente
+    primary_ip = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("10.255.255.255", 1))
+        primary_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        pass
+
+    if primary_ip and not primary_ip.startswith("127."):
+        seen.add(primary_ip)
+        ips.append({"ip": primary_ip, "label": f"{primary_ip} (Recomendada / LAN activa)"})
+
+    # 2. Todas las IPs asociadas al hostname
+    try:
+        hostname = socket.gethostname()
+        for ip in socket.gethostbyname_ex(hostname)[2]:
+            if ip not in seen and not ip.startswith("127."):
+                seen.add(ip)
+                ips.append({"ip": ip, "label": f"{ip} (Adaptador de red)"})
+    except Exception:
+        pass
+
+    if not ips:
+        ips.append({"ip": "127.0.0.1", "label": "127.0.0.1 (Localhost)"})
+
+    return ips
+
+
+def get_local_ip(preferred_ip: Optional[str] = None) -> str:
+    """Obtiene la direccion IP a exponer para el servidor AirPad."""
+    if preferred_ip and preferred_ip.strip() not in ("", "0.0.0.0", "Auto", "Todas"):
+        return preferred_ip.strip()
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("10.255.255.255", 1))
@@ -33,6 +100,87 @@ def get_local_ip() -> str:
             return socket.gethostbyname(socket.gethostname())
         except Exception:
             return "127.0.0.1"
+
+
+class TelemetryCollector:
+    """Recolecta métricas de latencia, jitter, frames y tasa de transferencia."""
+
+    def __init__(self, max_samples: int = 1000):
+        self.enabled = False
+        self.max_samples = max_samples
+        self.lock = threading.Lock()
+        self.transit_times_ms: List[float] = []
+        self.server_to_engine_us: List[float] = []
+        self.engine_to_backend_us: List[float] = []
+        self.total_pipeline_us: List[float] = []
+        self.last_client_ms: Optional[float] = None
+        self.jitter_ms: List[float] = []
+        self.frames_received = 0
+        self.frames_binary = 0
+        self.frames_json = 0
+        self.bytes_received = 0
+        self.invalid_frames = 0
+        self.start_time = time.time()
+
+    def record_packet(self, is_binary: bool, byte_len: int, client_ms: int = 0, server_recv_ns: int = 0):
+        if not self.enabled:
+            return
+        with self.lock:
+            self.frames_received += 1
+            if is_binary:
+                self.frames_binary += 1
+            else:
+                self.frames_json += 1
+            self.bytes_received += byte_len
+            if client_ms > 0:
+                if self.last_client_ms is not None:
+                    diff = abs(client_ms - self.last_client_ms)
+                    self.jitter_ms.append(diff)
+                    if len(self.jitter_ms) > self.max_samples:
+                        self.jitter_ms.pop(0)
+                self.last_client_ms = client_ms
+
+    def record_engine_stage(self, server_recv_ns: int, engine_ns: int, backend_ns: int):
+        if not self.enabled or server_recv_ns <= 0:
+            return
+        with self.lock:
+            s2e = (engine_ns - server_recv_ns) / 1000.0
+            e2b = (backend_ns - engine_ns) / 1000.0
+            total = (backend_ns - server_recv_ns) / 1000.0
+            self.server_to_engine_us.append(s2e)
+            self.engine_to_backend_us.append(e2b)
+            self.total_pipeline_us.append(total)
+            if len(self.total_pipeline_us) > self.max_samples:
+                self.total_pipeline_us.pop(0)
+                self.server_to_engine_us.pop(0)
+                self.engine_to_backend_us.pop(0)
+
+    def get_stats(self) -> Dict[str, Any]:
+        with self.lock:
+            def percentile(vals, p):
+                if not vals:
+                    return 0.0
+                s = sorted(vals)
+                k = (len(s) - 1) * (p / 100.0)
+                f = int(k)
+                c = min(f + 1, len(s) - 1)
+                return s[f] + (s[c] - s[f]) * (k - f)
+
+            elapsed = max(0.1, time.time() - self.start_time)
+            return {
+                "enabled": self.enabled,
+                "frames_total": self.frames_received,
+                "frames_binary": self.frames_binary,
+                "frames_json": self.frames_json,
+                "fps": round(self.frames_received / elapsed, 1),
+                "kbps": round((self.bytes_received / elapsed) / 1024.0, 2),
+                "jitter_p50_ms": round(percentile(self.jitter_ms, 50), 2),
+                "jitter_p95_ms": round(percentile(self.jitter_ms, 95), 2),
+                "pipeline_p50_us": round(percentile(self.total_pipeline_us, 50), 1),
+                "pipeline_p95_us": round(percentile(self.total_pipeline_us, 95), 1),
+                "pipeline_p99_us": round(percentile(self.total_pipeline_us, 99), 1),
+                "pipeline_max_us": round(max(self.total_pipeline_us) if self.total_pipeline_us else 0.0, 1),
+            }
 
 
 class AirPadClient:
@@ -50,8 +198,19 @@ class AirPadClient:
         self.last_activity = time.time()
         self.ping_ms = 0
         self.active = True
+        self.binary_negotiated = False
 
-        # Estado normalizado de botones
+        # Parser incremental TCP/WebSocket
+        self.rx_buffer = bytearray()
+
+        # Concurrencia de estado
+        self.state_lock = threading.Lock()
+
+        # Cola FIFO para transiciones fiables de botones (down/up)
+        self.button_queue: List[Dict[str, Any]] = []
+        self.current_buttons_mask = 0
+
+        # Estado normalizado de botones activos
         self.buttons = {
             "A": False, "B": False, "X": False, "Y": False,
             "LB": False, "RB": False, "BACK": False, "START": False,
@@ -59,51 +218,127 @@ class AirPadClient:
             "UP": False, "DOWN": False, "LEFT": False, "RIGHT": False
         }
 
-        # Estado normalizado de ejes [-1.0, 1.0] y gatillos [0.0, 1.0]
+        # Snapshot atómico de ejes [-1.0, 1.0] y gatillos [0.0, 1.0]
         self.axes = {
             "lx": 0.0, "ly": 0.0,
             "rx": 0.0, "ry": 0.0,
             "lt": 0.0, "rt": 0.0
         }
 
-    def update_button(self, btn_name: str, state: int):
+        # Telemetría y marcas de tiempo
+        self.latest_seq = 0
+        self.t_client_ms = 0
+        self.t_server_recv_ns = 0
+
+    def enqueue_button(self, btn_name: str, state: int, seq: int = 0, client_ms: int = 0, recv_ns: int = 0):
         self.last_activity = time.time()
+        self.t_client_ms = client_ms
+        self.t_server_recv_ns = recv_ns
+        self.latest_seq = seq
+
         key = btn_name.upper()
-        # Normalizaciones de nombres
         name_map = {
             "DPADUP": "UP", "DPADDOWN": "DOWN", "DPADLEFT": "LEFT", "DPADRIGHT": "RIGHT",
             "SELECT": "BACK", "L1": "LB", "R1": "RB", "L3": "LS", "R3": "RS",
             "HOME": "GUIDE"
         }
         key = name_map.get(key, key)
-        if key in self.buttons:
-            self.buttons[key] = (state == 1)
+        with self.state_lock:
+            self.button_queue.append({
+                "btn": key,
+                "state": state,
+                "seq": seq
+            })
+            if len(self.button_queue) > 64:
+                self.button_queue.pop(0)
 
-    def update_trigger(self, side: str, value: float):
+            if key in self.buttons:
+                self.buttons[key] = (state == 1)
+
+    def update_trigger(self, side: str, value: float, recv_ns: int = 0):
         self.last_activity = time.time()
+        self.t_server_recv_ns = recv_ns
         s = side.lower()
         val = max(0.0, min(1.0, float(value)))
-        if s in ("l", "lt", "l2"):
-            self.axes["lt"] = val
-        elif s in ("r", "rt", "r2"):
-            self.axes["rt"] = val
+        with self.state_lock:
+            if s in ("l", "lt", "l2"):
+                self.axes["lt"] = val
+            elif s in ("r", "rt", "r2"):
+                self.axes["rt"] = val
 
-    def update_joystick(self, stick: str, x: float, y: float):
+    def update_joystick(self, stick: str, x: float, y: float, recv_ns: int = 0):
         self.last_activity = time.time()
+        self.t_server_recv_ns = recv_ns
         s = stick.lower()
         vx = max(-1.0, min(1.0, float(x)))
         vy = max(-1.0, min(1.0, float(y)))
-        if s in ("l", "left"):
-            self.axes["lx"] = vx
-            self.axes["ly"] = vy
-        elif s in ("r", "right"):
-            self.axes["rx"] = vx
-            self.axes["ry"] = vy
+        with self.state_lock:
+            if s in ("l", "left"):
+                self.axes["lx"] = vx
+                self.axes["ly"] = vy
+            elif s in ("r", "right"):
+                self.axes["rx"] = vx
+                self.axes["ry"] = vy
+
+    def update_binary_state(self, seq: int, buttons_mask: int, lt_u8: int, rt_u8: int,
+                            lx_i16: int, ly_i16: int, rx_i16: int, ry_i16: int,
+                            client_time_ms: int = 0, recv_ns: int = 0):
+        self.last_activity = time.time()
+        self.t_client_ms = client_time_ms
+        self.t_server_recv_ns = recv_ns
+        self.latest_seq = seq
+
+        with self.state_lock:
+            # 1. Detectar transiciones de botones respecto al estado anterior
+            prev_mask = self.current_buttons_mask
+            if buttons_mask != prev_mask:
+                self.current_buttons_mask = buttons_mask
+                for btn_name, bit in BUTTON_BITS.items():
+                    was_pressed = bool(prev_mask & bit)
+                    is_pressed = bool(buttons_mask & bit)
+                    if was_pressed != is_pressed:
+                        self.button_queue.append({
+                            "btn": btn_name,
+                            "state": 1 if is_pressed else 0,
+                            "seq": seq
+                        })
+                        if len(self.button_queue) > 64:
+                            self.button_queue.pop(0)
+                        self.buttons[btn_name] = is_pressed
+
+            # 2. Snapshot analógico atómico (reemplazable instantáneamente por el más reciente)
+            self.axes["lt"] = lt_u8 / 255.0
+            self.axes["rt"] = rt_u8 / 255.0
+            self.axes["lx"] = max(-1.0, min(1.0, lx_i16 / 32767.0))
+            self.axes["ly"] = max(-1.0, min(1.0, ly_i16 / 32767.0))
+            self.axes["rx"] = max(-1.0, min(1.0, rx_i16 / 32767.0))
+            self.axes["ry"] = max(-1.0, min(1.0, ry_i16 / 32767.0))
+
+    def reset_inputs(self):
+        """Libera todos los botones y centra ejes de forma segura."""
+        with self.state_lock:
+            self.button_queue.clear()
+            self.current_buttons_mask = 0
+            for k in self.buttons:
+                self.buttons[k] = False
+            for k in self.axes:
+                self.axes[k] = 0.0
 
     def get_physical_state(self) -> Dict[str, Any]:
         """Convierte el estado de AirPad al diccionario compatible con EmulatorEngine."""
-        b = self.buttons
-        a = self.axes
+        with self.state_lock:
+            # Drenar cola de botones
+            while self.button_queue:
+                ev = self.button_queue.pop(0)
+                b_name = ev["btn"]
+                if b_name in self.buttons:
+                    self.buttons[b_name] = (ev["state"] == 1)
+
+            b = dict(self.buttons)
+            a = dict(self.axes)
+            seq = self.latest_seq
+            c_ms = self.t_client_ms
+            r_ns = self.t_server_recv_ns
 
         return {
             "buttons": {
@@ -137,6 +372,11 @@ class AirPadClient:
             "raw_phone": {
                 "buttons": dict(b),
                 "axes": dict(a)
+            },
+            "telemetry": {
+                "seq": seq,
+                "t_client_ms": c_ms,
+                "t_server_recv_ns": r_ns
             }
         }
 
@@ -144,12 +384,13 @@ class AirPadClient:
 class WebGamepadServer:
     """
     Servidor HTTP & WebSocket ultra ligero para j360More AirPad.
-    Gestiona hasta 12 ranuras de smartphones simultaneos.
+    Gestiona hasta 12 ranuras de smartphones simultaneos con protocolo binario.
     """
 
     def __init__(self, host: str = "0.0.0.0", port: int = 8080, static_dir: Optional[str] = None):
         self.host = host
         self.port = port
+        self.preferred_ip: Optional[str] = None
         self.static_dir = static_dir
         if not self.static_dir:
             base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -158,7 +399,7 @@ class WebGamepadServer:
         self.running = False
         self.server_sock: Optional[socket.socket] = None
         self.thread: Optional[threading.Thread] = None
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
         # Slots 1..12
         self.clients: Dict[str, AirPadClient] = {}
@@ -168,9 +409,13 @@ class WebGamepadServer:
         self.haptics_enabled = True
         self.auto_assign_enabled = True
 
-        # Callbacks
+        # Telemetría
+        self.telemetry = TelemetryCollector()
+
+        # Callbacks y eventos reactivos
         self.on_client_connected_cb: Optional[Callable[[str, AirPadClient], None]] = None
         self.on_client_disconnected_cb: Optional[Callable[[str], None]] = None
+        self.on_input_event: Optional[Callable[[], None]] = None
 
     def start(self) -> bool:
         """Inicia el servidor en un hilo secundario."""
@@ -187,7 +432,7 @@ class WebGamepadServer:
             self.running = True
             self.thread = threading.Thread(target=self._run_loop, daemon=True, name="AirPadServer")
             self.thread.start()
-            print(f"[*] Servidor AirPad iniciado en http://{get_local_ip()}:{self.port}")
+            print(f"[*] Servidor AirPad iniciado en http://{get_local_ip(self.preferred_ip)}:{self.port}")
             return True
         except Exception as e:
             print(f"[!] Error iniciando Servidor AirPad en puerto {self.port}: {e}")
@@ -201,11 +446,15 @@ class WebGamepadServer:
             return False
 
     def stop(self):
-        """Detiene el servidor y desconecta a todos los clientes."""
+        """Detiene el servidor y desconecta a todos los clientes de forma limpia e instantánea."""
         self.running = False
         with self.lock:
-            for slot_id, client in list(self.clients.items()):
-                self._disconnect_client(slot_id)
+            clients_to_close = list(self.clients.items())
+            self.clients.clear()
+
+        # Finalizar clientes fuera del lock para evitar cualquier contención o llamada recursiva
+        for slot_id, client in clients_to_close:
+            self._finish_client_disconnect(slot_id, client, notify_callbacks=False)
 
         if self.server_sock:
             try:
@@ -215,12 +464,12 @@ class WebGamepadServer:
             self.server_sock = None
 
         if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=1.0)
+            self.thread.join(timeout=0.5)
             self.thread = None
 
     def get_url(self) -> str:
         """Retorna la URL local para el QR y el portapapeles."""
-        return f"http://{get_local_ip()}:{self.port}"
+        return f"http://{get_local_ip(self.preferred_ip)}:{self.port}"
 
     def get_connected_count(self) -> int:
         with self.lock:
@@ -273,7 +522,8 @@ class WebGamepadServer:
             "axes": {i: 0.0 for i in range(6)},
             "hats": {0: (0, 0)},
             "keys": set(),
-            "raw_phone": {"buttons": {}, "axes": {}}
+            "raw_phone": {"buttons": {}, "axes": {}},
+            "telemetry": {"seq": 0, "t_client_ms": 0, "t_server_recv_ns": 0}
         }
 
     def send_rumble(self, slot_id: str, low: int, high: int):
@@ -285,6 +535,14 @@ class WebGamepadServer:
             if client and client.active:
                 msg = json.dumps({"type": "rumble", "low": low, "high": high})
                 self._send_ws_frame(client.sock, msg)
+
+    def notify_input(self):
+        """Despierta inmediatamente al motor de emulacion."""
+        if self.on_input_event:
+            try:
+                self.on_input_event()
+            except Exception:
+                pass
 
     def _find_free_slot(self) -> Optional[int]:
         """Encuentra el menor slot libre entre 1 y self.max_slots (maximo 12)."""
@@ -298,12 +556,11 @@ class WebGamepadServer:
         """Bucle principal de recepcion de conexiones y peticiones."""
         while self.running and self.server_sock:
             try:
-                # Recoger sockets a monitorear
                 with self.lock:
                     sockets = [self.server_sock]
                     client_map = {}
-                    for slot_id, client in self.clients.items():
-                        if client.active:
+                    for slot_id, client in list(self.clients.items()):
+                        if client.active and client.sock:
                             sockets.append(client.sock)
                             client_map[client.sock] = slot_id
 
@@ -388,7 +645,6 @@ class WebGamepadServer:
                 return
 
             if not os.path.isfile(full_path):
-                # Fallback para SPA o 404
                 conn.sendall(b"HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nNot Found")
                 conn.close()
                 return
@@ -434,7 +690,6 @@ class WebGamepadServer:
             slot_num = self._find_free_slot()
 
         if slot_num is None:
-            # Servidor lleno (max 12)
             conn.sendall(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 17\r\n\r\nServer Full (12)")
             conn.close()
             return
@@ -453,6 +708,12 @@ class WebGamepadServer:
         ).encode("utf-8")
 
         conn.sendall(response)
+
+        # Configurar TCP_NODELAY para mínima latencia
+        try:
+            conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except Exception:
+            pass
         conn.setblocking(False)
 
         client = AirPadClient(slot_id, slot_num, conn, addr)
@@ -473,13 +734,15 @@ class WebGamepadServer:
 
         print(f"[+] AirPad conectado: {slot_id} desde {addr[0]} ({client.device_model})")
 
-        # Enviar mensaje de bienvenida con el slot y configuración
+        # Enviar mensaje de bienvenida con el slot, hapticos y soporte binario anunciado
         welcome = {
             "type": "welcome",
             "slot": slot_num,
             "slot_id": slot_id,
             "haptics": self.haptics_enabled,
-            "name": client.name
+            "name": client.name,
+            "binary": True,
+            "protocol": "bin_v1"
         }
         self._send_ws_frame(conn, json.dumps(welcome))
 
@@ -490,90 +753,169 @@ class WebGamepadServer:
                 print(f"[!] Error en callback on_client_connected: {e}")
 
     def _handle_ws_data(self, slot_id: str, sock: socket.socket):
-        """Lee y decodifica tramas WebSocket entrantes."""
+        """Parser incremental RFC 6455 con buffer por cliente y drenado de todas las tramas."""
+        client = self.clients.get(slot_id)
+        if not client or not client.active:
+            return
+
+        # 1. Leer socket no bloqueante hasta BlockingIOError o EOF
         try:
-            head = sock.recv(2)
-            if not head or len(head) < 2:
-                self._disconnect_client(slot_id)
-                return
-
-            b1, b2 = head[0], head[1]
-            opcode = b1 & 0x0F
-            masked = (b2 & 0x80) != 0
-            payload_len = b2 & 0x7F
-
-            # 0x8 = Close frame
-            if opcode == 0x8:
-                self._disconnect_client(slot_id)
-                return
-
-            if payload_len == 126:
-                ext = sock.recv(2)
-                payload_len = struct.unpack("!H", ext)[0]
-            elif payload_len == 127:
-                ext = sock.recv(8)
-                payload_len = struct.unpack("!Q", ext)[0]
-
-            mask_key = sock.recv(4) if masked else None
-
-            # Leer carga util
-            raw_payload = b""
-            while len(raw_payload) < payload_len:
-                chunk = sock.recv(min(4096, payload_len - len(raw_payload)))
+            while True:
+                chunk = sock.recv(8192)
                 if not chunk:
-                    break
-                raw_payload += chunk
-
-            if mask_key:
-                unmasked = bytearray(len(raw_payload))
-                for i in range(len(raw_payload)):
-                    unmasked[i] = raw_payload[i] ^ mask_key[i % 4]
-                payload_str = unmasked.decode("utf-8", errors="ignore")
-            else:
-                payload_str = raw_payload.decode("utf-8", errors="ignore")
-
-            # Procesar JSON
-            if opcode == 0x1:  # Text frame
-                self._process_message(slot_id, payload_str)
-            elif opcode == 0x9:  # Ping
-                # Responder pong
-                pong_frame = bytearray([0x8A, 0x00])
-                sock.sendall(pong_frame)
-
+                    self._disconnect_client(slot_id)
+                    return
+                client.rx_buffer.extend(chunk)
+                if len(client.rx_buffer) > 262144:  # Protección contra desbordamiento
+                    self._disconnect_client(slot_id)
+                    return
         except (BlockingIOError, socket.timeout):
             pass
         except Exception:
             self._disconnect_client(slot_id)
+            return
 
-    def _process_message(self, slot_id: str, raw_json: str):
-        """Parsea el mensaje JSON recibido del smartphone."""
+        # 2. Drenar tramas completas presentes en rx_buffer
+        recv_ns = time.perf_counter_ns()
+        buf = client.rx_buffer
+
+        while True:
+            if len(buf) < 2:
+                break
+
+            b0 = buf[0]
+            b1 = buf[1]
+            fin = bool(b0 & 0x80)
+            opcode = b0 & 0x0F
+            masked = bool(b1 & 0x80)
+            raw_len = b1 & 0x7F
+
+            header_len = 2
+            if raw_len == 126:
+                if len(buf) < 4:
+                    break
+                payload_len = struct.unpack_from("!H", buf, 2)[0]
+                header_len += 2
+            elif raw_len == 127:
+                if len(buf) < 10:
+                    break
+                payload_len = struct.unpack_from("!Q", buf, 2)[0]
+                header_len += 8
+            else:
+                payload_len = raw_len
+
+            if masked:
+                if len(buf) < header_len + 4:
+                    break
+                mask = buf[header_len:header_len+4]
+                header_len += 4
+            else:
+                mask = None
+
+            total_frame_len = header_len + payload_len
+            if len(buf) < total_frame_len:
+                break
+
+            # Extraer payload y desenmascarar
+            raw_payload = buf[header_len:total_frame_len]
+            del buf[:total_frame_len]
+
+            if mask:
+                unmasked = bytearray(payload_len)
+                for i in range(payload_len):
+                    unmasked[i] = raw_payload[i] ^ mask[i % 4]
+                payload = bytes(unmasked)
+            else:
+                payload = bytes(raw_payload)
+
+            # Procesar según opcode RFC 6455
+            if opcode == 0x8:  # Close
+                self._disconnect_client(slot_id)
+                return
+            elif opcode == 0x9:  # Ping -> Responder Pong
+                pong_header = bytearray([0x8A, len(payload)])
+                sock.sendall(pong_header + payload)
+            elif opcode == 0xA:  # Pong
+                client.ping_ms = int(time.time() * 1000)
+            elif opcode == 0x2:  # Binary frame
+                self._process_binary_message(slot_id, client, payload, recv_ns)
+            elif opcode == 0x1:  # Text frame (JSON)
+                try:
+                    payload_str = payload.decode("utf-8", errors="ignore")
+                    self._process_json_message(slot_id, client, payload_str, recv_ns, len(payload))
+                except Exception:
+                    pass
+
+    def _process_binary_message(self, slot_id: str, client: AirPadClient, payload: bytes, recv_ns: int):
+        """Decodifica un estado completo de gamepad empaquetado en binario v1."""
+        p_len = len(payload)
+        if p_len < 18:
+            return
+
         try:
-            msg = json.loads(raw_json)
-            client = self.clients.get(slot_id)
-            if not client:
+            if p_len >= 22:
+                ver, p_type, seq, buttons_mask, lt_u8, rt_u8, lx_i16, ly_i16, rx_i16, ry_i16, client_time_ms = STRUCT_BIN_V1_22.unpack_from(payload, 0)
+            else:
+                ver, p_type, seq, buttons_mask, lt_u8, rt_u8, lx_i16, ly_i16, rx_i16, ry_i16 = STRUCT_BIN_V1_18.unpack_from(payload, 0)
+                client_time_ms = 0
+
+            if ver != 1 or p_type != 1:
                 return
 
+            client.update_binary_state(
+                seq=seq,
+                buttons_mask=buttons_mask,
+                lt_u8=lt_u8,
+                rt_u8=rt_u8,
+                lx_i16=lx_i16,
+                ly_i16=ly_i16,
+                rx_i16=rx_i16,
+                ry_i16=ry_i16,
+                client_time_ms=client_time_ms,
+                recv_ns=recv_ns
+            )
+
+            self.telemetry.record_packet(is_binary=True, byte_len=p_len, client_ms=client_time_ms, server_recv_ns=recv_ns)
+            self.notify_input()
+        except Exception:
+            pass
+
+    def _process_json_message(self, slot_id: str, client: AirPadClient, raw_json: str, recv_ns: int, byte_len: int):
+        """Parsea el mensaje JSON recibido del smartphone (compatibilidad retroactiva)."""
+        try:
+            msg = json.loads(raw_json)
             m_type = msg.get("type", "")
 
             if m_type == "btn":
                 btn = msg.get("button") or msg.get("btn", "")
                 state = int(msg.get("state", 0))
-                client.update_button(btn, state)
+                seq = int(msg.get("seq", 0))
+                t_c = int(msg.get("t", 0))
+                client.enqueue_button(btn, state, seq, t_c, recv_ns)
+                self.telemetry.record_packet(is_binary=False, byte_len=byte_len, client_ms=t_c, server_recv_ns=recv_ns)
+                self.notify_input()
 
             elif m_type == "trigger":
                 side = msg.get("side", "")
                 val = float(msg.get("value", 0.0))
-                client.update_trigger(side, val)
+                client.update_trigger(side, val, recv_ns)
+                self.telemetry.record_packet(is_binary=False, byte_len=byte_len, server_recv_ns=recv_ns)
+                self.notify_input()
 
             elif m_type == "joystick":
                 stick = msg.get("stick", "")
                 x = float(msg.get("x", 0.0))
                 y = float(msg.get("y", 0.0))
-                client.update_joystick(stick, x, y)
+                client.update_joystick(stick, x, y, recv_ns)
+                self.telemetry.record_packet(is_binary=False, byte_len=byte_len, server_recv_ns=recv_ns)
+                self.notify_input()
 
             elif m_type == "info":
                 name = msg.get("name")
                 model = msg.get("model")
+                proto = msg.get("protocol", "")
+                if proto == "bin_v1":
+                    client.binary_negotiated = True
                 if name:
                     client.name = str(name)[:25]
                 if model:
@@ -608,27 +950,34 @@ class WebGamepadServer:
         except Exception:
             pass
 
-    def _disconnect_client(self, slot_id: str):
-        """Cierra la conexion de un cliente y libera su ranura."""
-        client = self.clients.pop(slot_id, None)
-        if client:
-            client.active = False
-            try:
-                client.sock.close()
-            except Exception:
-                pass
-            print(f"[-] AirPad desconectado: {slot_id} ({client.name})")
+    def _finish_client_disconnect(self, slot_id: str, client: AirPadClient, notify_callbacks: bool = True):
+        """Finaliza el cierre de socket y notificaciones de desconexión sin retener el lock del servidor."""
+        client.active = False
+        client.reset_inputs()
+        self.notify_input()
+        try:
+            client.sock.close()
+        except Exception:
+            pass
+        print(f"[-] AirPad desconectado: {slot_id} ({client.name})")
 
-            if self.on_client_disconnected_cb:
-                try:
-                    self.on_client_disconnected_cb(slot_id)
-                except Exception as e:
-                    print(f"[!] Error en callback on_client_disconnected: {e}")
+        if notify_callbacks and self.on_client_disconnected_cb:
+            try:
+                self.on_client_disconnected_cb(slot_id)
+            except Exception as e:
+                print(f"[!] Error en callback on_client_disconnected: {e}")
+
+    def _disconnect_client(self, slot_id: str, notify_callbacks: bool = True):
+        """Cierra la conexion de un cliente, resetea sus entradas y libera su ranura."""
+        client = None
+        with self.lock:
+            client = self.clients.pop(slot_id, None)
+        if client:
+            self._finish_client_disconnect(slot_id, client, notify_callbacks=notify_callbacks)
 
     def kick_client(self, slot_id: str):
         """Desconecta intencionalmente a un cliente especifico."""
-        with self.lock:
-            self._disconnect_client(slot_id)
+        self._disconnect_client(slot_id, notify_callbacks=True)
 
 
 # Instancia singleton del servidor
