@@ -35,7 +35,7 @@ from i18n import (
     canonicalize_mapping, localize_mapping
 )
 
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
@@ -343,6 +343,275 @@ DEFAULT_PHONE_MAPPINGS = {
     "DPAD_RIGHT": "POV 1 Right"
 }
 
+class ArrowButton(tk.Canvas):
+    """Botón estilizado para deslizamiento horizontal de pestañas con flechas proporcionadas y vectoriales."""
+    def __init__(self, parent, direction="left", command_start=None, command_stop=None, **kwargs):
+        super().__init__(
+            parent,
+            width=20,
+            height=22,
+            highlightthickness=1,
+            highlightbackground="#cbd5e1",
+            bg="#f1f5f9",
+            cursor="hand2",
+            **kwargs
+        )
+        self.direction = direction
+        self.command_start = command_start
+        self.command_stop = command_stop
+
+        if direction == "left":
+            self.poly = self.create_polygon(13, 5, 6, 11, 13, 17, fill="#334155")
+        else:
+            self.poly = self.create_polygon(7, 5, 14, 11, 7, 17, fill="#334155")
+
+        self.bind("<ButtonPress-1>", self._on_press)
+        self.bind("<ButtonRelease-1>", self._on_release)
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+
+    def _on_enter(self, e):
+        self.configure(bg="#e0f2fe", highlightbackground="#38bdf8")
+        self.itemconfig(self.poly, fill="#0284c7")
+
+    def _on_leave(self, e):
+        self.configure(bg="#f1f5f9", highlightbackground="#cbd5e1")
+        self.itemconfig(self.poly, fill="#334155")
+
+    def _on_press(self, e):
+        self.configure(bg="#bae6fd", highlightbackground="#0284c7")
+        if self.command_start:
+            self.command_start(e)
+
+    def _on_release(self, e):
+        self.configure(bg="#e0f2fe", highlightbackground="#38bdf8")
+        if self.command_stop:
+            self.command_stop(e)
+
+
+class ScrollableNotebook(ttk.Frame):
+    """Contenedor de pestañas horizontales deslizables con soporte para rueda del ratón y flechas ◀ ▶.
+    Basado en la arquitectura de muhammeteminturgut/ttkScrollableNotebook con soporte nativo de Windows.
+    """
+    def __init__(self, parent, wheelscroll: bool = True, **kwargs):
+        super().__init__(parent)
+        self.xLocation = 0
+        self.timer = None
+        self.menuSpace = 48
+        self.contentsManaged = []
+        self._external_tab_changed_cbs = []
+
+        # Estilo para asegurar que el notebook de contenido no dibuje encabezados de pestaña duplicados
+        s = ttk.Style()
+        try:
+            s.layout("NoTabs.TNotebook.Tab", [])
+        except Exception:
+            pass
+
+        # 1. Marco visor superior que aloja únicamente la tira de pestañas y las flechas
+        self.tab_viewport = ttk.Frame(self, height=28)
+        self.tab_viewport.pack(fill="x", side="top")
+        self.tab_viewport.pack_propagate(False)
+
+        self.notebookTab = ttk.Notebook(self.tab_viewport, **kwargs)
+        self.notebookTab.place(x=0, y=0)
+        self.notebookTab.bind("<<NotebookTabChanged>>", self._tabChanger)
+
+        self.slideFrame = ttk.Frame(self.tab_viewport)
+
+        self.leftArrow = ArrowButton(self.slideFrame, direction="left", command_start=self._leftSlideStart, command_stop=self._slideStop)
+        self.leftArrow.pack(side="left", padx=(0, 2))
+
+        self.rightArrow = ArrowButton(self.slideFrame, direction="right", command_start=self._rightSlideStart, command_stop=self._slideStop)
+        self.rightArrow.pack(side="left")
+
+        if wheelscroll:
+            for w in (self.notebookTab, self.tab_viewport, self.slideFrame, self.leftArrow, self.rightArrow):
+                w.bind("<MouseWheel>", self._wheelscroll)
+
+        # 2. Notebook de contenido que ocupa el resto del espacio
+        self.notebookContent = ttk.Notebook(self, style="NoTabs.TNotebook", **kwargs)
+        self.notebookContent.pack(fill="both", expand=True, side="top")
+
+        self.bind("<Configure>", self._on_configure)
+
+    def _update_arrows_visibility(self):
+        cont_w = self.tab_viewport.winfo_width()
+        tab_w = self.notebookTab.winfo_reqwidth()
+        if cont_w <= 1:
+            return
+        tab_h = self.notebookTab.winfo_reqheight()
+        if tab_h > 1 and tab_h != self.tab_viewport.winfo_height():
+            self.tab_viewport.configure(height=max(28, tab_h))
+
+        if tab_w <= cont_w:
+            self.xLocation = 0
+            self.notebookTab.place(x=0, y=0)
+            self.slideFrame.place_forget()
+        else:
+            self.slideFrame.place(relx=1.0, x=-2, y=2, anchor="ne")
+            self.slideFrame.lift()
+            max_scroll = tab_w - (cont_w - self.menuSpace)
+            if -self.xLocation > max_scroll:
+                self.xLocation = -max_scroll
+                self.notebookTab.place(x=self.xLocation, y=0)
+
+    def _on_configure(self, event=None):
+        self._update_arrows_visibility()
+
+    def _wheelscroll(self, event):
+        if hasattr(event, "delta") and event.delta:
+            if event.delta > 0:
+                self._leftSlide(event)
+            else:
+                self._rightSlide(event)
+
+    def _tabChanger(self, event=None):
+        try:
+            cur = self.notebookTab.select()
+            if cur:
+                idx = self.notebookTab.index(cur)
+                if idx < len(self.notebookContent.tabs()):
+                    self.notebookContent.select(idx)
+                self._ensure_visible(idx)
+        except Exception:
+            pass
+        for cb in self._external_tab_changed_cbs:
+            try:
+                cb(event)
+            except Exception:
+                pass
+
+    def _ensure_visible(self, idx: int):
+        total_tabs = len(self.notebookTab.tabs())
+        if total_tabs == 0:
+            return
+        total_w = self.notebookTab.winfo_reqwidth()
+        cont_w = self.tab_viewport.winfo_width()
+        if total_w <= cont_w - self.menuSpace or cont_w <= 0:
+            self.xLocation = 0
+            self.notebookTab.place(x=0, y=0)
+            return
+
+        max_scroll = total_w - (cont_w - self.menuSpace)
+        if idx == 0:
+            self.xLocation = 0
+        elif idx >= total_tabs - 1:
+            self.xLocation = -max_scroll
+        else:
+            avg_w = total_w / total_tabs
+            est_left = idx * avg_w
+            est_right = (idx + 1) * avg_w
+            if est_left + self.xLocation < 0:
+                self.xLocation = -est_left
+            elif est_right + self.xLocation > (cont_w - self.menuSpace):
+                self.xLocation = (cont_w - self.menuSpace) - est_right
+            self.xLocation = max(-max_scroll, min(0, int(self.xLocation)))
+
+        self.notebookTab.place(x=self.xLocation, y=0)
+
+    def _rightSlideStart(self, event=None):
+        if self._rightSlide(event):
+            self.timer = self.after(50, self._rightSlideStart)
+
+    def _rightSlide(self, event=None):
+        tab_w = self.notebookTab.winfo_reqwidth()
+        cont_w = self.tab_viewport.winfo_width()
+        if tab_w > cont_w - self.menuSpace:
+            max_scroll = tab_w - (cont_w - self.menuSpace)
+            if -self.xLocation < max_scroll:
+                self.xLocation -= 40
+                if -self.xLocation > max_scroll:
+                    self.xLocation = -max_scroll
+                self.notebookTab.place(x=self.xLocation, y=0)
+                return True
+        return False
+
+    def _leftSlideStart(self, event=None):
+        if self._leftSlide(event):
+            self.timer = self.after(50, self._leftSlideStart)
+
+    def _leftSlide(self, event=None):
+        if self.xLocation < 0:
+            self.xLocation += 40
+            if self.xLocation > 0:
+                self.xLocation = 0
+            self.notebookTab.place(x=self.xLocation, y=0)
+            return True
+        return False
+
+    def _slideStop(self, event=None):
+        if self.timer is not None:
+            self.after_cancel(self.timer)
+            self.timer = None
+
+    def add(self, frame, **kwargs):
+        self.notebookContent.add(frame, text="")
+        dummy = ttk.Frame(self.notebookTab)
+        self.notebookTab.add(dummy, **kwargs)
+        self.contentsManaged.append(frame)
+        self._update_arrows_visibility()
+
+    def select(self, tab_id=None):
+        if tab_id is None:
+            return self.notebookTab.select()
+        if tab_id in self.contentsManaged:
+            idx = self.contentsManaged.index(tab_id)
+            self.notebookTab.select(idx)
+            self.notebookContent.select(idx)
+            self._ensure_visible(idx)
+            return
+        try:
+            self.notebookTab.select(tab_id)
+            cur = self.notebookTab.index(tab_id)
+            self.notebookContent.select(cur)
+            self._ensure_visible(cur)
+        except Exception:
+            pass
+
+    def index(self, tab_id):
+        if tab_id in self.contentsManaged:
+            return self.contentsManaged.index(tab_id)
+        return self.notebookTab.index(tab_id)
+
+    def tabs(self):
+        return self.notebookTab.tabs()
+
+    def forget(self, tab_id):
+        try:
+            idx = self.index(tab_id)
+            if idx < len(self.notebookContent.tabs()):
+                self.notebookContent.forget(idx)
+            self.notebookTab.forget(tab_id)
+            if idx < len(self.contentsManaged):
+                self.contentsManaged.pop(idx)
+        except Exception:
+            pass
+        self._update_arrows_visibility()
+
+    def tab(self, tab_id, option=None, **kwargs):
+        idx = self.index(tab_id)
+        if kwargs:
+            return self.notebookTab.tab(idx, option=option, **kwargs)
+        return self.notebookTab.tab(idx, option=option)
+
+    def bind(self, sequence, func=None, add=None):
+        if sequence == "<<NotebookTabChanged>>":
+            if func is not None:
+                if add:
+                    self._external_tab_changed_cbs.append(func)
+                else:
+                    self._external_tab_changed_cbs = [func]
+            return
+        return self.notebookTab.bind(sequence, func, add=add)
+
+    def unbind(self, sequence, funcid=None):
+        if sequence == "<<NotebookTabChanged>>":
+            self._external_tab_changed_cbs.clear()
+            return
+        return self.notebookTab.unbind(sequence, funcid=funcid)
+
+
 class J360MoreApp:
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -356,6 +625,7 @@ class J360MoreApp:
 
         self.driver_manager = DriverManager(self.config)
         self.device_manager = DeviceManager(self.driver_manager)
+        self.device_manager.set_driver_backend(self.config.get("driver_backend", "vigem" if sys.platform == "win32" else "viiper"))
         self.engine = EmulatorEngine(self.device_manager)
         self.engine.set_config(self.config)
 
@@ -384,6 +654,13 @@ class J360MoreApp:
         self.airpad_server.on_input_event = self.engine.trigger_input_event
         if self.config.get("airpad_server_enabled", True):
             self.airpad_server.start()
+
+        # Asegurar que el cloaking residual de HidHide esté desactivado al iniciar
+        if self.driver_manager.is_hidhide_installed():
+            try:
+                self.driver_manager.set_cloak_active(False)
+            except Exception:
+                pass
 
         # Comprobar estado de drivers (ViGEmBus y aviso leve de HidHide)
         self.root.after(200, self._check_system_drivers)
@@ -764,7 +1041,7 @@ class J360MoreApp:
                         data["driver_backend"] = "vigem"
 
                     # Si está en ViGEmBus, solo se permiten xbox360, ds4 o mixed
-                    if data.get("driver_backend") == "vigem" and data.get("emulated_type") in ("dualsense", "ns2pro"):
+                    if data.get("driver_backend") == "vigem" and data.get("emulated_type") in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
                         data["emulated_type"] = "xbox360"
 
                     if "language" not in data:
@@ -901,8 +1178,8 @@ class J360MoreApp:
         )
         self.lbl_version.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # 3. Pestañas de controles (1 a 12 según max_controllers) que rellenan el espacio central
-        self.notebook = ttk.Notebook(self.root)
+        # 3. Pestañas de controles deslizantes (ScrollableNotebook) y pestaña de Juegos
+        self.notebook = ScrollableNotebook(self.root, wheelscroll=True)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=6, pady=2)
 
         self.tab_frames = {}
@@ -928,31 +1205,17 @@ class J360MoreApp:
         self.tab_frames.clear()
         self.tab_widgets.clear()
 
-        is_mixed = self.config.get("emulated_type", "xbox360").lower() in ("mixed", "mixto")
         for i in range(1, count + 1):
             tab = ttk.Frame(self.notebook, padding=4)
-            base_text = self.t("tab_control", i=i)
-            pad_type = self.get_pad_emulated_type(i)
-            if is_mixed:
-                badge = "[Xbox]" if pad_type == "xbox360" else "[DS4]"
-                tab_text = f"{base_text} {badge}"
-            else:
-                if pad_type == "dualsense":
-                    badge = "[PS5]"
-                elif pad_type == "ns2pro":
-                    badge = "[Switch 2]"
-                elif pad_type == "ds4":
-                    badge = "[DS4]"
-                else:
-                    badge = ""
-                tab_text = f"{base_text} {badge}".strip() if badge else base_text
+            tab_text = self.t("tab_control", i=i)
             self.notebook.add(tab, text=f" {tab_text} ")
             self.tab_frames[i] = tab
             self._build_tab_content(i, tab)
 
         # Pestaña fija de Juegos al extremo derecho
         self.tab_games = ttk.Frame(self.notebook, padding=6)
-        self.notebook.add(self.tab_games, text=f" {self.t('tab_games')} ")
+        games_text = self.t("tab_games")
+        self.notebook.add(self.tab_games, text=f" {games_text} ")
         self._build_games_tab(self.tab_games)
 
         if count > 0:
@@ -960,7 +1223,6 @@ class J360MoreApp:
             self.notebook.select(target_idx)
 
         self._update_header_title(count)
-
         self._refresh_all_devices()
 
     def _build_tab_content(self, pad_id: int, parent: ttk.Frame):
@@ -1829,6 +2091,47 @@ class J360MoreApp:
         val = combo.get().strip()
         self._apply_mapping_with_conflict_check(pad_id, target_name, val, combo=combo)
 
+    def _prev_tab(self):
+        if not hasattr(self, "notebook"):
+            return
+        tabs = self.notebook.tabs()
+        if not tabs:
+            return
+        try:
+            cur = self.notebook.index(self.notebook.select())
+            if cur > 0:
+                self.notebook.select(cur - 1)
+        except Exception:
+            pass
+
+    def _next_tab(self):
+        if not hasattr(self, "notebook"):
+            return
+        tabs = self.notebook.tabs()
+        if not tabs:
+            return
+        try:
+            cur = self.notebook.index(self.notebook.select())
+            if cur < len(tabs) - 1:
+                self.notebook.select(cur + 1)
+        except Exception:
+            pass
+
+    def _on_notebook_mousewheel(self, event):
+        if not hasattr(self, "notebook"):
+            return
+        tabs = self.notebook.tabs()
+        if not tabs:
+            return
+        try:
+            cur = self.notebook.index(self.notebook.select())
+            if event.delta > 0 and cur > 0:
+                self.notebook.select(cur - 1)
+            elif event.delta < 0 and cur < len(tabs) - 1:
+                self.notebook.select(cur + 1)
+        except Exception:
+            pass
+
     def _on_tab_changed(self):
         if self.recording_target:
             self._cancel_recording()
@@ -1904,12 +2207,38 @@ class J360MoreApp:
     def _on_key_release(self, event):
         self.engine.on_key_event(event.keysym, is_pressed=False)
 
+    def _is_device_path_hidden(self, path: Optional[str]) -> bool:
+        """Comprueba de forma insensible a mayúsculas si una ruta PnP está marcada para ocultar."""
+        if not path:
+            return False
+        norm = path.strip().upper()
+        return any(isinstance(p, str) and p.strip().upper() == norm for p in self.config.get("hidden_devices", []))
+
+    def _mark_device_hidden(self, path: str):
+        """Marca una ruta PnP para ser ocultada al emular de forma normalizada."""
+        if not path:
+            return
+        norm = path.strip().upper()
+        current = [p.strip().upper() for p in self.config.get("hidden_devices", []) if isinstance(p, str) and p.strip().upper() != norm]
+        current.append(norm)
+        self.config["hidden_devices"] = current
+        self.save_config(silent=True)
+
+    def _unmark_device_hidden(self, path: str):
+        """Desmarca una ruta PnP de la lista de ocultos."""
+        if not path:
+            return
+        norm = path.strip().upper()
+        current = [p.strip().upper() for p in self.config.get("hidden_devices", []) if isinstance(p, str) and p.strip().upper() != norm]
+        self.config["hidden_devices"] = current
+        self.save_config(silent=True)
+
     def _hide_emulation_devices(self):
-        """Oculta los dispositivos seleccionados con HidHide cuando inicia la emulación."""
+        """Oculta únicamente los dispositivos explícitamente marcados con HidHide cuando inicia la emulación."""
         if not self.driver_manager.is_hidhide_installed():
             return
 
-        hidden_devs = self.config.get("hidden_devices", [])
+        hidden_devs = [p.strip().upper() for p in self.config.get("hidden_devices", []) if isinstance(p, str) and p.strip()]
         if not hidden_devs:
             return
 
@@ -1917,8 +2246,7 @@ class J360MoreApp:
         self.driver_manager.ensure_process_whitelisted()
 
         for inst_path in hidden_devs:
-            if inst_path:
-                self.driver_manager.hide_device(inst_path)
+            self.driver_manager.hide_device(inst_path)
 
         self.driver_manager.set_cloak_active(True)
 
@@ -1927,13 +2255,12 @@ class J360MoreApp:
         if not self.driver_manager.is_hidhide_installed():
             return
 
-        hidden_devs = self.config.get("hidden_devices", [])
-        if not hidden_devs:
-            return
-
+        hidden_devs = [p.strip().upper() for p in self.config.get("hidden_devices", []) if isinstance(p, str) and p.strip()]
         for inst_path in hidden_devs:
-            if inst_path:
-                self.driver_manager.unhide_device(inst_path)
+            self.driver_manager.unhide_device(inst_path)
+
+        # Desactivar siempre el cloaking global de HidHide al detener la emulación
+        self.driver_manager.set_cloak_active(False)
 
     def _toggle_emulation(self):
         self._sync_ui_to_config()
@@ -2164,12 +2491,14 @@ class J360MoreApp:
         def on_driver_changed():
             d = driver_var.get()
             if d == "vigem":
+                rb_xbone.configure(state="disabled")
                 rb_ps5.configure(state="disabled")
                 rb_ns2.configure(state="disabled")
-                if type_var.get() in ("dualsense", "ns2pro"):
+                if type_var.get() in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
                     type_var.set("xbox360")
                     on_type_changed()
             else:
+                rb_xbone.configure(state="normal")
                 rb_ps5.configure(state="normal")
                 rb_ns2.configure(state="normal")
 
@@ -2187,7 +2516,7 @@ class J360MoreApp:
         box_type.pack(fill=tk.X, pady=(0, 6))
 
         cur_type = self.config.get("emulated_type", "xbox360").lower()
-        if driver_var.get() == "vigem" and cur_type in ("dualsense", "ns2pro"):
+        if driver_var.get() == "vigem" and cur_type in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
             cur_type = "xbox360"
         type_var = tk.StringVar(value=cur_type)
 
@@ -2223,6 +2552,8 @@ class J360MoreApp:
         type_row = ttk.Frame(box_type)
         type_row.pack(fill=tk.X, padx=4, pady=2)
         ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 10))
+        rb_xbone = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_xboxone"), variable=type_var, value="xboxone", command=on_type_changed)
+        rb_xbone.pack(side=tk.LEFT, padx=(0, 10))
         ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 10))
         rb_ps5 = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_dualsense"), variable=type_var, value="dualsense", command=on_type_changed)
         rb_ps5.pack(side=tk.LEFT, padx=(0, 10))
@@ -2231,6 +2562,7 @@ class J360MoreApp:
         ttk.Radiobutton(type_row, text=self.t("set_emulated_type_mixed"), variable=type_var, value="mixed", command=on_type_changed).pack(side=tk.LEFT)
 
         if driver_var.get() == "vigem":
+            rb_xbone.configure(state="disabled")
             rb_ps5.configure(state="disabled")
             rb_ns2.configure(state="disabled")
 
@@ -2614,11 +2946,12 @@ class J360MoreApp:
             new_driver = driver_var.get()
             driver_changed = (new_driver != old_driver)
             self.config["driver_backend"] = new_driver
+            self.device_manager.set_driver_backend(new_driver)
 
             # 3. Aplicar tipo de mando emulado
             old_type = self.config.get("emulated_type", "xbox360").lower()
             new_type = type_var.get().lower()
-            if new_driver == "vigem" and new_type in ("dualsense", "ns2pro"):
+            if new_driver == "vigem" and new_type in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
                 new_type = "xbox360"
             type_changed = (new_type != old_type)
             self.config["emulated_type"] = new_type
@@ -2779,7 +3112,7 @@ class J360MoreApp:
 
             if dev.get("instance_path"):
                 inst_path = dev.get("instance_path")
-                is_marked = inst_path in self.config.get("hidden_devices", [])
+                is_marked = self._is_device_path_hidden(inst_path)
                 if is_marked or dev.get("is_hidden"):
                     btn_hide.config(state=tk.DISABLED)
                     btn_unhide.config(state=tk.NORMAL)
@@ -2817,7 +3150,7 @@ class J360MoreApp:
                 status_str = self.t("dev_status_connected")
 
                 inst_path = dev.get("instance_path")
-                is_marked = inst_path and (inst_path in self.config.get("hidden_devices", []))
+                is_marked = self._is_device_path_hidden(inst_path)
 
                 if not has_hidhide:
                     hidhide_str = self.t("dev_not_available")
@@ -2865,7 +3198,7 @@ class J360MoreApp:
                 return
 
             inst_path = dev.get("instance_path")
-            is_marked = inst_path and (inst_path in self.config.get("hidden_devices", []))
+            is_marked = self._is_device_path_hidden(inst_path)
 
             if not has_hidhide:
                 hidhide_state = self.t("dev_not_available")
@@ -2920,10 +3253,7 @@ class J360MoreApp:
                 messagebox.showwarning(self.t("hidhide_title"), self.t("dev_no_pnp_path"))
                 return
 
-            hidden_list = self.config.setdefault("hidden_devices", [])
-            if inst_path not in hidden_list:
-                hidden_list.append(inst_path)
-                self.save_config(silent=True)
+            self._mark_device_hidden(inst_path)
 
             if self.engine.is_running():
                 self.driver_manager.hide_device(inst_path)
@@ -2958,12 +3288,13 @@ class J360MoreApp:
                 messagebox.showwarning(self.t("hidhide_title"), self.t("dev_no_pnp_path"))
                 return
 
-            hidden_list = self.config.setdefault("hidden_devices", [])
-            if inst_path in hidden_list:
-                hidden_list.remove(inst_path)
-                self.save_config(silent=True)
-
+            self._unmark_device_hidden(inst_path)
             self.driver_manager.unhide_device(inst_path)
+
+            # Si ya no quedan dispositivos marcados o no se está emulando, desactivar cloaking
+            if not self.config.get("hidden_devices", []) or not self.engine.is_running():
+                self.driver_manager.set_cloak_active(False)
+
             messagebox.showinfo(
                 self.t("hidhide_title"),
                 self.t("dev_unhide_msg", name=dev.get('product_name'))
@@ -3202,6 +3533,8 @@ class J360MoreApp:
             pad_badge = "DualShock 4"
         elif pad_type == "ns2pro":
             pad_badge = "Switch 2 Pro"
+        elif pad_type in ("xboxone", "xbox_one"):
+            pad_badge = "Xbox One"
         else:
             pad_badge = "Xbox 360"
         left_box = ttk.LabelFrame(center_frame, text=f" {self.t('subtab_general')} - {pad_badge} ", padding=2)
@@ -4144,7 +4477,7 @@ class J360MoreApp:
         try:
             if hasattr(self, "engine") and self.engine and self.engine.is_running():
                 self.engine.stop()
-                self._unhide_emulation_devices()
+            self._unhide_emulation_devices()
         except Exception as e:
             print(f"[!] Error deteniendo motor de emulación al cerrar: {e}")
 

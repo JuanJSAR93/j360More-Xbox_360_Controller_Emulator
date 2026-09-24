@@ -16,6 +16,7 @@ import viiper_backend
 from viiper_backend import (
     ViiperClient,
     XBOX_BUTTONS,
+    XBOX_ONE_BUTTONS,
     DS4_BUTTONS,
     DUALSENSE_BUTTONS,
     NS2PRO_BUTTONS
@@ -143,9 +144,9 @@ def apply_trigger_calibration(val: float, deadzone_pct: float, anti_deadzone_pct
     return max(0.0, min(1.0, res))
 
 def get_pad_emulated_type(config: dict, pad_id: int) -> str:
-    """Determina si un pad_id debe ser emulado como 'xbox360', 'ds4', 'dualsense' o 'ns2pro'."""
+    """Determina si un pad_id debe ser emulado como 'xbox360', 'xboxone', 'ds4', 'dualsense' o 'ns2pro'."""
     mode = config.get("emulated_type", "xbox360").lower()
-    if mode in ("ds4", "dualsense", "ns2pro"):
+    if mode in ("xboxone", "xbox_one", "ds4", "dualsense", "ns2pro"):
         return mode
     elif mode in ("mixed", "mixto"):
         max_ctrls = config.get("max_controllers", 8)
@@ -290,6 +291,8 @@ class EmulatorEngine:
             if emulated_type in ("mixed", "mixto"):
                 half = max_ctrls // 2
                 ctrl_type_name = f"Mixto ({half}x Xbox 360 + {half}x DS4)"
+            elif emulated_type in ("xboxone", "xbox_one"):
+                ctrl_type_name = "Xbox One"
             elif emulated_type == "ds4":
                 ctrl_type_name = "DualShock 4"
             elif emulated_type == "dualsense":
@@ -586,6 +589,15 @@ class EmulatorEngine:
                         rx_int = int(rx_calib * 32767)
                         ry_int = int(-ry_calib * 32767)
                         self.viiper_client.send_xbox360_state(pad_id, btn_mask, lt_byte, rt_byte, lx_int, ly_int, rx_int, ry_int)
+                    elif pad_type in ("xboxone", "xbox_one"):
+                        btn_mask = 0
+                        for b in pressed_buttons:
+                            btn_mask |= XBOX_ONE_BUTTONS.get(b, 0)
+                        lx_int = int(lx_calib * 32767)
+                        ly_int = int(-ly_calib * 32767)
+                        rx_int = int(rx_calib * 32767)
+                        ry_int = int(-ry_calib * 32767)
+                        self.viiper_client.send_xboxone_state(pad_id, btn_mask, lt_byte, rt_byte, lx_int, ly_int, rx_int, ry_int)
                     elif pad_type == "ds4":
                         btn_mask = 0
                         for b in pressed_buttons:

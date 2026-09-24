@@ -11,6 +11,12 @@ import pygame
 from driver_manager import DriverManager
 from raw_keyboard import RawKeyboardManager
 import web_gamepad_server
+from detect_virtual_gamepads import (
+    is_virtual_device,
+    get_virtual_instance_ids,
+    get_virtual_vid_pids,
+    clear_device_cache,
+)
 
 # Inicializar subsistema de joystick de pygame
 pygame.init()
@@ -65,6 +71,7 @@ def _get_present_pnp_device_instance_paths() -> List[str]:
 
 class DeviceManager:
     def __init__(self, driver_manager: Optional[DriverManager] = None):
+        self.driver_backend: str = "vigem" if sys.platform == "win32" else "viiper"
         self.driver_manager = driver_manager or DriverManager()
         self.keyboard_manager = RawKeyboardManager.get_instance()
         self.joysticks: Dict[str, pygame.joystick.Joystick] = {}
@@ -97,6 +104,12 @@ class DeviceManager:
         except Exception:
             pass
 
+    def set_driver_backend(self, backend: str):
+        """Configura el backend de driver virtual activo ('viiper' o 'vigem') para la detección condicionada."""
+        if backend and backend.lower() != getattr(self, "driver_backend", "").lower():
+            self.driver_backend = backend.lower()
+            clear_device_cache()
+
     def add_on_devices_changed_callback(self, callback):
         """Registra una función callback a invocar cuando se detecta reconexión/cambio de mandos."""
         if callback not in self._on_devices_changed_callbacks:
@@ -117,44 +130,25 @@ class DeviceManager:
         if hasattr(self, "keyboard_manager") and self.keyboard_manager:
             self.keyboard_manager.stop()
 
-    def _is_virtual_gamepad(self, joy: pygame.joystick.Joystick) -> bool:
-        """Determina si un joystick es un mando virtual creado por ViGEmBus o VIIPER."""
+    def _is_virtual_gamepad(self, joy: pygame.joystick.Joystick, active_driver: Optional[str] = None) -> bool:
+        """Determina de forma condicionada si un joystick es un mando virtual creado por el driver activo."""
         try:
-            name = joy.get_name().strip()
+            drv = (active_driver or getattr(self, "driver_backend", "vigem")).lower()
+            name = joy.get_name().strip().lower()
             guid = joy.get_guid()
-            vid = "0000"
-            pid = "0000"
-            if len(guid) >= 20:
-                vid = (guid[10:12] + guid[8:10]).upper()
-                pid = (guid[18:20] + guid[16:18]).upper()
-
-            name_l = name.lower()
-            if any(x in name_l for x in ("usbip", "viiper", "vigem", "nefarius", "vgamepad")):
+            if drv in ("viiper", "usbip", "all") and any(k in name for k in ("viiper", "usbip", "vhci")):
                 return True
-
-            # Xbox 360 virtual (ViGEmBus o VIIPER)
-            if vid == "045E" and pid == "028E" and ("xbox 360" in name_l or "xinput" in name_l or "controller" in name_l):
+            if drv in ("vigem", "vigembus", "all") and any(k in name for k in ("vigem", "nefarius", "virtual gamepad")):
                 return True
-
-            # DualShock 4 virtual (ViGEmBus o VIIPER)
-            if vid == "054C" and pid in ("05C4", "09CC"):
-                if any(x in name_l for x in ("ps4", "playstation", "wireless controller", "dualshock", "compatible con hid", "sony")):
-                    return True
-
-            # DualSense virtual (VIIPER)
-            if vid == "054C" and pid in ("0CE6", "0DF2"):
-                if any(x in name_l for x in ("dualsense", "wireless controller", "playstation", "sony")):
-                    return True
-
-            # Switch 2 Pro virtual (VIIPER)
-            if (vid == "057E" and pid == "2069") or ("switch 2" in name_l) or ("ns2pro" in name_l):
-                return True
+            return is_virtual_device(instance_id=guid, name=name, active_driver=drv, max_age=4.0)
         except Exception:
             pass
         return False
 
-    def refresh_devices(self) -> List[Dict[str, Any]]:
-        """Re-escanea los joysticks fisicos conectados por USB o Bluetooth, excluyendo virtuales."""
+    def refresh_devices(self, active_driver: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Re-escanea los joysticks fisicos conectados por USB o Bluetooth, excluyendo virtuales según el driver activo."""
+        if active_driver:
+            self.set_driver_backend(active_driver)
         try:
             pygame.event.pump()
         except Exception:
@@ -222,24 +216,26 @@ class DeviceManager:
         import re
         candidates_by_vid_pid: Dict[Tuple[str, str], List[str]] = {}
 
+        v_driver = getattr(self, "driver_backend", "vigem")
+        virtual_instance_ids = {x.upper() for x in get_virtual_instance_ids(active_driver=v_driver, max_age=5.0) if x}
+        virtual_vid_pids = get_virtual_vid_pids(active_driver=v_driver, max_age=5.0)
+
         def _is_virtual_path(pth: str) -> bool:
-            u = pth.upper()
-            if any(x in u for x in (
-                "VID_045E&PID_028E",
-                "VID_054C&PID_05C4",
-                "VID_054C&PID_09CC",
-                "VID_054C&PID_0CE6",
-                "VID_054C&PID_0DF2",
-                "VID_057E&PID_2069",
-            )):
+            if not pth:
+                return False
+            up = pth.upper()
+            if up in virtual_instance_ids:
                 return True
-            if any(x in u for x in ("USBIP", "VIGEM", "VIIPER")):
-                return True
+            for vid in virtual_instance_ids:
+                if len(vid) >= 8 and (vid in up or up in vid):
+                    return True
             return False
 
-        # 1. Prioridad: rutas directas de mandos reportadas por HidHide (dev-gaming)
+        # 1. Prioridad: rutas directas de mandos reportadas por HidHide (dev-gaming) que estén realmente presentes
         gaming_devices = self.driver_manager.get_gaming_devices_info()
         for g in gaming_devices:
+            if not g.get("present", False) or g.get("usage", "").lower() == "absent":
+                continue
             p = g.get("instance_path", "").strip()
             if p:
                 if _is_virtual_path(p):
@@ -291,8 +287,26 @@ class DeviceManager:
                 joy = pygame.joystick.Joystick(i)
                 joy.init()
 
-                # Si es un mando virtual de ViGEmBus, lo ignoramos totalmente
-                if self._is_virtual_gamepad(joy):
+                guid = joy.get_guid()
+                name = joy.get_name().strip()
+                vid = "0000"
+                pid = "0000"
+                if len(guid) >= 20:
+                    vid = (guid[10:12] + guid[8:10]).upper()
+                    pid = (guid[18:20] + guid[16:18]).upper()
+
+                # Si es un mando virtual del driver activo (ViGEmBus o VIIPER), lo ignoramos totalmente:
+                # 1. Comprobación directa por nombre o firma
+                # 2. Si el (VID, PID) está registrado como virtual y no quedan instancias físicas PnP disponibles
+                is_virt = False
+                if self._is_virtual_gamepad(joy, active_driver=self.driver_backend):
+                    is_virt = True
+                elif (vid, pid) in virtual_vid_pids:
+                    avail_physical = [c for c in candidates_by_vid_pid.get((vid, pid), []) if c not in used_instance_paths]
+                    if not avail_physical:
+                        is_virt = True
+
+                if is_virt:
                     joy.quit()
                     continue
 
