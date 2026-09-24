@@ -180,13 +180,38 @@ def native_windows_devices() -> list[dict[str, Any]]:
             continue
 
         p_dn = wintypes.DWORD()
+        curr_dn = dn
         parent_id = ''
+        grandparent_id = ''
         parent_bus_reported = ''
-        if cfgmgr32.CM_Get_Parent(ctypes.byref(p_dn), dn, 0) == 0:
+        ancestor_tokens: list[str] = []
+
+        depth = 0
+        while cfgmgr32.CM_Get_Parent(ctypes.byref(p_dn), curr_dn, 0) == 0:
             p_buf = ctypes.create_unicode_buffer(512)
-            if cfgmgr32.CM_Get_Device_IDW(p_dn, p_buf, 512, 0) == 0:
-                parent_id = p_buf.value
-                parent_bus_reported = get_reg_prop(p_dn, 22)
+            if cfgmgr32.CM_Get_Device_IDW(p_dn, p_buf, 512, 0) != 0:
+                break
+            anc_id = p_buf.value
+            if not anc_id or anc_id.startswith("HTREE") or anc_id == "ROOT":
+                break
+            anc_svc = get_reg_prop(p_dn, 5)
+            anc_desc = get_reg_prop(p_dn, 1) or get_reg_prop(p_dn, 13)
+            anc_bus = get_reg_prop(p_dn, 22)
+
+            for item in (anc_id, anc_svc, anc_desc, anc_bus):
+                if item and item not in ancestor_tokens:
+                    ancestor_tokens.append(item)
+
+            if depth == 0:
+                parent_id = anc_id
+                parent_bus_reported = anc_bus
+            elif depth == 1:
+                grandparent_id = anc_id
+
+            curr_dn = wintypes.DWORD(p_dn.value)
+            depth += 1
+            if depth >= 5:
+                break
 
         results.append({
             'instance_id': dev_id,
@@ -198,6 +223,8 @@ def native_windows_devices() -> list[dict[str, Any]]:
             'BusReportedDeviceDesc': bus_reported,
             'Parent': parent_id,
             'ParentBusReportedDeviceDesc': parent_bus_reported,
+            'GrandParent': grandparent_id,
+            'Ancestors': " ".join(ancestor_tokens),
             'hardware_ids': hwid.split(),
             'compatible_ids': comp.split(),
             'HardwareIds': hwid.split(),
@@ -388,6 +415,7 @@ def pnp_signal_text(device: dict[str, Any]) -> str:
         value(device, "ParentBusReportedDeviceDesc", "parent_bus_reported"),
         value(device, "Parent", "parent"),
         value(device, "GrandParent", "grandparent"),
+        value(device, "Ancestors", "ancestors"),
         value(device, "EnumeratorName", "enumerator_name", "enumerator"),
         value(device, "Service", "service"),
         value(device, "Driver", "driver"),

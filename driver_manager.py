@@ -140,44 +140,75 @@ class DriverManager:
         self._hidhide_available = False
         return False
 
-    def _run_cli(self, args: List[str], timeout: float = 3.0) -> subprocess.CompletedProcess:
+    def _run_cli(self, args: List[str], timeout: float = 4.0) -> subprocess.CompletedProcess:
         """Ejecuta un comando con HidHideCLI de forma segura, rápida y sin abrir ventanas de consola."""
         cli = self.get_hidhide_cli_path()
         if not cli:
-            raise RuntimeError("HidHideCLI no encontrado en el sistema.")
+            return subprocess.CompletedProcess(args=[], returncode=-1, stdout="", stderr="HidHideCLI no encontrado")
 
         # Bandera para evitar abrir ventanas de consola emergentes en Windows
         flags = 0
         if sys.platform == "win32":
             flags = subprocess.CREATE_NO_WINDOW
 
-        return subprocess.run(
-            [cli] + args,
-            stdin=subprocess.DEVNULL,
-            capture_output=True,
-            text=True,
-            creationflags=flags,
-            timeout=timeout
-        )
+        try:
+            return subprocess.run(
+                [cli] + args,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+                creationflags=flags,
+                timeout=timeout
+            )
+        except subprocess.TimeoutExpired:
+            return subprocess.CompletedProcess(args=[cli] + args, returncode=-1, stdout="", stderr="TimeoutExpired")
+        except Exception as e:
+            return subprocess.CompletedProcess(args=[cli] + args, returncode=-1, stdout="", stderr=str(e))
 
     # ==========================================
     # GESTION DE WHITELIST (LISTA BLANCA)
     # ==========================================
     def ensure_process_whitelisted(self, exe_path: Optional[str] = None) -> bool:
-        """Asegura que el ejecutable actual esté registrado en la lista blanca de HidHide."""
-        target_exe = exe_path or sys.executable
+        """Asegura que el ejecutable actual (Python, pythonw o j360More) esté registrado en la lista blanca de HidHide."""
         if not self.is_hidhide_installed():
             return False
 
         try:
             # Consultar lista blanca actual
-            p = self._run_cli(["--app-list"])
-            if target_exe.lower() in p.stdout.lower():
-                return True
+            p = self._run_cli(["--app-list"], timeout=4.0)
+            app_list_lower = p.stdout.lower()
 
-            # Registrar el ejecutable
-            p_reg = self._run_cli(["--app-reg", target_exe])
-            return p_reg.returncode == 0
+            candidates = set()
+            if exe_path:
+                candidates.add(os.path.abspath(exe_path))
+
+            if sys.executable:
+                candidates.add(os.path.abspath(sys.executable))
+                try:
+                    candidates.add(os.path.realpath(sys.executable))
+                except Exception:
+                    pass
+                exe_dir = os.path.dirname(sys.executable)
+                for alt_name in ("python.exe", "pythonw.exe", "j360More.exe"):
+                    alt_path = os.path.join(exe_dir, alt_name)
+                    if os.path.isfile(alt_path):
+                        candidates.add(alt_path)
+
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            for cand_rel in (
+                os.path.join(base_dir, "dist", "j360More.exe"),
+                os.path.join(base_dir, "dist", "j360More", "j360More.exe")
+            ):
+                if os.path.isfile(cand_rel):
+                    candidates.add(cand_rel)
+
+            all_ok = True
+            for target in candidates:
+                if target.lower() not in app_list_lower:
+                    res = self._run_cli(["--app-reg", target], timeout=4.0)
+                    if res.returncode != 0:
+                        all_ok = False
+            return all_ok
         except Exception as e:
             print(f"[!] Error asegurando whitelist en HidHide: {e}")
             return False
@@ -207,30 +238,42 @@ class DriverManager:
             print(f"[!] Error configurando cloaking en HidHide: {e}")
             return False
 
-    def get_hidden_device_paths(self) -> Set[str]:
-        """Obtiene el conjunto de rutas de instancia actualmente ocultas en HidHide."""
+    def get_hidden_device_paths(self, max_age: float = 10.0) -> Set[str]:
+        """Obtiene el conjunto de rutas de instancia actualmente ocultas en HidHide con caché de respuesta."""
         if not self.is_hidhide_installed():
             return set()
 
+        import time
+        now = time.time()
+        if getattr(self, "_hidden_paths_cache", None) is not None and (now - getattr(self, "_hidden_paths_cache_time", 0.0)) < max_age:
+            return self._hidden_paths_cache
+
         try:
-            p = self._run_cli(["--dev-list"])
+            p = self._run_cli(["--dev-list"], timeout=3.0)
             paths = set()
             for line in p.stdout.splitlines():
                 line = line.strip()
                 if line.startswith('--dev-hide "') and line.endswith('"'):
                     path = line[len('--dev-hide "'):-1]
                     paths.add(path.upper())
+            self._hidden_paths_cache = paths
+            self._hidden_paths_cache_time = now
             return paths
         except Exception:
-            return set()
+            return getattr(self, "_hidden_paths_cache", set())
 
-    def get_gaming_devices_info(self) -> List[Dict[str, Any]]:
-        """Obtiene la lista de mandos para juegos detectados por HidHide en formato JSON."""
+    def get_gaming_devices_info(self, max_age: float = 30.0) -> List[Dict[str, Any]]:
+        """Obtiene la lista de mandos para juegos detectados por HidHide en formato JSON con caché de respuesta."""
         if not self.is_hidhide_installed():
             return []
 
+        import time
+        now = time.time()
+        if getattr(self, "_gaming_cache", None) is not None and (now - getattr(self, "_gaming_cache_time", 0.0)) < max_age:
+            return self._gaming_cache
+
         try:
-            p = self._run_cli(["--dev-gaming"])
+            p = self._run_cli(["--dev-gaming"], timeout=4.0)
             if not p.stdout or not p.stdout.strip():
                 return []
             data = json.loads(p.stdout)
@@ -244,10 +287,11 @@ class DriverManager:
                         "present": d.get("present", False),
                         "usage": d.get("usage", "")
                     })
+            self._gaming_cache = devices
+            self._gaming_cache_time = now
             return devices
         except Exception as e:
-            print(f"[!] Error leyendo dev-gaming de HidHide: {e}")
-            return []
+            return getattr(self, "_gaming_cache", [])
 
     def hide_device(self, instance_path: str) -> bool:
         """Oculta un dispositivo físico específico y activa el cloaking global si está apagado."""
@@ -265,6 +309,8 @@ class DriverManager:
 
             # 3. Asegurar que el cloaking esté activo
             self.set_cloak_active(True)
+            self._hidden_paths_cache = None
+            self._gaming_cache = None
             return True
         except Exception as e:
             print(f"[!] Error ocultando dispositivo en HidHide: {e}")
@@ -277,6 +323,8 @@ class DriverManager:
 
         try:
             p = self._run_cli(["--dev-unhide", instance_path])
+            self._hidden_paths_cache = None
+            self._gaming_cache = None
             return p.returncode == 0
         except Exception as e:
             print(f"[!] Error desocultando dispositivo en HidHide: {e}")

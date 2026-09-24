@@ -467,20 +467,25 @@ class ScrollableNotebook(ttk.Frame):
                 self._rightSlide(event)
 
     def _tabChanger(self, event=None):
+        if getattr(self, "_in_tab_change", False):
+            return
+        self._in_tab_change = True
         try:
             cur = self.notebookTab.select()
             if cur:
                 idx = self.notebookTab.index(cur)
                 if idx < len(self.notebookContent.tabs()):
-                    self.notebookContent.select(idx)
+                    cur_cont = self.notebookContent.select()
+                    if not cur_cont or self.notebookContent.index(cur_cont) != idx:
+                        self.notebookContent.select(idx)
                 self._ensure_visible(idx)
-        except Exception:
-            pass
-        for cb in self._external_tab_changed_cbs:
-            try:
-                cb(event)
-            except Exception:
-                pass
+            for cb in self._external_tab_changed_cbs:
+                try:
+                    cb(event)
+                except Exception:
+                    pass
+        finally:
+            self._in_tab_change = False
 
     def _ensure_visible(self, idx: int):
         total_tabs = len(self.notebookTab.tabs())
@@ -555,19 +560,39 @@ class ScrollableNotebook(ttk.Frame):
     def select(self, tab_id=None):
         if tab_id is None:
             return self.notebookTab.select()
-        if tab_id in self.contentsManaged:
-            idx = self.contentsManaged.index(tab_id)
-            self.notebookTab.select(idx)
-            self.notebookContent.select(idx)
-            self._ensure_visible(idx)
+        if getattr(self, "_in_tab_change", False):
             return
+        self._in_tab_change = True
         try:
-            self.notebookTab.select(tab_id)
-            cur = self.notebookTab.index(tab_id)
-            self.notebookContent.select(cur)
-            self._ensure_visible(cur)
-        except Exception:
-            pass
+            target_idx = None
+            if tab_id in self.contentsManaged:
+                target_idx = self.contentsManaged.index(tab_id)
+            else:
+                try:
+                    target_idx = self.notebookTab.index(tab_id)
+                except Exception:
+                    pass
+
+            if target_idx is not None:
+                cur_tab = self.notebookTab.select()
+                cur_tab_idx = self.notebookTab.index(cur_tab) if cur_tab else None
+                if cur_tab_idx != target_idx:
+                    self.notebookTab.select(target_idx)
+
+                cur_content = self.notebookContent.select()
+                cur_cont_idx = self.notebookContent.index(cur_content) if cur_content else None
+                if target_idx < len(self.notebookContent.tabs()) and cur_cont_idx != target_idx:
+                    self.notebookContent.select(target_idx)
+
+                self._ensure_visible(target_idx)
+
+                for cb in self._external_tab_changed_cbs:
+                    try:
+                        cb(None)
+                    except Exception:
+                        pass
+        finally:
+            self._in_tab_change = False
 
     def index(self, tab_id):
         if tab_id in self.contentsManaged:
@@ -577,16 +602,44 @@ class ScrollableNotebook(ttk.Frame):
     def tabs(self):
         return self.notebookTab.tabs()
 
-    def forget(self, tab_id):
+    def forget(self, tab_id, destroy: bool = False):
         try:
             idx = self.index(tab_id)
+            content_frame = None
+            if idx < len(self.contentsManaged):
+                content_frame = self.contentsManaged.pop(idx)
             if idx < len(self.notebookContent.tabs()):
                 self.notebookContent.forget(idx)
             self.notebookTab.forget(tab_id)
-            if idx < len(self.contentsManaged):
-                self.contentsManaged.pop(idx)
+            if destroy and content_frame is not None:
+                try:
+                    content_frame.destroy()
+                except Exception:
+                    pass
         except Exception:
             pass
+        self._update_arrows_visibility()
+
+    def clear(self):
+        """Limpia y destruye todos los widgets contenidos liberando recursos GDI de Windows."""
+        for f in list(self.contentsManaged):
+            try:
+                f.destroy()
+            except Exception:
+                pass
+        self.contentsManaged.clear()
+        for t in list(self.notebookTab.tabs()):
+            try:
+                self.notebookTab.forget(t)
+            except Exception:
+                pass
+        for t in list(self.notebookContent.tabs()):
+            try:
+                self.notebookContent.forget(t)
+            except Exception:
+                pass
+        self.xLocation = 0
+        self.notebookTab.place(x=0, y=0)
         self._update_arrows_visibility()
 
     def tab(self, tab_id, option=None, **kwargs):
@@ -642,7 +695,6 @@ class J360MoreApp:
 
         self._load_assets()
         self._build_ui()
-        self._refresh_all_devices()
         self.device_manager.add_on_devices_changed_callback(lambda devs: self.root.after(0, self._on_devices_hotplugged, devs))
 
         # Servidor AirPad para smartphones
@@ -655,10 +707,11 @@ class J360MoreApp:
         if self.config.get("airpad_server_enabled", True):
             self.airpad_server.start()
 
-        # Asegurar que el cloaking residual de HidHide esté desactivado al iniciar
+        # Asegurar que el cloaking residual de HidHide esté desactivado al iniciar y que Python/la app estén en la whitelist
         if self.driver_manager.is_hidhide_installed():
             try:
                 self.driver_manager.set_cloak_active(False)
+                self.driver_manager.ensure_process_whitelisted()
             except Exception:
                 pass
 
@@ -677,8 +730,6 @@ class J360MoreApp:
         # Manejo de modales para evitar bloqueo al minimizar con Win+D
         self._active_dialog = None
         self._modal_needs_regrab = False
-        self.root.bind("<Unmap>", self._on_root_unmap, add="+")
-        self.root.bind("<Map>", self._on_root_map, add="+")
 
         self.root.after(30, self._update_loop)
 
@@ -711,33 +762,6 @@ class J360MoreApp:
                 pass
 
         dlg.destroy = on_close
-
-    def _on_root_unmap(self, event):
-        if event.widget == self.root:
-            if getattr(self, "_active_dialog", None):
-                dlg = self._active_dialog
-                if dlg.winfo_exists():
-                    try:
-                        dlg.grab_release()
-                        self._modal_needs_regrab = True
-                    except Exception:
-                        pass
-
-    def _on_root_map(self, event):
-        if event.widget == self.root:
-            def restore_modal():
-                if getattr(self, "_active_dialog", None):
-                    dlg = self._active_dialog
-                    if dlg.winfo_exists() and self.root.wm_state() != "iconic":
-                        try:
-                            self._modal_needs_regrab = False
-                            dlg.deiconify()
-                            dlg.lift()
-                            dlg.focus_force()
-                            dlg.grab_set()
-                        except Exception:
-                            pass
-            self.root.after(50, restore_modal)
 
     def t(self, key: str, **kwargs) -> str:
         lang = self.config.get("language", "es")
@@ -786,22 +810,38 @@ class J360MoreApp:
 
     def _get_pad_img_tk(self, pad_id: Optional[int] = None):
         t = self.get_pad_emulated_type(pad_id)
-        if t == "dualsense" and getattr(self, "ctrl_ds5_tk", None):
+        if t == "dualsense":
+            if getattr(self, "ctrl_ds5_tk", None) is None:
+                self._load_ds5_asset()
             return self.ctrl_ds5_tk
-        elif t == "ds4" and getattr(self, "ctrl_ds4_tk", None):
+        elif t == "ds4":
+            if getattr(self, "ctrl_ds4_tk", None) is None:
+                self._load_ds4_asset()
             return self.ctrl_ds4_tk
-        elif t == "ns2pro" and getattr(self, "ctrl_ns2p_tk", None):
+        elif t == "ns2pro":
+            if getattr(self, "ctrl_ns2p_tk", None) is None:
+                self._load_ns2p_asset()
             return self.ctrl_ns2p_tk
+        if getattr(self, "ctrl_360_tk", None) is None:
+            self._load_360_asset()
         return self.ctrl_360_tk
 
     def _get_pad_hires_img(self, pad_id: Optional[int] = None):
         t = self.get_pad_emulated_type(pad_id)
         if t == "dualsense":
+            if getattr(self, "ctrl_ds5_hires", None) is None:
+                self._load_ds5_asset()
             return getattr(self, "ctrl_ds5_hires", None) or getattr(self, "ctrl_ds5_base", None) or self.ctrl_ds4_hires
         elif t == "ds4":
+            if getattr(self, "ctrl_ds4_hires", None) is None:
+                self._load_ds4_asset()
             return self.ctrl_ds4_hires or self.ctrl_ds4_base
         elif t == "ns2pro":
+            if getattr(self, "ctrl_ns2p_hires", None) is None:
+                self._load_ns2p_asset()
             return getattr(self, "ctrl_ns2p_hires", None) or getattr(self, "ctrl_ns2p_base", None) or self.ctrl_360_hires
+        if getattr(self, "ctrl_360_hires", None) is None:
+            self._load_360_asset()
         return self.ctrl_360_hires or self.ctrl_360_base
 
     @property
@@ -917,13 +957,15 @@ class J360MoreApp:
                 print(f"[!] Error generando icono desde icon.svg: {e}")
 
         # 2. Configurar icono en la ventana de Tkinter
-        if os.path.exists(ICON_ICO_PATH):
+        icon_set = False
+        if os.path.exists(ICON_ICO_PATH) and sys.platform == "win32":
             try:
                 self.root.iconbitmap(ICON_ICO_PATH)
+                icon_set = True
             except Exception:
                 pass
 
-        if os.path.exists(ICON_PNG_PATH):
+        if not icon_set and os.path.exists(ICON_PNG_PATH):
             try:
                 self.app_icon_tk = ImageTk.PhotoImage(file=ICON_PNG_PATH)
                 self.root.iconphoto(True, self.app_icon_tk)
@@ -975,38 +1017,56 @@ class J360MoreApp:
         tk_img = ImageTk.PhotoImage(pil_base) if pil_base else None
         return pil_hires, pil_base, tk_img
 
+    def _load_360_asset(self):
+        if getattr(self, "ctrl_360_tk", None) is None:
+            (self.ctrl_360_hires, self.ctrl_360_base, self.ctrl_360_tk) = self._load_single_controller_asset(
+                CONTROLLER_360_SVG_PATH, CONTROLLER_360_HIRES_PNG, CONTROLLER_360_CACHE_PNG
+            )
+            if self.ctrl_360_base is None and os.path.exists(CONTROLLER_PNG_FALLBACK):
+                try:
+                    p = Image.open(CONTROLLER_PNG_FALLBACK).resize((350, 275), Image.Resampling.LANCZOS)
+                    self.ctrl_360_base = p
+                    self.ctrl_360_hires = p
+                    self.ctrl_360_tk = ImageTk.PhotoImage(p)
+                except Exception:
+                    pass
+
+    def _load_ds4_asset(self):
+        if getattr(self, "ctrl_ds4_tk", None) is None:
+            (self.ctrl_ds4_hires, self.ctrl_ds4_base, self.ctrl_ds4_tk) = self._load_single_controller_asset(
+                CONTROLLER_DS4_SVG_PATH, CONTROLLER_DS4_HIRES_PNG, CONTROLLER_DS4_CACHE_PNG
+            )
+
+    def _load_ds5_asset(self):
+        if getattr(self, "ctrl_ds5_tk", None) is None:
+            (self.ctrl_ds5_hires, self.ctrl_ds5_base, self.ctrl_ds5_tk) = self._load_single_controller_asset(
+                CONTROLLER_DS5_SVG_PATH, CONTROLLER_DS5_HIRES_PNG, CONTROLLER_DS5_CACHE_PNG
+            )
+
+    def _load_ns2p_asset(self):
+        if getattr(self, "ctrl_ns2p_tk", None) is None:
+            (self.ctrl_ns2p_hires, self.ctrl_ns2p_base, self.ctrl_ns2p_tk) = self._load_single_controller_asset(
+                CONTROLLER_NS2P_SVG_PATH, CONTROLLER_NS2P_HIRES_PNG, CONTROLLER_NS2P_CACHE_PNG
+            )
+
     def _load_assets(self):
         self.controller_img_tk = None
         self.controller_pil_base = None
         self.controller_pil_hires = None
+        self.ctrl_360_hires = self.ctrl_360_base = self.ctrl_360_tk = None
+        self.ctrl_ds4_hires = self.ctrl_ds4_base = self.ctrl_ds4_tk = None
+        self.ctrl_ds5_hires = self.ctrl_ds5_base = self.ctrl_ds5_tk = None
+        self.ctrl_ns2p_hires = self.ctrl_ns2p_base = self.ctrl_ns2p_tk = None
 
-        # 1. Assets Xbox 360
-        (self.ctrl_360_hires, self.ctrl_360_base, self.ctrl_360_tk) = self._load_single_controller_asset(
-            CONTROLLER_360_SVG_PATH, CONTROLLER_360_HIRES_PNG, CONTROLLER_360_CACHE_PNG
-        )
-        if self.ctrl_360_base is None and os.path.exists(CONTROLLER_PNG_FALLBACK):
-            try:
-                p = Image.open(CONTROLLER_PNG_FALLBACK).resize((350, 275), Image.Resampling.LANCZOS)
-                self.ctrl_360_base = p
-                self.ctrl_360_hires = p
-                self.ctrl_360_tk = ImageTk.PhotoImage(p)
-            except Exception:
-                pass
-
-        # 2. Assets DualShock 4
-        (self.ctrl_ds4_hires, self.ctrl_ds4_base, self.ctrl_ds4_tk) = self._load_single_controller_asset(
-            CONTROLLER_DS4_SVG_PATH, CONTROLLER_DS4_HIRES_PNG, CONTROLLER_DS4_CACHE_PNG
-        )
-
-        # 3. Assets PlayStation 5 (DualSense)
-        (self.ctrl_ds5_hires, self.ctrl_ds5_base, self.ctrl_ds5_tk) = self._load_single_controller_asset(
-            CONTROLLER_DS5_SVG_PATH, CONTROLLER_DS5_HIRES_PNG, CONTROLLER_DS5_CACHE_PNG
-        )
-
-        # 4. Assets Nintendo Switch 2 Pro
-        (self.ctrl_ns2p_hires, self.ctrl_ns2p_base, self.ctrl_ns2p_tk) = self._load_single_controller_asset(
-            CONTROLLER_NS2P_SVG_PATH, CONTROLLER_NS2P_HIRES_PNG, CONTROLLER_NS2P_CACHE_PNG
-        )
+        emulated_type = self.config.get("emulated_type", "xbox360").lower()
+        if emulated_type == "dualsense":
+            self._load_ds5_asset()
+        elif emulated_type == "ds4":
+            self._load_ds4_asset()
+        elif emulated_type == "ns2pro":
+            self._load_ns2p_asset()
+        else:
+            self._load_360_asset()
 
         self._update_active_assets()
 
@@ -1198,9 +1258,8 @@ class J360MoreApp:
         except Exception:
             pass
 
-        # Limpiar pestañas actuales del notebook
-        for tab_id in self.notebook.tabs():
-            self.notebook.forget(tab_id)
+        # Limpiar y destruir pestañas anteriores para liberar recursos GDI y evitar fugas
+        self.notebook.clear()
 
         self.tab_frames.clear()
         self.tab_widgets.clear()
@@ -1210,7 +1269,6 @@ class J360MoreApp:
             tab_text = self.t("tab_control", i=i)
             self.notebook.add(tab, text=f" {tab_text} ")
             self.tab_frames[i] = tab
-            self._build_tab_content(i, tab)
 
         # Pestaña fija de Juegos al extremo derecho
         self.tab_games = ttk.Frame(self.notebook, padding=6)
@@ -1218,12 +1276,46 @@ class J360MoreApp:
         self.notebook.add(self.tab_games, text=f" {games_text} ")
         self._build_games_tab(self.tab_games)
 
+        target_idx = 0
         if count > 0:
             target_idx = min(cur_idx, count)  # permitir seleccionar pestaña de juegos si estaba activa
-            self.notebook.select(target_idx)
+            if target_idx < count:
+                self._ensure_tab_built(target_idx + 1)
+        self.notebook.select(target_idx)
 
         self._update_header_title(count)
-        self._refresh_all_devices()
+        self._refresh_all_devices(async_scan=False)
+
+    def _ensure_tab_built(self, pad_id: int):
+        if pad_id in self.tab_frames and pad_id not in self.tab_widgets:
+            parent = self.tab_frames[pad_id]
+            self._build_tab_content(pad_id, parent)
+
+            # Si ya se escanearon periféricos físicos previamente, asociar al dev_combo
+            if getattr(self, "available_devices", None):
+                cb = self.tab_widgets[pad_id].get("dev_combo")
+                if cb and cb.winfo_exists():
+                    dev_names = []
+                    kbd_count = 0
+                    for d in self.available_devices:
+                        if d.get("id", "").startswith("kbd_"):
+                            kbd_count += 1
+                            dev_names.append(self.get_device_display_name(d, kbd_count))
+                        else:
+                            dev_names.append(self.get_device_display_name(d))
+                    cb["values"] = dev_names
+                    saved_dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+                    match_idx = 0
+                    for idx, dev in enumerate(self.available_devices):
+                        if dev["id"] == saved_dev_id:
+                            match_idx = idx
+                            break
+                    try:
+                        cb.current(match_idx)
+                    except Exception:
+                        pass
+                    has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
+                    self._update_tab_state(pad_id, has_dev)
 
     def _build_tab_content(self, pad_id: int, parent: ttk.Frame):
         widgets = {"combos": {}, "buttons": {}, "calib": {}, "mapping_controls": []}
@@ -1291,12 +1383,13 @@ class J360MoreApp:
         right_col = ttk.Frame(main_grid, padding=2)
         right_col.pack(side=tk.RIGHT, fill=tk.Y, padx=4)
 
+        options = tuple(self.get_input_options())
         def make_row(parent_col, label_text, target_name, label_anchor="w", lbl_width=14):
             row = ttk.Frame(parent_col)
             row.pack(fill=tk.X, pady=1)
             lbl = ttk.Label(row, text=label_text, width=lbl_width, anchor=label_anchor, font=("Segoe UI", 8))
             lbl.pack(side=tk.LEFT)
-            cb = ttk.Combobox(row, values=self.get_input_options(), width=15, font=("Segoe UI", 8))
+            cb = ttk.Combobox(row, values=options, width=15, font=("Segoe UI", 8))
             cb.pack(side=tk.LEFT, padx=2)
             cb.bind("<<ComboboxSelected>>", lambda e, p=pad_id, t=target_name, c=cb: self._on_combo_changed(p, t, c))
             btn = ttk.Button(row, text="...", width=3, command=lambda: self._start_record(pad_id, target_name))
@@ -1823,8 +1916,8 @@ class J360MoreApp:
                     except Exception:
                         pass
 
-    def _refresh_all_devices(self):
-        self.available_devices = self.device_manager.refresh_devices()
+    def _apply_refreshed_devices(self, new_devices: List[Dict[str, Any]]):
+        self.available_devices = new_devices
         dev_names = []
         kbd_count = 0
         for d in self.available_devices:
@@ -1834,8 +1927,10 @@ class J360MoreApp:
             else:
                 dev_names.append(self.get_device_display_name(d))
 
-        for pad_id, widgets in self.tab_widgets.items():
-            cb = widgets["dev_combo"]
+        for pad_id, widgets in list(self.tab_widgets.items()):
+            cb = widgets.get("dev_combo")
+            if not cb or not cb.winfo_exists():
+                continue
             cb["values"] = dev_names
 
             cfg = self.config.get("controllers", {}).get(str(pad_id), {})
@@ -1846,47 +1941,38 @@ class J360MoreApp:
                 if dev["id"] == saved_dev_id:
                     match_idx = idx
                     break
-            cb.current(match_idx)
+            try:
+                cb.current(match_idx)
+            except Exception:
+                pass
 
             has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
             self._update_tab_state(pad_id, has_dev)
+
+    def _refresh_all_devices(self, async_scan: bool = False):
+        if async_scan:
+            def _worker():
+                devs = self.device_manager.refresh_devices()
+                try:
+                    self.root.after(0, self._apply_refreshed_devices, devs)
+                except Exception:
+                    pass
+            threading.Thread(target=_worker, daemon=True, name="refresh-devices-worker").start()
+        else:
+            devs = self.device_manager.refresh_devices()
+            self._apply_refreshed_devices(devs)
 
     def _on_devices_hotplugged(self, new_devices: List[Dict[str, Any]]):
         """Manejador ejecutado en el hilo de la UI cuando el DeviceManager auto-reconecta mandos."""
         try:
             old_dev_ids = {d["id"] for d in getattr(self, "available_devices", []) if d["id"] != "none"}
-            self.available_devices = new_devices
             current_dev_ids = {d["id"] for d in new_devices if d["id"] != "none"}
             newly_added_ids = current_dev_ids - old_dev_ids
 
-            dev_names = []
-            kbd_count = 0
-            for d in self.available_devices:
-                if d.get("id", "").startswith("kbd_"):
-                    kbd_count += 1
-                    dev_names.append(self.get_device_display_name(d, kbd_count))
-                else:
-                    dev_names.append(self.get_device_display_name(d))
+            self._apply_refreshed_devices(new_devices)
 
             auto_usb = self.config.get("auto_assign_usb", True)
             auto_phone = self.config.get("airpad_auto_assign", True)
-
-            for pad_id, widgets in self.tab_widgets.items():
-                cb = widgets["dev_combo"]
-                cb["values"] = dev_names
-
-                cfg = self.config.get("controllers", {}).get(str(pad_id), {})
-                saved_dev_id = cfg.get("physical_device_id", "none")
-
-                match_idx = 0
-                for idx, dev in enumerate(self.available_devices):
-                    if dev["id"] == saved_dev_id:
-                        match_idx = idx
-                        break
-                cb.current(match_idx)
-
-                has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
-                self._update_tab_state(pad_id, has_dev)
 
             # Auto-asignación de dispositivos nuevos a ranuras libres
             if newly_added_ids and (auto_usb or auto_phone):
@@ -2135,6 +2221,15 @@ class J360MoreApp:
     def _on_tab_changed(self):
         if self.recording_target:
             self._cancel_recording()
+        try:
+            sel = self.notebook.select()
+            if sel:
+                idx = self.notebook.index(sel)
+                pad_id = idx + 1
+                if pad_id in self.tab_frames:
+                    self._ensure_tab_built(pad_id)
+        except Exception:
+            pass
 
     def _cancel_recording(self):
         if not self.recording_target:
@@ -3996,7 +4091,16 @@ class J360MoreApp:
                     self._active_dialog = None
                     self._modal_needs_regrab = False
 
-            cur_pad_id = self.notebook.index(self.notebook.select()) + 1
+            selected = self.notebook.select()
+            if not selected:
+                self.root.after(30, self._update_loop)
+                return
+            try:
+                cur_pad_id = self.notebook.index(selected) + 1
+            except Exception:
+                self.root.after(30, self._update_loop)
+                return
+
             widgets = self.tab_widgets.get(cur_pad_id)
 
             if widgets:
@@ -4008,6 +4112,9 @@ class J360MoreApp:
                     state = self.engine.compute_controller_state(cur_pad_id)
 
                 canvas = widgets.get("canvas")
+                if not canvas or not canvas.winfo_exists():
+                    self.root.after(30, self._update_loop)
+                    return
                 leds = widgets.get("leds", {})
                 rec_ind = widgets.get("rec_indicators", {})
 
@@ -4022,6 +4129,7 @@ class J360MoreApp:
                 if canvas and rec_ind:
                     active_pts = self._get_canvas_points(cur_pad_id)
                     if rec_canvas_key and rec_canvas_key in active_pts:
+                        widgets["_rec_shown"] = True
                         cx, cy, r = active_pts[rec_canvas_key]
                         t = time.time()
                         pulse = (math.sin(t * 10) + 1.0) / 2.0  # 0..1 oscila a ~1.6 Hz
@@ -4032,13 +4140,15 @@ class J360MoreApp:
 
                         canvas.coords(rec_ind["core"], cx - r, cy - r, cx + r, cy + r)
                         canvas.itemconfig(rec_ind["core"], state="normal", fill="#ffaa00", outline="#ffffff", width=2)
-                    else:
+                    elif widgets.get("_rec_shown", True):
+                        widgets["_rec_shown"] = False
                         canvas.itemconfig(rec_ind["halo"], state="hidden")
                         canvas.itemconfig(rec_ind["core"], state="hidden")
 
                 # 2. Indicadores reactivos de botones OPRIMIDOS (verde neon brillante con halo)
                 if canvas and leds:
                     pressed_btns = state.get("buttons", set())
+                    last_led_states = widgets.setdefault("_led_states", {})
                     for btn_name, (tag, glow) in leds.items():
                         is_active = False
                         if btn_name in pressed_btns:
@@ -4068,14 +4178,16 @@ class J360MoreApp:
                         elif btn_name == "RIGHT_THUMB" and ("RIGHT_THUMB" in pressed_btns):
                             is_active = True
 
-                        new_state = "normal" if is_active else "hidden"
-                        canvas.itemconfig(tag, state=new_state)
-                        canvas.itemconfig(glow, state=new_state)
-                        if is_active:
-                            canvas.tag_raise(glow)
-                            canvas.tag_raise(tag)
+                        if last_led_states.get(btn_name) != is_active:
+                            last_led_states[btn_name] = is_active
+                            new_state = "normal" if is_active else "hidden"
+                            canvas.itemconfig(tag, state=new_state)
+                            canvas.itemconfig(glow, state=new_state)
+                            if is_active:
+                                canvas.tag_raise(glow)
+                                canvas.tag_raise(tag)
 
-                # 2. Triggers
+                # 3. Triggers
                 c_w = widgets.get("calib", {})
                 for trig_key, raw_k, out_k in [("left_trigger", "lt_raw", "lt"), ("right_trigger", "rt_raw", "rt")]:
                     if trig_key in c_w:
@@ -4088,10 +4200,13 @@ class J360MoreApp:
                         raw_val = state.get(raw_k, 0.0)
                         out_byte = state.get(out_k, 0)
 
-                        self._draw_trigger_graph(tw["canvas"], dz, adz, sens, inv, raw_val, out_byte)
-                        tw["lbl_di_xi"].config(text=f"DI: {int(raw_val * 32767):5d}    XI: {out_byte:3d}")
+                        trig_sig = (dz, adz, sens, inv, round(raw_val, 3), out_byte)
+                        if tw.get("_last_sig") != trig_sig:
+                            tw["_last_sig"] = trig_sig
+                            self._draw_trigger_graph(tw["canvas"], dz, adz, sens, inv, raw_val, out_byte)
+                            tw["lbl_di_xi"].config(text=f"DI: {int(raw_val * 32767):5d}    XI: {out_byte:3d}")
 
-                # 3. Sticks
+                # 4. Sticks
                 for stick_key, rx_k, ry_k, cx_k, cy_k in [
                     ("left_stick", "lx_raw", "ly_raw", "lx", "ly"),
                     ("right_stick", "rx_raw", "ry_raw", "rx", "ry")
@@ -4111,13 +4226,19 @@ class J360MoreApp:
                         # Arriba es +Y y Abajo es -Y. En Pygame Y hacia arriba es negativo, por lo que invertimos para la visualizacion 2D
                         disp_y = -cal_y
 
-                        self._draw_stick_canvas(sw["canvas"], dz, adz, cal_x, disp_y)
-                        sw["lbl_xy"].config(text=f"X: {cal_x:+0.2f}  Y: {disp_y:+0.2f}")
+                        stick_canvas_sig = (dz, adz, round(cal_x, 3), round(disp_y, 3))
+                        if sw.get("_last_canvas_sig") != stick_canvas_sig:
+                            sw["_last_canvas_sig"] = stick_canvas_sig
+                            self._draw_stick_canvas(sw["canvas"], dz, adz, cal_x, disp_y)
+                            sw["lbl_xy"].config(text=f"X: {cal_x:+0.2f}  Y: {disp_y:+0.2f}")
 
                         raw_mag = min(1.0, math.sqrt(raw_x**2 + raw_y**2))
                         out_mag = min(1.0, math.sqrt(cal_x**2 + cal_y**2))
-                        self._draw_stick_curve(sw["curve_canvas"], dz, adz, sens, raw_mag, out_mag)
-                        sw["lbl_di_xi"].config(text=f"DI: {int(raw_mag * 32767):5d}    XI: {int(out_mag * 32767):5d}")
+                        curve_sig = (dz, adz, sens, round(raw_mag, 3), round(out_mag, 3))
+                        if sw.get("_last_curve_sig") != curve_sig:
+                            sw["_last_curve_sig"] = curve_sig
+                            self._draw_stick_curve(sw["curve_canvas"], dz, adz, sens, raw_mag, out_mag)
+                            sw["lbl_di_xi"].config(text=f"DI: {int(raw_mag * 32767):5d}    XI: {int(out_mag * 32767):5d}")
 
         except Exception:
             pass

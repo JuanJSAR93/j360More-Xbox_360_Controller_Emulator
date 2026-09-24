@@ -80,6 +80,7 @@ class DeviceManager:
         self._auto_reconnect_job = None
         self._pending_hotplug_check = False
         self._last_hotplug_event_time = 0.0
+        self._init_time = time.time()
 
         try:
             if not pygame.get_init():
@@ -154,8 +155,8 @@ class DeviceManager:
         except Exception:
             pass
 
-        self.joysticks.clear()
-        self._physical_map.clear()
+        new_joysticks = {}
+        new_physical_map = {}
 
         device_list = [
             {
@@ -209,7 +210,7 @@ class DeviceManager:
 
         # Obtener rutas de instancia presentes e información de HidHide
         present_pnp_paths = _get_present_pnp_device_instance_paths()
-        hidden_paths = self.driver_manager.get_hidden_device_paths()
+        hidden_paths = self.driver_manager.get_hidden_device_paths(max_age=10.0)
 
         # Recopilar rutas candidatas PnP por (VID, PID)
         import hashlib
@@ -232,7 +233,7 @@ class DeviceManager:
             return False
 
         # 1. Prioridad: rutas directas de mandos reportadas por HidHide (dev-gaming) que estén realmente presentes
-        gaming_devices = self.driver_manager.get_gaming_devices_info()
+        gaming_devices = self.driver_manager.get_gaming_devices_info(max_age=30.0)
         for g in gaming_devices:
             if not g.get("present", False) or g.get("usage", "").lower() == "absent":
                 continue
@@ -285,7 +286,8 @@ class DeviceManager:
         for i in range(count):
             try:
                 joy = pygame.joystick.Joystick(i)
-                joy.init()
+                if not joy.get_init():
+                    joy.init()
 
                 guid = joy.get_guid()
                 name = joy.get_name().strip()
@@ -310,9 +312,9 @@ class DeviceManager:
                     joy.quit()
                     continue
 
-                self.joysticks[i] = joy
+                new_joysticks[i] = joy
                 dev_id = f"joy_{phys_idx}"
-                self._physical_map[dev_id] = i
+                new_physical_map[dev_id] = i
 
                 name = joy.get_name().strip()
                 guid = joy.get_guid()
@@ -397,6 +399,18 @@ class DeviceManager:
         except Exception:
             pass
 
+        # Cerrar únicamente los joysticks que ya no están presentes (por instance_id, no por índice SDL)
+        new_inst_ids = {j.get_instance_id() for j in new_joysticks.values() if j.get_init()}
+        for old_idx, old_joy in list(self.joysticks.items()):
+            try:
+                if old_joy.get_init() and old_joy.get_instance_id() not in new_inst_ids:
+                    old_joy.quit()
+            except Exception:
+                pass
+
+        self.joysticks = new_joysticks
+        self._physical_map = new_physical_map
+
         self._device_cache = list(device_list)
         return device_list
 
@@ -449,8 +463,10 @@ class DeviceManager:
             hotplug_events = pygame.event.get([pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED])
             if hotplug_events:
                 now = time.time()
+                has_removed = False
                 for ev in hotplug_events:
                     if ev.type == pygame.JOYDEVICEREMOVED:
+                        has_removed = True
                         inst_id = getattr(ev, 'instance_id', None)
                         # Localizar el joystick específico desconectado por su instance_id
                         for s_idx, j in list(self.joysticks.items()):
@@ -464,12 +480,12 @@ class DeviceManager:
                                     break
                             except Exception:
                                 pass
-                    elif ev.type == pygame.JOYDEVICEADDED:
-                        pass
-                self._pending_hotplug_check = True
-                self._last_hotplug_event_time = now
+                # Ignorar eventos de agregación inicial durante el primer segundo de arranque
+                if has_removed or (time.time() - getattr(self, "_init_time", 0.0) >= 1.5):
+                    self._pending_hotplug_check = True
+                    self._last_hotplug_event_time = now
 
-            # Debounce: si hubo eventos de hotplug y ya pasaron ~300ms de calma USB, refrescar
+            # Debounce: si hubo eventos de hotplug y ya pasaron ~300ms de calma USB, refrescar en hilo secundario
             if self._pending_hotplug_check and (time.time() - self._last_hotplug_event_time >= 0.3):
                 self._pending_hotplug_check = False
                 self._perform_selective_reconnect()
@@ -477,7 +493,7 @@ class DeviceManager:
             pass
 
     def _perform_selective_reconnect(self):
-        """Re-escanea dispositivos preservando los mandos sanos y reconectando los perdidos."""
+        """Re-escanea dispositivos preservando los mandos sanos y reconectando los perdidos de forma segura."""
         try:
             new_list = self.refresh_devices()
             # Notificar a los observadores (ej. GUI) de forma segura

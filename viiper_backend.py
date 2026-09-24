@@ -291,7 +291,7 @@ class ViiperClient:
             f'--usb.addr=0.0.0.0:{self.port - 1}',
             f'--api.addr={self.host}:{self.port}',
             '--api.auto-attach-local-client=true',
-            '--api.auto-attach-windows-native=true',
+            '--api.auto-attach-windows-native=false',
         ]
 
         self.server_proc = subprocess.Popen(
