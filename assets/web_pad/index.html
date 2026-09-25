@@ -28,8 +28,11 @@
 
   <!-- Barra flotante de edición de disposición -->
   <div id="layout-toolbar" class="layout-toolbar hidden">
-    <div class="layout-toolbar-row">
-      <span id="layout-toolbar-title" class="layout-toolbar-title">Toca un control para moverlo o escalarlo</span>
+    <div class="layout-toolbar-row" id="layout-toolbar-header">
+      <div class="layout-toolbar-drag" title="Arrastra para mover este panel">
+        <span class="drag-handle-icon">⠿</span>
+        <span id="layout-toolbar-title" class="layout-toolbar-title">Toca un control para moverlo o escalarlo</span>
+      </div>
       <div class="layout-scale-controls">
         <button id="btn-scale-down" class="toolbar-btn icon" title="Reducir tamaño">−</button>
         <span id="lbl-scale-val" class="scale-label">100%</span>

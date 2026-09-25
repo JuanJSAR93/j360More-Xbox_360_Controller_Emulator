@@ -841,8 +841,9 @@ class J360MoreApp:
         self.airpad_server.haptics_enabled = self.config.get("airpad_haptics_enabled", True)
         self.airpad_server.max_slots = self.config.get("max_controllers", 8)
         self.airpad_server.on_input_event = self.engine.trigger_input_event
-        if self.config.get("airpad_server_enabled", True):
+        if self.config.get("airpad_server_enabled", False):
             self.airpad_server.start()
+        self._update_airpad_status_ui(force=True)
 
         # Asegurar que el cloaking residual de HidHide esté desactivado al iniciar y que Python/la app estén en la whitelist
         if self.driver_manager.is_hidhide_installed():
@@ -1307,6 +1308,8 @@ class J360MoreApp:
                         data["author"] = "JuanJSAR"
                     if "max_controllers" not in data:
                         data["max_controllers"] = 8
+                    if "airpad_server_enabled" not in data:
+                        data["airpad_server_enabled"] = False
                     if "controllers" not in data or not isinstance(data["controllers"], dict):
                         data["controllers"] = {}
                     for i in range(1, 13):
@@ -1332,10 +1335,11 @@ class J360MoreApp:
         cfg = {
             "version": "2.0",
             "author": "JuanJSAR",
-            "language": "es",
+            "language": "en",
             "max_controllers": 8,
             "driver_backend": "viiper",
             "emulated_type": "xbox360",
+            "airpad_server_enabled": False,
             "games": [],
             "controllers": {}
         }
@@ -3078,7 +3082,7 @@ class J360MoreApp:
         qr_frame.pack(side=tk.LEFT, padx=(4, 14), pady=2)
         qr_frame.pack_propagate(False)
 
-        lbl_qr = tk.Label(qr_frame, bg="white")
+        lbl_qr = tk.Label(qr_frame, bg="white", wraplength=145, justify="center")
         lbl_qr.pack(fill=tk.BOTH, expand=True)
 
         qr_info_box = ttk.Frame(qr_box)
@@ -3111,7 +3115,7 @@ class J360MoreApp:
 
         def update_qr_code():
             if not srv.running:
-                lbl_qr.config(image="", text=self.t("airpad_srv_off_box"), font=("Segoe UI", 9, "bold"), fg="#dc2626", justify="center")
+                lbl_qr.config(image="", text=self.t("airpad_srv_off_box"), font=("Segoe UI", 8, "bold"), fg="#dc2626", justify="center", wraplength=145)
                 lbl_qr.image = None
                 entry_url.config(state="normal")
                 entry_url.delete(0, tk.END)
@@ -3137,13 +3141,13 @@ class J360MoreApp:
                         qr_img = qr.make_image(fill_color="black", back_color="white")
                         qr_img = qr_img.resize((165, 165), Image.Resampling.NEAREST)
                         qr_photo = ImageTk.PhotoImage(qr_img)
-                        lbl_qr.config(image=qr_photo, text="")
+                        lbl_qr.config(image=qr_photo, text="", wraplength=0)
                         lbl_qr.image = qr_photo
                         qr_done = True
                     except Exception as ex:
                         logger.warning(f"Error renderizando código QR: {ex}")
                 if not qr_done:
-                    lbl_qr.config(image="", text=url, font=("Segoe UI", 8), fg="black", justify="center")
+                    lbl_qr.config(image="", text=url, font=("Segoe UI", 8), fg="black", justify="center", wraplength=145)
                     lbl_qr.image = None
 
         update_srv_status_label()

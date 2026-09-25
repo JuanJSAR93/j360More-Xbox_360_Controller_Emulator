@@ -48,28 +48,34 @@
   let wakeLock = null;
 
   async function requestWakeLock() {
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-        console.log('[*] Screen Wake Lock activado');
-        wakeLock.addEventListener('release', () => {
-          wakeLock = null;
-        });
+    if ('wakeLock' in navigator) {
+      try {
+        if (!wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('[*] Screen Wake Lock activado');
+          wakeLock.addEventListener('release', () => {
+            wakeLock = null;
+          });
+        }
+      } catch (err) {
+        console.log('[!] Wake Lock no disponible o bloqueado:', err);
       }
-    } catch (err) {
-      console.log('[!] Wake Lock no soportado o bloqueado:', err);
     }
   }
 
+  // Re-solicitar al regresar a la pestaña
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       requestWakeLock();
     }
   });
 
+  // Re-solicitar ante toques si se liberó el bloqueo
   window.addEventListener('pointerdown', () => {
-    if (!wakeLock) requestWakeLock();
-  }, { once: true });
+    if (!wakeLock) {
+      requestWakeLock();
+    }
+  });
 
   // --- 3. Protocolo Binario v1 y Estado Local ---
   const BUTTON_BITS = {
@@ -666,6 +672,81 @@
     }
   }
 
+  // --- Arrastre del Panel Flotante de Edición ---
+  let isDraggingToolbar = false;
+  let toolbarDragStartX = 0;
+  let toolbarDragStartY = 0;
+  let toolbarInitialLeft = 0;
+  let toolbarInitialTop = 0;
+
+  layoutToolbar.addEventListener('pointerdown', (e) => {
+    // Si se hizo clic en un botón interactivo (scale, save, export, etc.), no arrastrar
+    if (e.target.closest('button') || e.target.closest('input')) {
+      return;
+    }
+    isDraggingToolbar = true;
+    layoutToolbar.classList.add('dragging');
+    try {
+      layoutToolbar.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    const rect = layoutToolbar.getBoundingClientRect();
+    // Cambiar de transform: translateX(-50%) a coordenadas absolutas left/top
+    layoutToolbar.style.transform = 'none';
+    layoutToolbar.style.left = `${rect.left}px`;
+    layoutToolbar.style.top = `${rect.top}px`;
+
+    toolbarDragStartX = e.clientX;
+    toolbarDragStartY = e.clientY;
+    toolbarInitialLeft = rect.left;
+    toolbarInitialTop = rect.top;
+    e.stopPropagation();
+  });
+
+  layoutToolbar.addEventListener('pointermove', (e) => {
+    if (!isDraggingToolbar) return;
+    const deltaX = e.clientX - toolbarDragStartX;
+    const deltaY = e.clientY - toolbarDragStartY;
+
+    let newLeft = toolbarInitialLeft + deltaX;
+    let newTop = toolbarInitialTop + deltaY;
+
+    // Confinar dentro del área visible de la pantalla
+    const pad = 4;
+    const width = layoutToolbar.offsetWidth;
+    const height = layoutToolbar.offsetHeight;
+    newLeft = Math.max(pad, Math.min(window.innerWidth - width - pad, newLeft));
+    newTop = Math.max(pad, Math.min(window.innerHeight - height - pad, newTop));
+
+    layoutToolbar.style.left = `${newLeft}px`;
+    layoutToolbar.style.top = `${newTop}px`;
+    e.stopPropagation();
+  });
+
+  function stopToolbarDrag(e) {
+    if (isDraggingToolbar) {
+      isDraggingToolbar = false;
+      layoutToolbar.classList.remove('dragging');
+      try {
+        layoutToolbar.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+  }
+
+  layoutToolbar.addEventListener('pointerup', stopToolbarDrag);
+  layoutToolbar.addEventListener('pointercancel', stopToolbarDrag);
+
+  window.addEventListener('resize', () => {
+    if (isEditingLayout && layoutToolbar.style.transform === 'none') {
+      const pad = 4;
+      const rect = layoutToolbar.getBoundingClientRect();
+      const newLeft = Math.max(pad, Math.min(window.innerWidth - rect.width - pad, rect.left));
+      const newTop = Math.max(pad, Math.min(window.innerHeight - rect.height - pad, rect.top));
+      layoutToolbar.style.left = `${newLeft}px`;
+      layoutToolbar.style.top = `${newTop}px`;
+    }
+  });
+
   btnLayout.addEventListener('click', () => toggleEditLayout());
 
   btnLayoutSave.addEventListener('click', () => {
@@ -909,12 +990,31 @@
     }
   });
 
-  // --- 11. Pantalla Completa ---
+  // --- 11. Pantalla Completa y Bloqueo de Orientacion Horizontal (Estrategia C) ---
   btnFullscreen.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen().then(() => {
+        requestWakeLock();
+        // Estrategia C: Bloqueo de orientacion horizontal en Android
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      }).catch(() => {});
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().then(() => {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      }).catch(() => {});
+    }
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      requestWakeLock();
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
     }
   });
 

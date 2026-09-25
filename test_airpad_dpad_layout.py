@@ -67,7 +67,9 @@ def test_html_and_layout_ids():
         "btn-lt", "btn-lb", "btn-ls",
         "btn-rt", "btn-rb", "btn-rs",
         "center-buttons",
-        "stick-left", "dpad", "action-buttons", "stick-right"
+        "stick-left", "dpad",
+        "btn-a", "btn-b", "btn-x", "btn-y",
+        "stick-right"
     ]
     for lid in expected_layout_ids:
         assert f'data-layout-id="{lid}"' in html, f"Missing layout ID: {lid}"
