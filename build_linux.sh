@@ -41,26 +41,21 @@ echo "[*] Compilando ejecutable nativo de Linux (PyInstaller)..."
 pyinstaller --noconfirm --onefile --windowed --noupx \
     --name "j360More" \
     --add-data "assets:assets" \
-    --add-data "bin:bin" \
     --collect-all "resvg_py" \
+    --collect-all "PIL" \
+    --collect-all "qrcode" \
     gui_app.py
 
-# 6. Copiar configuración y otorgar permisos de ejecución
+# 6. Preparar paquete final en dist/
 echo "[*] Preparando paquete final en dist/..."
 chmod +x dist/j360More
-if [ -f "config_mapping.json" ]; then
-    cp config_mapping.json dist/
-fi
+rm -f dist/config_mapping.json
 
-if [ -d "bin" ]; then
-    cp -r bin dist/
-    chmod +x dist/bin/* 2>/dev/null || true
-fi
-
-# 7. Empaquetar tar.gz listo para distribuir
-echo "[*] Creando archivo comprimido j360More-v1.4.0-linux-x86_64.tar.gz..."
+# 7. Empaquetar tar.gz listo para distribuir (solo j360More nativo)
+echo "[*] Creando archivo comprimido j360More-v1.5.0-linux-x86_64.tar.gz..."
 cd dist
-tar -czvf j360More-v1.4.0-linux-x86_64.tar.gz j360More config_mapping.json bin/ 2>/dev/null || tar -czvf j360More-v1.4.0-linux-x86_64.tar.gz j360More config_mapping.json
+rm -f config_mapping.json
+tar -czvf j360More-v1.5.0-linux-x86_64.tar.gz j360More
 cd ..
 
 echo ""
@@ -68,7 +63,7 @@ echo "======================================================="
 echo "     ¡COMPILACIÓN PARA LINUX COMPLETADA CON ÉXITO!     "
 echo "======================================================="
 echo "Binario ejecutable: dist/j360More"
-echo "Archivo comprimido: dist/j360More-v1.4.0-linux-x86_64.tar.gz"
+echo "Archivo comprimido: dist/j360More-v1.5.0-linux-x86_64.tar.gz"
 echo ""
 echo "Para ejecutar en Linux:"
 echo "  ./dist/j360More"

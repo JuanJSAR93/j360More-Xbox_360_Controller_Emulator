@@ -1,4 +1,4 @@
-# j360More - Emulador Multimando (Xbox 360, PS4, PS5 y Switch 2 Pro)
+# j360More - Emulador Multimando (Xbox 360, Xbox One, PS4, PS5 y Switch 2 Pro)
 
 [📖 Read in English](README.md) | [Descargas Oficiales (Releases)](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Documentación Web](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
@@ -7,7 +7,7 @@
 > Descargas y Versiones: [Releases Oficiales](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases)  
 > Documentación Web (GitHub Pages): Carpeta `/docs`
 
-**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte tanto para el nuevo driver multiplataforma **VIIPER** (USB/IP) como para **ViGEmBus**, ofrece una moderna interfaz bilingüe (**Español e Inglés**), diseño intuitivo inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense** y **Nintendo Switch 2 Pro**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
+**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte tanto para el nuevo driver multiplataforma **VIIPER** (USB/IP) como para **ViGEmBus**, ofrece una moderna interfaz bilingüe (**Español e Inglés**), diseño intuitivo inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **Xbox One**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense** y **Nintendo Switch 2 Pro**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
 
 Diseñado con arquitectura multiplataforma: funcionamiento nativo en **Windows (10/11)** y con **soporte completo para Linux (Beta)** gracias a VIIPER y al protocolo estándar USB/IP.
 
@@ -35,7 +35,7 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 - **Driver VIIPER (Recomendado / Por defecto en nuevas instalaciones)**:
   - Arquitectura moderna basada en el protocolo USB/IP.
   - Binario autónomo `bin/viiper.exe` incluido directamente en la aplicación (se inicia y gestiona en segundo plano automáticamente).
-  - Desbloquea la emulación de **Xbox 360**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)** y **Nintendo Switch 2 Pro (`ns2pro`)**.
+  - Desbloquea la emulación de **Xbox 360**, **Xbox One (GIP)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)** y **Nintendo Switch 2 Pro (`ns2pro`)**.
   - Abre el camino a la compatibilidad nativa con **Linux (Beta)** mediante los módulos de kernel `usbip`.
 - **Driver ViGEmBus**:
   - Controlador clásico a nivel de kernel para Windows que soporta mandos de **Xbox 360**, **DualShock 4** y modo **Mixto**.
@@ -43,10 +43,11 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 
 ### 3. Soporte de Emulación Multi-Consola
 - **Xbox 360 (XInput)**: El estándar universal para juegos en Steam, Xbox Game Pass, Epic Games Store y emuladores.
+- **Xbox One (GIP / XInput)**: Emulación oficial mediante el protocolo **GIP (General Input Protocol)** de Microsoft a través de VIIPER (`authorized-xboxone`). El sistema Windows PnP lo reconoce e instala como un mando nativo de Xbox One, con soporte completo XInput, ideal para juegos modernos de Windows Store, Xbox Game Pass y títulos que requieren el estándar moderno de Xbox One.
 - **PlayStation 4 (DualShock 4)**: DirectInput / Sony HID nativo, con iconos oficiales de PlayStation en juegos compatibles.
 - **PlayStation 5 (DualSense)**: Emulación del layout oficial de PS5 con respuesta analógica completa.
 - **Nintendo Switch 2 Pro (`ns2pro`)**: Disposición auténtica de Nintendo (B/A, Y/X, L/ZL, R/ZR, -, +, Home) con rango escalado $0 \dots 4095$ y punto central calibrado en $2048$.
-- **Modo Mixto**: Divide automáticamente los mandos creados entre Xbox 360 y PlayStation/Nintendo para partidas combinadas.
+- **Modo Mixto**: Divide automáticamente los mandos creados entre Xbox 360/Xbox One y PlayStation/Nintendo para partidas combinadas.
 
 ### 4. Visión Multiplataforma: Windows y Linux (Beta)
 - **Windows**: Compatible de fábrica mediante el driver `usbip-win2` o `ViGEmBus`.
@@ -54,7 +55,7 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 
 ### 5. Activación Inteligente y Aislamiento de Mandos Virtuales
 - **Sin mandos fantasma**: Solo se instancian en el sistema los mandos virtuales que tengan asignado y habilitado un periférico físico real.
-- **Filtro automático de auto-detección**: El gestor de dispositivos reconoce e ignora los mandos virtuales generados por el propio emulador (Xbox 360, DS4, DualSense, Switch 2 Pro y dispositivos USB/IP), evitando bucles de entrada o duplicados en el selector de mandos físicos.
+- **Filtro automático de auto-detección**: El gestor de dispositivos reconoce e ignora los mandos virtuales generados por el propio emulador (Xbox 360, Xbox One, DS4, DualSense, Switch 2 Pro y dispositivos USB/IP), evitando bucles de entrada o duplicados en el selector de mandos físicos.
 
 ### 6. Soporte Bilingüe Integrado (Español e Inglés)
 - Toda la interfaz, cuadros de diálogo, avisos del sistema, tablas de periféricos e información de hardware están traducidos al 100%.
@@ -96,7 +97,7 @@ Elige uno de los dos controladores soportados:
 
 > **❓ ¿Por qué es obligatorio instalar usbip-win2 o ViGEmBus?**  
 > Windows no permite que las aplicaciones creen dispositivos de entrada virtuales sin un controlador firmado a nivel de sistema.  
-> - **Si usas VIIPER (predeterminado)**: necesitas el driver **usbip-win2** para comunicar y exponer los mandos por USB/IP (soportando Xbox 360, DualShock 4, DualSense y Switch 2 Pro).  
+> - **Si usas VIIPER (predeterminado)**: necesitas el driver **usbip-win2** para comunicar y exponer los mandos por USB/IP (soportando Xbox 360, Xbox One GIP, DualShock 4, DualSense y Switch 2 Pro).  
 > - **Si usas ViGEmBus (alternativo tradicional)**: necesitas el driver **ViGEmBus** (soportando Xbox 360 y DualShock 4).  
 > Sin al menos uno de ellos instalado, Windows no podrá instanciar los mandos virtuales para tus juegos.
 
@@ -132,14 +133,20 @@ python gui_app.py
 
 ---
 
-## 📦 Compilación a Ejecutable (.exe)
+## 📦 Compilación a Ejecutables Standalone
 
-Para compilar el ejecutable portable standalone (`dist\j360More.exe`) con icono oficial y el demonio VIIPER preempaquetado:
-
+### Windows:
+Para compilar el ejecutable portable standalone (`dist\j360More.exe`) con icono oficial, metadatos de versión y el demonio VIIPER integrado:
 ```cmd
-build.bat
+build_windows.bat
 ```
-Selecciona la opción `[1]` para Ejecutable Único o `[2]` para Carpeta Distribuida.
+
+### Linux (Docker):
+Para compilar el binario nativo ELF y paquete de distribución para Linux (`dist/j360More` y `dist/j360More-v1.5.0-linux-x86_64.tar.gz`):
+```cmd
+build_linux.bat
+```
+*(En entornos host de Linux, puedes ejecutar directamente `./build_linux.sh`)*
 
 ---
 
@@ -150,8 +157,10 @@ xbox_multi_emulator/
 ├── assets/                     # Recursos visuales e iconos (SVG, ICO, PNG)
 │   ├── icon.svg                # Icono vectorial oficial del proyecto
 │   ├── icon.ico                # Icono multirresolución compilado de Windows
-│   ├── controller.svg          # Diagrama vectorial del mando Xbox 360
-│   └── controller_render.png   # Render de alta resolución
+│   ├── controller_360.svg      # Diagrama vectorial detallado de Xbox 360
+│   ├── controller_DS4.svg      # Diagrama vectorial de PlayStation 4
+│   ├── controller_DS5.svg      # Diagrama vectorial de PlayStation 5
+│   └── web_pad/                # Interfaz táctil HTML5/JS AirPad para smartphones
 ├── bin/                        # Binarios auxiliares del backend
 │   └── viiper.exe              # Servidor de emulación multiplataforma VIIPER (USB/IP)
 ├── docs/                       # Página web oficial para GitHub Pages (Bilingüe)
@@ -159,18 +168,21 @@ xbox_multi_emulator/
 │   ├── index.html              # Landing page principal
 │   ├── script.js               # Lógica interactiva y selector de idioma
 │   └── styles.css              # Estilos Cyber Gaming
-├── dist/                       # Binario compilado y configuración
-│   ├── j360More.exe            # Ejecutable portable standalone
-│   └── config_mapping.json     # Mapeo persistente de controles
+├── dist/                       # Salida de compilación y empaquetado
+│   ├── j360More.exe            # Ejecutable portable standalone para Windows
+│   ├── j360More-*.zip          # Paquete de distribución para Windows (j360More.exe + bin/viiper.exe)
+│   ├── j360More                # Binario ejecutable nativo ELF para Linux
+│   └── j360More-*.tar.gz       # Paquete de distribución para Linux (j360More nativo)
 ├── config_mapping.json         # Configuración base en JSON
 ├── driver_manager.py           # Administrador de detección de ViGEmBus, VIIPER e HidHide
 ├── emulator.py                 # Punto de entrada y modos consola/test
 ├── emulator_engine.py          # Motor de emulación híbrido a 120Hz (ViGEmBus y VIIPER)
-├── gui_app.py                  # Interfaz gráfica principal Tkinter/TTK
-├── i18n.py                     # Módulo de internacionalización (Español / Inglés)
+├── gui_app.py                  # Interfaz gráfica principal Tkinter/TTK y SplashScreen
+├── i18n.py                     # Módulo de internacionalización (Multilenguaje)
 ├── input_devices.py            # Detección SDL2 en caliente, correlación PnP y exclusión de virtuales
 ├── raw_keyboard.py             # Gestor de multi-teclado Raw Input (Zero Cross-Talk)
-├── viiper_backend.py           # Cliente IPC/TCP nativo para VIIPER (Xbox 360, DS4, PS5, Switch 2)
+├── viiper_backend.py           # Cliente IPC/TCP nativo para VIIPER (Xbox 360, Xbox One GIP, DS4, PS5, Switch 2)
+├── web_gamepad_server.py       # Servidor HTTP y WebSocket de AirPad para mandos móviles
 ├── version_info.txt            # Metadatos del ejecutable y derechos de autor
 └── requirements.txt            # Dependencias de Python
 ```

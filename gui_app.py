@@ -66,6 +66,7 @@ else:
     ASSETS_DIR = os.path.join(SCRIPT_DIR, "assets")
 
 CONTROLLER_360_SVG_PATH = os.path.join(ASSETS_DIR, "controller_360.svg") if os.path.exists(os.path.join(ASSETS_DIR, "controller_360.svg")) else os.path.join(ASSETS_DIR, "controller.svg")
+CONTROLLER_ONE_SVG_PATH = os.path.join(ASSETS_DIR, "controller_one.svg")
 CONTROLLER_DS4_SVG_PATH = os.path.join(ASSETS_DIR, "controller_DS4.svg")
 CONTROLLER_DS5_SVG_PATH = os.path.join(ASSETS_DIR, "controller_DS5.svg")
 CONTROLLER_NS2P_SVG_PATH = os.path.join(ASSETS_DIR, "controller_ns2p.svg")
@@ -73,6 +74,8 @@ CONTROLLER_SVG_PATH = CONTROLLER_360_SVG_PATH
 
 CONTROLLER_360_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_360_render.png")
 CONTROLLER_360_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_360_hires.png")
+CONTROLLER_ONE_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_one_render.png")
+CONTROLLER_ONE_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_one_hires.png")
 CONTROLLER_DS4_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ds4_render.png")
 CONTROLLER_DS4_HIRES_PNG = os.path.join(ASSETS_DIR, "controller_ds4_hires.png")
 CONTROLLER_DS5_CACHE_PNG = os.path.join(ASSETS_DIR, "controller_ds5_render.png")
@@ -126,6 +129,49 @@ XBOX_CANVAS_POINTS = {
     "B": (311.5, 129.4, 11),
     "X": (259.1, 129.4, 11),
     "Y": (287.6, 105.5, 11),
+}
+
+# Coordenadas relativas en el canvas para Xbox One (350x275)
+XBOXONE_HITBOXES = {
+    "A": (269.4, 145.2, 14.0),
+    "B": (291.4, 123.6, 14.0),
+    "X": (245.4, 123.7, 14.0),
+    "Y": (269.6, 102.5, 14.0),
+    "GUIDE": (175.0, 93.8, 16.0),
+    "BACK": (149.4, 119.7, 13.0),
+    "START": (200.9, 120.1, 13.0),
+    "LEFT_SHOULDER": (75.3, 72.7, 15.0),
+    "RIGHT_SHOULDER": (275.8, 74.5, 15.0),
+    "LEFT_TRIGGER": (74.8, 50.5, 15.0),
+    "RIGHT_TRIGGER": (276.1, 50.3, 15.0),
+}
+
+XBOXONE_CANVAS_POINTS = {
+    "LEFT_TRIGGER": (74.8, 50.5, 13),
+    "LEFT_SHOULDER": (75.3, 72.7, 13),
+    "RIGHT_TRIGGER": (276.1, 50.3, 13),
+    "RIGHT_SHOULDER": (275.8, 74.5, 13),
+    "LEFT_STICK_UP": (81.5, 107.4, 7),
+    "LEFT_STICK_DOWN": (81.5, 141.4, 7),
+    "LEFT_STICK_LEFT": (64.5, 124.4, 7),
+    "LEFT_STICK_RIGHT": (98.5, 124.4, 7),
+    "LEFT_THUMB": (81.5, 124.4, 8),
+    "RIGHT_STICK_UP": (218.0, 151.0, 7),
+    "RIGHT_STICK_DOWN": (218.0, 184.9, 7),
+    "RIGHT_STICK_LEFT": (201.1, 167.9, 7),
+    "RIGHT_STICK_RIGHT": (235.0, 167.9, 7),
+    "RIGHT_THUMB": (218.0, 167.9, 8),
+    "DPAD_UP": (129.8, 150.1, 9),
+    "DPAD_DOWN": (129.8, 180.9, 9),
+    "DPAD_LEFT": (114.4, 165.5, 9),
+    "DPAD_RIGHT": (145.2, 165.5, 9),
+    "BACK": (149.4, 119.7, 9),
+    "GUIDE": (175.0, 93.8, 14),
+    "START": (200.9, 120.1, 9),
+    "A": (269.4, 145.2, 11),
+    "B": (291.4, 123.6, 11),
+    "X": (245.4, 123.7, 11),
+    "Y": (269.6, 102.5, 11),
 }
 
 # Coordenadas relativas en el canvas para DualShock 4 (350x275)
@@ -665,15 +711,106 @@ class ScrollableNotebook(ttk.Frame):
         return self.notebookTab.unbind(sequence, funcid=funcid)
 
 
-class J360MoreApp:
-    def __init__(self, root: tk.Tk):
+class SplashScreen:
+    """Ventana de carga inicial (Splash Screen) con icono SVG y en primer plano (topmost)."""
+    def __init__(self, root: tk.Tk, title: str = "j360More", desc: str = "Cargando controladores y periféricos..."):
         self.root = root
+        self.window = tk.Toplevel(root)
+        self.window.title(title)
+        self.window.overrideredirect(True)
+        self.window.attributes("-topmost", True)
+        self.window.configure(bg="#2d2d30")
+
+        # Dimensiones y centrado en el monitor principal
+        w, h = 420, 240
+        sw = self.window.winfo_screenwidth()
+        sh = self.window.winfo_screenheight()
+        x = max(0, (sw - w) // 2)
+        y = max(0, (sh - h) // 2)
+        self.window.geometry(f"{w}x{h}+{x}+{y}")
+
+        # Contenedor con borde fino oscuro
+        outer = tk.Frame(self.window, bg="#3e3e42", padx=1, pady=1)
+        outer.pack(fill=tk.BOTH, expand=True)
+
+        inner = tk.Frame(outer, bg="#1e1e1e", padx=20, pady=16)
+        inner.pack(fill=tk.BOTH, expand=True)
+
+        # 1. Icono oficial de la app desde icon.svg o icon.png
+        self.icon_photo = None
+        if os.path.exists(ICON_SVG_PATH) and resvg_py is not None:
+            try:
+                png_bytes = resvg_py.svg_to_bytes(svg_path=ICON_SVG_PATH, width=64, height=64)
+                pil_img = Image.open(io.BytesIO(png_bytes))
+                self.icon_photo = ImageTk.PhotoImage(pil_img)
+            except Exception:
+                pass
+        if not self.icon_photo and os.path.exists(ICON_PNG_PATH):
+            try:
+                pil_img = Image.open(ICON_PNG_PATH).resize((64, 64), Image.Resampling.LANCZOS)
+                self.icon_photo = ImageTk.PhotoImage(pil_img)
+            except Exception:
+                pass
+
+        if self.icon_photo:
+            lbl_icon = tk.Label(inner, image=self.icon_photo, bg="#1e1e1e")
+            lbl_icon.pack(pady=(0, 4))
+        else:
+            lbl_icon = tk.Label(inner, text="🎮", font=("Segoe UI Emoji", 28), fg="#39ff14", bg="#1e1e1e")
+            lbl_icon.pack(pady=(0, 4))
+
+        # 2. Título de la app
+        lbl_title = tk.Label(inner, text="j360More", font=("Segoe UI", 16, "bold"), fg="#ffffff", bg="#1e1e1e")
+        lbl_title.pack(pady=(0, 2))
+
+        # 3. Estado dinámico de carga
+        self.lbl_status = tk.Label(inner, text=desc, font=("Segoe UI", 9), fg="#b0b0b0", bg="#1e1e1e")
+        self.lbl_status.pack(pady=(0, 10))
+
+        # 4. Barra de progreso animada indeterminada
+        self.progress = ttk.Progressbar(inner, mode="indeterminate", length=340)
+        self.progress.pack(pady=(0, 8))
+        self.progress.start(10)
+
+        # 5. Versión en la parte inferior
+        lbl_ver = tk.Label(inner, text=f"v{APP_VERSION}", font=("Segoe UI", 8), fg="#666666", bg="#1e1e1e")
+        lbl_ver.pack()
+
+        self.window.update()
+
+    def set_status(self, text: str):
+        try:
+            self.lbl_status.config(text=text)
+            self.window.update_idletasks()
+        except Exception:
+            pass
+
+    def finish(self):
+        if "_PYI_SPLASH_IPC" in os.environ:
+            try:
+                import pyi_splash
+                if pyi_splash.is_alive():
+                    pyi_splash.close()
+            except Exception:
+                pass
+
+        try:
+            self.progress.stop()
+            self.window.destroy()
+        except Exception:
+            pass
+
+
+class J360MoreApp:
+    def __init__(self, root: tk.Tk, splash: Optional[Any] = None):
+        self.root = root
+        self.splash = splash
         self.config = self.load_config()
         self.root.title(self.t("app_title"))
         self._setup_app_icon()
 
         # Tamaño balanceado donde todo es visible cómodamente sin cortes
-        self.root.geometry("900x600")
+        self.root.geometry("950x600")
         self.root.resizable(False, False)
 
         self.driver_manager = DriverManager(self.config)
@@ -733,6 +870,18 @@ class J360MoreApp:
 
         self.root.after(30, self._update_loop)
 
+        # Cerrar el Splash Screen y desplegar la ventana principal lista
+        if getattr(self, "splash", None):
+            try:
+                self.splash.finish()
+            except Exception:
+                pass
+            self.splash = None
+
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
+
     def _setup_modal_dialog(self, dlg: tk.Toplevel):
         """Configura un diálogo modal protegido contra bloqueos de minimizado con Win+D en Windows."""
         dlg.transient(self.root)
@@ -790,7 +939,9 @@ class J360MoreApp:
 
     def _get_hitboxes(self, pad_id: Optional[int] = None) -> dict:
         t = self.get_pad_emulated_type(pad_id)
-        if t == "dualsense":
+        if t in ("xboxone", "xbox_one"):
+            return XBOXONE_HITBOXES
+        elif t == "dualsense":
             return DS5_HITBOXES
         elif t == "ds4":
             return DS4_HITBOXES
@@ -800,7 +951,9 @@ class J360MoreApp:
 
     def _get_canvas_points(self, pad_id: Optional[int] = None) -> dict:
         t = self.get_pad_emulated_type(pad_id)
-        if t == "dualsense":
+        if t in ("xboxone", "xbox_one"):
+            return XBOXONE_CANVAS_POINTS
+        elif t == "dualsense":
             return DS5_CANVAS_POINTS
         elif t == "ds4":
             return DS4_CANVAS_POINTS
@@ -810,7 +963,11 @@ class J360MoreApp:
 
     def _get_pad_img_tk(self, pad_id: Optional[int] = None):
         t = self.get_pad_emulated_type(pad_id)
-        if t == "dualsense":
+        if t in ("xboxone", "xbox_one"):
+            if getattr(self, "ctrl_one_tk", None) is None:
+                self._load_one_asset()
+            return self.ctrl_one_tk
+        elif t == "dualsense":
             if getattr(self, "ctrl_ds5_tk", None) is None:
                 self._load_ds5_asset()
             return self.ctrl_ds5_tk
@@ -828,7 +985,11 @@ class J360MoreApp:
 
     def _get_pad_hires_img(self, pad_id: Optional[int] = None):
         t = self.get_pad_emulated_type(pad_id)
-        if t == "dualsense":
+        if t in ("xboxone", "xbox_one"):
+            if getattr(self, "ctrl_one_hires", None) is None:
+                self._load_one_asset()
+            return getattr(self, "ctrl_one_hires", None) or getattr(self, "ctrl_one_base", None) or self.ctrl_360_hires
+        elif t == "dualsense":
             if getattr(self, "ctrl_ds5_hires", None) is None:
                 self._load_ds5_asset()
             return getattr(self, "ctrl_ds5_hires", None) or getattr(self, "ctrl_ds5_base", None) or self.ctrl_ds4_hires
@@ -935,7 +1096,23 @@ class J360MoreApp:
             else:
                 self.lbl_version.config(text=f"v{APP_VERSION}")
 
+        self._update_airpad_status_ui(force=True)
         self._rebuild_tabs(max_ctrls)
+
+    def _update_airpad_status_ui(self, force: bool = False):
+        """Actualiza el indicador visual de AirPad en la cabecera."""
+        if not hasattr(self, "airpad_status_text_lbl") or not hasattr(self, "airpad_status_dot"):
+            return
+        is_running = bool(hasattr(self, "airpad_server") and getattr(self.airpad_server, "running", False))
+        if force or getattr(self, "_last_airpad_running_state", None) != is_running:
+            self._last_airpad_running_state = is_running
+            color = "#00cc44" if is_running else "#888888"
+            text_key = "airpad_status_active" if is_running else "airpad_status_stopped"
+            try:
+                self.airpad_status_dot.itemconfig(self.airpad_status_circle, fill=color)
+                self.airpad_status_text_lbl.config(text=self.t(text_key))
+            except Exception:
+                pass
 
     def _setup_app_icon(self):
         """Configura el icono de la ventana principal y secundarias a partir de icon.svg o icon.ico/png"""
@@ -1031,6 +1208,12 @@ class J360MoreApp:
                 except Exception:
                     pass
 
+    def _load_one_asset(self):
+        if getattr(self, "ctrl_one_tk", None) is None:
+            (self.ctrl_one_hires, self.ctrl_one_base, self.ctrl_one_tk) = self._load_single_controller_asset(
+                CONTROLLER_ONE_SVG_PATH, CONTROLLER_ONE_HIRES_PNG, CONTROLLER_ONE_CACHE_PNG
+            )
+
     def _load_ds4_asset(self):
         if getattr(self, "ctrl_ds4_tk", None) is None:
             (self.ctrl_ds4_hires, self.ctrl_ds4_base, self.ctrl_ds4_tk) = self._load_single_controller_asset(
@@ -1054,12 +1237,15 @@ class J360MoreApp:
         self.controller_pil_base = None
         self.controller_pil_hires = None
         self.ctrl_360_hires = self.ctrl_360_base = self.ctrl_360_tk = None
+        self.ctrl_one_hires = self.ctrl_one_base = self.ctrl_one_tk = None
         self.ctrl_ds4_hires = self.ctrl_ds4_base = self.ctrl_ds4_tk = None
         self.ctrl_ds5_hires = self.ctrl_ds5_base = self.ctrl_ds5_tk = None
         self.ctrl_ns2p_hires = self.ctrl_ns2p_base = self.ctrl_ns2p_tk = None
 
         emulated_type = self.config.get("emulated_type", "xbox360").lower()
-        if emulated_type == "dualsense":
+        if emulated_type in ("xboxone", "xbox_one"):
+            self._load_one_asset()
+        elif emulated_type == "dualsense":
             self._load_ds5_asset()
         elif emulated_type == "ds4":
             self._load_ds4_asset()
@@ -1072,7 +1258,18 @@ class J360MoreApp:
 
     def _update_active_assets(self):
         emulated_type = self.config.get("emulated_type", "xbox360").lower()
-        if emulated_type == "dualsense" and getattr(self, "ctrl_ds5_base", None) is not None:
+        if emulated_type in ("xboxone", "xbox_one"):
+            if getattr(self, "ctrl_one_tk", None) is None:
+                self._load_one_asset()
+            if getattr(self, "ctrl_one_base", None) is not None:
+                self.controller_pil_hires = self.ctrl_one_hires
+                self.controller_pil_base = self.ctrl_one_base
+                self.controller_img_tk = self.ctrl_one_tk
+            else:
+                self.controller_pil_hires = self.ctrl_360_hires
+                self.controller_pil_base = self.ctrl_360_base
+                self.controller_img_tk = self.ctrl_360_tk
+        elif emulated_type == "dualsense" and getattr(self, "ctrl_ds5_base", None) is not None:
             self.controller_pil_hires = self.ctrl_ds5_hires
             self.controller_pil_base = self.ctrl_ds5_base
             self.controller_img_tk = self.ctrl_ds5_tk
@@ -1203,12 +1400,25 @@ class J360MoreApp:
         status_container = ttk.Frame(header_frame)
         status_container.pack(side=tk.RIGHT)
 
+        # 1. Indicador de Emulación
         self.status_dot = tk.Canvas(status_container, width=12, height=12, highlightthickness=0)
-        self.status_dot.pack(side=tk.LEFT, padx=3)
+        self.status_dot.pack(side=tk.LEFT, padx=(0, 2))
         self.status_circle = self.status_dot.create_oval(1, 1, 11, 11, fill="#888888", outline="")
 
         self.status_text_lbl = ttk.Label(status_container, text=self.t("status_stopped"), font=("Segoe UI", 8))
-        self.status_text_lbl.pack(side=tk.LEFT)
+        self.status_text_lbl.pack(side=tk.LEFT, padx=(0, 8))
+
+        # Separador vertical
+        sep_status = ttk.Separator(status_container, orient=tk.VERTICAL)
+        sep_status.pack(side=tk.LEFT, fill=tk.Y, padx=4, pady=2)
+
+        # 2. Indicador de AirPad
+        self.airpad_status_dot = tk.Canvas(status_container, width=12, height=12, highlightthickness=0)
+        self.airpad_status_dot.pack(side=tk.LEFT, padx=(6, 2))
+        self.airpad_status_circle = self.airpad_status_dot.create_oval(1, 1, 11, 11, fill="#888888", outline="")
+
+        self.airpad_status_text_lbl = ttk.Label(status_container, text=self.t("airpad_status_stopped"), font=("Segoe UI", 8))
+        self.airpad_status_text_lbl.pack(side=tk.LEFT)
 
         # 2. Barra inferior compacta (se empaqueta primero al fondo para garantizar visibilidad)
         bottom_frame = ttk.Frame(self.root, padding="8 4 8 4")
@@ -1248,6 +1458,7 @@ class J360MoreApp:
         self._rebuild_tabs(max_ctrls)
 
         self.notebook.bind("<<NotebookTabChanged>>", lambda e: self._on_tab_changed())
+        self._update_airpad_status_ui(force=True)
 
     def _rebuild_tabs(self, count: int):
         self._update_active_assets()
@@ -1549,7 +1760,11 @@ class J360MoreApp:
         pad_type = self.get_pad_emulated_type(pad_id)
 
         # Centros geométricos de D-Pad y Sticks según el controlador emulado activo
-        if pad_type == "dualsense":
+        if pad_type in ("xboxone", "xbox_one"):
+            dpad_cx, dpad_cy = 129.8, 165.5
+            ls_cx, ls_cy = 81.5, 124.4
+            rs_cx, rs_cy = 218.0, 167.9
+        elif pad_type == "dualsense":
             dpad_cx, dpad_cy = 68.5, 121.2
             ls_cx, ls_cy = 122.0, 154.2
             rs_cx, rs_cy = 225.5, 154.2
@@ -2791,6 +3006,7 @@ class J360MoreApp:
             self.save_config(silent=True)
             update_srv_status_label()
             update_qr_code()
+            self._update_airpad_status_ui(force=True)
 
         def restart_airpad():
             try:
@@ -2807,6 +3023,7 @@ class J360MoreApp:
             self.save_config(silent=True)
             update_srv_status_label()
             update_qr_code()
+            self._update_airpad_status_ui(force=True)
 
         btn_toggle_srv = ttk.Button(top_ctrls, text=self.t("airpad_btn_turn_on"), command=toggle_server_state)
         btn_toggle_srv.pack(side=tk.LEFT, padx=(0, 10))
@@ -4066,6 +4283,7 @@ class J360MoreApp:
 
     def _update_loop(self):
         try:
+            self._update_airpad_status_ui()
             # Sincronización de modales ante eventos globales como Win+D
             if getattr(self, "_active_dialog", None):
                 dlg = self._active_dialog
@@ -4615,7 +4833,23 @@ class J360MoreApp:
 
 def run_gui():
     root = tk.Tk()
-    app = J360MoreApp(root)
+    root.withdraw()
+
+    # Cargar idioma de configuración para el texto del splash
+    lang = "es"
+    try:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_mapping.json")
+        if os.path.exists(cfg_path):
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                lang = json.load(f).get("language", "es")
+    except Exception:
+        pass
+
+    splash_title = get_text(lang, "splash_loading_title")
+    splash_desc = get_text(lang, "splash_loading_desc")
+    splash = SplashScreen(root, title=splash_title, desc=splash_desc)
+
+    app = J360MoreApp(root, splash=splash)
     root.mainloop()
 
 if __name__ == "__main__":

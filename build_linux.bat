@@ -35,5 +35,5 @@ echo    COMPILACION LOCAL PARA LINUX COMPLETADA CON EXITO!
 echo =======================================================
 echo Archivos generados en dist/:
 echo   - dist/j360More
-echo   - dist/j360More-v1.4.0-linux-x86_64.tar.gz
+echo   - dist/j360More-v1.5.0-linux-x86_64.tar.gz
 echo =======================================================

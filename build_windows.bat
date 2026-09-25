@@ -14,9 +14,12 @@ echo [*] Compilando ejecutable standalone de Windows (PyInstaller)...
 python -m PyInstaller --noconfirm --onefile --windowed --noupx ^
     --name "j360More" ^
     --icon "assets/icon.ico" ^
+    --version-file "version_info.txt" ^
     --add-data "assets;assets" ^
     --add-data "bin;bin" ^
     --collect-all "resvg_py" ^
+    --collect-all "PIL" ^
+    --collect-all "qrcode" ^
     gui_app.py
 
 if %errorlevel% neq 0 (
@@ -25,18 +28,23 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [*] Copiando archivos de configuracion y binarios a dist/...
-if exist "config_mapping.json" (
-    copy /y "config_mapping.json" "dist\" >nul
-)
-
+echo [*] Copiando binarios auxiliares a dist/...
 if exist "bin" (
     xcopy /e /i /y "bin" "dist\bin" >nul
 )
+
+if exist "dist\config_mapping.json" (
+    del /q "dist\config_mapping.json"
+)
+
+echo.
+echo [*] Creando paquete ZIP de Windows (j360More-v1.5.0-windows-x86_64.zip)...
+python -c "import zipfile, os; z = zipfile.ZipFile('dist/j360More-v1.5.0-windows-x86_64.zip', 'w', zipfile.ZIP_DEFLATED); z.write('dist/j360More.exe', 'j360More.exe'); (z.write('dist/bin/viiper.exe', 'bin/viiper.exe') if os.path.exists('dist/bin/viiper.exe') else (z.write('bin/viiper.exe', 'bin/viiper.exe') if os.path.exists('bin/viiper.exe') else None)); z.close()"
 
 echo.
 echo =======================================================
 echo   ¡COMPILACION PARA WINDOWS COMPLETADA CON EXITO!
 echo =======================================================
 echo Ejecutable: dist\j360More.exe
+echo Paquete ZIP: dist\j360More-v1.5.0-windows-x86_64.zip
 echo =======================================================

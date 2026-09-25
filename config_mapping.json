@@ -13,7 +13,7 @@
     "1": {
       "name": "Jugador 1",
       "enabled": false,
-      "physical_device_id": "joy_0",
+      "physical_device_id": "kbd_92d465e9",
       "mappings": {
         "LEFT_TRIGGER": "Button 7",
         "LEFT_SHOULDER": "Button 5",
@@ -780,9 +780,9 @@
     }
   },
   "driver_backend": "viiper",
-  "emulated_type": "xbox360",
+  "emulated_type": "mixed",
   "hidhide_cli_path": "C:\\Program Files\\Nefarius Software Solutions\\HidHide\\x64\\HidHideCLI.exe",
   "suppress_hidhide_warning": false,
   "hidden_devices": [],
-  "airpad_bind_ip": null
+  "airpad_bind_ip": "192.168.1.34"
 }

@@ -561,6 +561,10 @@
     'center-buttons': 'Botones Centrales (Select/Guide/Start)',
     'stick-left': 'Joystick Izquierdo (LS)',
     'dpad': 'Cruceta (D-Pad)',
+    'btn-y': 'Botón Y (Amarillo)',
+    'btn-x': 'Botón X (Azul)',
+    'btn-b': 'Botón B (Rojo)',
+    'btn-a': 'Botón A (Verde)',
     'action-buttons': 'Botones de Acción (ABXY)',
     'abxy': 'Botones de Acción (ABXY)',
     'stick-right': 'Joystick Derecho (RS)'
@@ -571,6 +575,14 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         layoutPositions = JSON.parse(raw);
+        // Migración hacia atrás: si existía el grupo unificado action-buttons, expandirlo a cada botón
+        if (layoutPositions['action-buttons'] && !layoutPositions['btn-a']) {
+          const legacy = layoutPositions['action-buttons'];
+          ['btn-a', 'btn-b', 'btn-x', 'btn-y'].forEach((k) => {
+            layoutPositions[k] = JSON.parse(JSON.stringify(legacy));
+          });
+          delete layoutPositions['action-buttons'];
+        }
         applyPositions(layoutPositions);
       }
     } catch (e) {
@@ -581,7 +593,10 @@
   function applyPositions(posMap) {
     document.querySelectorAll('.layout-item[data-layout-id]').forEach((el) => {
       const id = el.getAttribute('data-layout-id');
-      const item = posMap[id];
+      let item = posMap[id];
+      if (!item && (id === 'btn-a' || id === 'btn-b' || id === 'btn-x' || id === 'btn-y')) {
+        item = posMap['action-buttons'] || posMap['abxy'];
+      }
       if (item && typeof item.x === 'number' && typeof item.y === 'number') {
         const scale = (typeof item.scale === 'number' && item.scale > 0) ? item.scale : 1.0;
         el.style.transform = `translate(${item.x}px, ${item.y}px) scale(${scale})`;
@@ -637,7 +652,14 @@
     if (isEditingLayout) {
       layoutToolbar.classList.remove('hidden');
       tempSessionPositions = JSON.parse(JSON.stringify(layoutPositions));
-      setSelectedItem('stick-left');
+      if (tempSessionPositions['action-buttons'] && !tempSessionPositions['btn-a']) {
+        const legacy = tempSessionPositions['action-buttons'];
+        ['btn-a', 'btn-b', 'btn-x', 'btn-y'].forEach((k) => {
+          tempSessionPositions[k] = JSON.parse(JSON.stringify(legacy));
+        });
+        delete tempSessionPositions['action-buttons'];
+      }
+      setSelectedItem('btn-a');
     } else {
       layoutToolbar.classList.add('hidden');
       setSelectedItem(null);
@@ -689,7 +711,7 @@
     modalDesc.textContent = 'Pega un código de disposición JSON o carga un archivo guardado previamente:';
     modalTextarea.value = '';
     modalTextarea.readOnly = false;
-    modalTextarea.placeholder = '{\n  "stick-left": { "x": 0, "y": 0, "scale": 1.0 },\n  ...\n}';
+    modalTextarea.placeholder = '{\n  "stick-left": { "x": 0, "y": 0, "scale": 1.0 },\n  "btn-a": { "x": 10, "y": 15, "scale": 1.1 },\n  "btn-b": { "x": 30, "y": 0, "scale": 1.0 },\n  ...\n}';
 
     modalBtnCopy.classList.add('hidden');
     modalBtnDownload.classList.add('hidden');
