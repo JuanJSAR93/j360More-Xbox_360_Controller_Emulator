@@ -34,6 +34,7 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 ### 2. Dual Emulation Driver Backends (VIIPER & ViGEmBus)
 - **VIIPER Driver Backend (Recommended / Default for new installs)**:
   - Modern cross-platform architecture utilizing USB/IP.
+  - Powered by a custom, modified build of [JuanJSAR93/VIIPER](https://github.com/JuanJSAR93/VIIPER) (forked from [Alia5/VIIPER](https://github.com/Alia5/VIIPER)) adding native **Xbox One (GIP protocol)** support and precise virtual device localization/enumeration.
   - Bundled directly inside `bin/viiper.exe` — launched and managed automatically by the application.
   - Unlocks emulation of **Xbox 360**, **Xbox One (GIP)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)**, and **Nintendo Switch 2 Pro (`ns2pro`)**.
   - Paves the way for seamless **Linux support (Beta)** using the Linux kernel's built-in `usbip` modules.
@@ -55,7 +56,7 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 
 ### 5. Smart Activation & Virtual Controller Filtering
 - **Zero Phantom Controllers**: Only assigned and enabled controller tabs spawn virtual gamepads.
-- **Self-Detection Isolation**: The device manager automatically recognizes and ignores virtual gamepads created by the emulator (Xbox 360, Xbox One, DS4, DualSense, Switch 2 Pro, and USB/IP endpoints), preventing accidental input loops or false physical devices.
+- **Accurate Virtual vs. Physical Device Identification**: Powered by our customized VIIPER build and Windows PnP tree traversal (`cfgmgr32.dll`), the device manager inspects hardware bus roots and runtime descriptions to reliably distinguish emulated gamepads from genuine physical hardware. This completely fixes the legacy issue where physical Xbox 360, DualShock 4, DualSense, and Switch controllers were falsely flagged as virtual devices.
 
 ### 6. Built-in Bilingual Interface (English & Spanish)
 - Complete localization for every menu, dialog, system prompt, device table, and hardware inspection view.
@@ -191,7 +192,7 @@ xbox_multi_emulator/
 
 ## 📄 License & Credits
 - **Creator & Lead Developer**: **JuanJSAR** ([@JuanJSAR93](https://github.com/JuanJSAR93))
-- **VIIPER**: Developed by Alia5 ([VIIPER on GitHub](https://github.com/Alia5/VIIPER)), enabling cross-platform virtual USB gamepad emulation via USB/IP.
+- **VIIPER**: Developed by Alia5 ([Original VIIPER on GitHub](https://github.com/Alia5/VIIPER)), enabling cross-platform virtual USB gamepad emulation via USB/IP. **j360More** bundles and maintains an enhanced, modified build by JuanJSAR ([JuanJSAR93/VIIPER: Virtual Input over IP Emulator](https://github.com/JuanJSAR93/VIIPER)) with native Xbox One GIP support and proper PnP device localization.
 - **usbip-win2**: Developed by vadimgrn ([usbip-win2 on GitHub](https://github.com/vadimgrn/usbip-win2)).
 - **ViGEmBus & HidHide**: Created by Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
 - **pygame-ce (SDL2)**: Powering hot-plug detection and input handling.

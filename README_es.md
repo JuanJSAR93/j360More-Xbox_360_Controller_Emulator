@@ -34,6 +34,7 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 ### 2. Arquitectura de Doble Controlador (VIIPER y ViGEmBus)
 - **Driver VIIPER (Recomendado / Por defecto en nuevas instalaciones)**:
   - Arquitectura moderna basada en el protocolo USB/IP.
+  - Basado en una versión personalizada y optimizada de [JuanJSAR93/VIIPER](https://github.com/JuanJSAR93/VIIPER) (fork de [Alia5/VIIPER](https://github.com/Alia5/VIIPER)), incorporando soporte nativo para **Xbox One (protocolo GIP)** y una correcta localización/enumeración de dispositivos emulados.
   - Binario autónomo `bin/viiper.exe` incluido directamente en la aplicación (se inicia y gestiona en segundo plano automáticamente).
   - Desbloquea la emulación de **Xbox 360**, **Xbox One (GIP)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)** y **Nintendo Switch 2 Pro (`ns2pro`)**.
   - Abre el camino a la compatibilidad nativa con **Linux (Beta)** mediante los módulos de kernel `usbip`.
@@ -55,7 +56,7 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 
 ### 5. Activación Inteligente y Aislamiento de Mandos Virtuales
 - **Sin mandos fantasma**: Solo se instancian en el sistema los mandos virtuales que tengan asignado y habilitado un periférico físico real.
-- **Filtro automático de auto-detección**: El gestor de dispositivos reconoce e ignora los mandos virtuales generados por el propio emulador (Xbox 360, Xbox One, DS4, DualSense, Switch 2 Pro y dispositivos USB/IP), evitando bucles de entrada o duplicados en el selector de mandos físicos.
+- **Identificación Precisa de Dispositivos Virtuales vs. Físicos**: Gracias a nuestra versión personalizada de VIIPER y al rastreo del árbol PnP de Windows (`cfgmgr32.dll`), el gestor de periféricos inspecciona la raíz del bus de hardware y las descripciones en tiempo de ejecución para diferenciar con total fiabilidad los mandos emulados de los periféricos físicos reales. Esto corrige por completo el fallo de versiones anteriores donde mandos físicos oficiales de Xbox 360, DualShock 4, DualSense y Switch 2 Pro eran omitidos al confundirse erróneamente con dispositivos virtuales.
 
 ### 6. Soporte Bilingüe Integrado (Español e Inglés)
 - Toda la interfaz, cuadros de diálogo, avisos del sistema, tablas de periféricos e información de hardware están traducidos al 100%.
@@ -191,7 +192,7 @@ xbox_multi_emulator/
 
 ## 📄 Licencia y Créditos
 - **Creador y Desarrollador Principal**: **JuanJSAR** ([@JuanJSAR93](https://github.com/JuanJSAR93))
-- **VIIPER**: Desarrollado por Alia5 ([VIIPER en GitHub](https://github.com/Alia5/VIIPER)), posibilitando la emulación multiplataforma de mandos USB virtuales mediante USB/IP.
+- **VIIPER**: Desarrollado por Alia5 ([VIIPER Original en GitHub](https://github.com/Alia5/VIIPER)), posibilitando la emulación multiplataforma de mandos USB virtuales mediante USB/IP. **j360More** incluye y mantiene una compilación mejorada y modificada por JuanJSAR ([JuanJSAR93/VIIPER: Virtual Input over IP Emulator](https://github.com/JuanJSAR93/VIIPER)) con soporte nativo para Xbox One GIP y una correcta localización/enumeración de dispositivos emulados.
 - **usbip-win2**: Desarrollado por vadimgrn ([usbip-win2 en GitHub](https://github.com/vadimgrn/usbip-win2)).
 - **ViGEmBus e HidHide**: Creados por Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
 - **pygame-ce (SDL2)**: Detección en caliente y lectura de eventos de periféricos.
