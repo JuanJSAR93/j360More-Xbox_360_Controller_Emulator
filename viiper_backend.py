@@ -112,35 +112,54 @@ NS2PRO_BUTTONS = {
 
 
 def find_viiper_executable() -> Optional[str]:
-    bin_name = 'viiper.exe' if sys.platform == 'win32' else 'viiper'
+    import platform
+    import shutil
+    mach = platform.machine().lower()
+    if sys.platform == 'win32':
+        bin_names = ['viiper.exe']
+    elif mach in ('aarch64', 'arm64'):
+        bin_names = ['viiper', 'viiper-arm64', 'viiper-aarch64']
+    elif mach in ('x86_64', 'amd64'):
+        bin_names = ['viiper', 'viiper-amd64', 'viiper-x86_64']
+    else:
+        bin_names = ['viiper']
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(base_dir, 'bin', bin_name),
-        os.path.join(base_dir, 'dist', 'bin', bin_name),
-        os.path.join(base_dir, 'assets', 'bin', bin_name),
-    ]
-    if getattr(sys, 'frozen', False):
-        exe_dir = os.path.dirname(sys.executable)
-        bundle_dir = getattr(sys, '_MEIPASS', exe_dir)
+    candidates = []
+
+    for bn in bin_names:
         candidates.extend([
-            os.path.join(exe_dir, 'bin', bin_name),
-            os.path.join(exe_dir, bin_name),
-            os.path.join(bundle_dir, 'bin', bin_name),
-            os.path.join(bundle_dir, bin_name),
+            os.path.join(base_dir, 'bin', bn),
+            os.path.join(base_dir, 'dist', 'bin', bn),
+            os.path.join(base_dir, 'assets', 'bin', bn),
         ])
+        if getattr(sys, 'frozen', False):
+            exe_dir = os.path.dirname(sys.executable)
+            bundle_dir = getattr(sys, '_MEIPASS', exe_dir)
+            candidates.extend([
+                os.path.join(exe_dir, 'bin', bn),
+                os.path.join(exe_dir, bn),
+                os.path.join(bundle_dir, 'bin', bn),
+                os.path.join(bundle_dir, bn),
+            ])
+
     if sys.platform == 'win32':
         local_app = os.environ.get('LOCALAPPDATA', '')
         if local_app:
             candidates.append(os.path.join(local_app, 'VIIPER', 'viiper.exe'))
     else:
-        candidates.extend(['/usr/local/bin/viiper', '/usr/bin/viiper'])
+        for bn in bin_names:
+            candidates.extend([f'/usr/local/bin/{bn}', f'/usr/bin/{bn}'])
 
     for c in candidates:
         if os.path.isfile(c) and os.access(c, os.X_OK if sys.platform != 'win32' else os.R_OK):
             return c
 
-    import shutil
-    return shutil.which(bin_name)
+    for bn in bin_names:
+        found = shutil.which(bn)
+        if found:
+            return found
+    return None
 
 
 get_viiper_binary_path = find_viiper_executable

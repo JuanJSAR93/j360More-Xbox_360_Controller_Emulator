@@ -45,51 +45,54 @@ jobs:
             gui_app.py
 
       - name: Package Windows Release
+        shell: pwsh
         run: |
-          Copy-Item config_mapping.json dist/ -Force
-          if (Test-Path bin) { Copy-Item bin dist/bin -Recurse -Force }
-          Compress-Archive -Path dist/j360More.exe, dist/config_mapping.json, dist/bin -DestinationPath j360More-v1.4.0-windows-x64.zip -Force
+          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.5.0" }
+          New-Item -ItemType Directory -Path "dist/pkg/bin" -Force | Out-Null
+          Copy-Item "dist/j360More.exe" "dist/pkg/" -Force
+          if (Test-Path "bin/viiper.exe") { Copy-Item "bin/viiper.exe" "dist/pkg/bin/viiper.exe" -Force }
+          $zipName = "j360More-$ver-windows-x86_64.zip"
+          Compress-Archive -Path "dist/pkg/*" -DestinationPath "dist/$zipName" -Force
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: j360More-Windows-x64
-          path: j360More-v1.4.0-windows-x64.zip
+          path: dist/*windows*.zip
 
   build-linux:
-    name: Build Linux Binary (ELF / tar.gz)
+    name: Build Linux (${{ matrix.arch }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            platform: linux/amd64
+          - arch: arm64
+            platform: linux/arm64
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
+      - name: Set up QEMU
+        if: matrix.platform == 'linux/arm64'
+        uses: docker/setup-qemu-action@v3
 
-      - name: Install Linux System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-tk libsdl2-2.0-0 libsdl2-image-2.0-0 build-essential linux-libc-dev
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install Python Dependencies
+      - name: Build Container and Compile Binary
         run: |
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Compile Linux Binary
-        run: |
-          chmod +x build_linux.sh
-          ./build_linux.sh
+          docker build --platform ${{ matrix.platform }} -f Dockerfile.linux_build -t j360more-builder:${{ matrix.arch }} .
+          docker run --rm --platform ${{ matrix.platform }} -v "$PWD:/workspace" -w /workspace j360more-builder:${{ matrix.arch }} bash build_linux.sh
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: j360More-Linux-x64
-          path: dist/j360More-v1.4.0-linux-x86_64.tar.gz
+          name: j360More-Linux-${{ matrix.arch }}
+          path: dist/j360More-*-linux-${{ matrix.arch }}.tar.gz
 
   release:
     name: Publish GitHub Release
@@ -100,17 +103,14 @@ jobs:
       contents: write
 
     steps:
-      - name: Download Windows Artifact
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: j360More-Windows-x64
           path: release-artifacts
+          merge-multiple: true
 
-      - name: Download Linux Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: j360More-Linux-x64
-          path: release-artifacts
+      - name: List Artifacts for Release
+        run: ls -la release-artifacts/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

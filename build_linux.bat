@@ -22,26 +22,43 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [*] Construyendo imagen de compilacion Linux...
-docker build -f Dockerfile.linux_build -t j360more-builder:linux .
+echo [*] Construyendo imagen de compilacion Linux (amd64)...
+docker build --platform linux/amd64 -f Dockerfile.linux_build -t j360more-builder:linux-amd64 .
 
 if %errorlevel% neq 0 (
-    echo [ERROR] Fallo al construir la imagen de Docker.
+    echo [ERROR] Fallo al construir la imagen de Docker para amd64.
     exit /b 1
 )
 
 echo.
-echo [*] Compilando binario ELF nativo de Linux dentro de Docker...
-docker run --rm -v "%cd%:/workspace" -w /workspace j360more-builder:linux bash build_linux.sh
+echo [*] Compilando binario ELF nativo de Linux amd64 dentro de Docker...
+docker run --rm --platform linux/amd64 -v "%cd%:/workspace" -w /workspace j360more-builder:linux-amd64 bash build_linux.sh
 
 if %errorlevel% neq 0 (
-    echo [ERROR] Fallo en la compilacion de Linux.
+    echo [ERROR] Fallo en la compilacion de Linux amd64.
     exit /b 1
 )
 
-REM Extraer j360More en dist si no se pudo copiar directamente por bloqueo virtiofs
 if exist "dist\j360More-v1.5.0-linux-x86_64.tar.gz" (
     python -c "import tarfile; t = tarfile.open('dist/j360More-v1.5.0-linux-x86_64.tar.gz'); t.extractall('dist'); t.close()" >nul 2>nul
+)
+
+echo.
+echo [*] Construyendo imagen de compilacion Linux (arm64)...
+docker build --platform linux/arm64 -f Dockerfile.linux_build -t j360more-builder:linux-arm64 .
+
+if %errorlevel% neq 0 (
+    echo [ERROR] Fallo al construir la imagen de Docker para arm64.
+    exit /b 1
+)
+
+echo.
+echo [*] Compilando binario ELF nativo de Linux arm64 dentro de Docker...
+docker run --rm --platform linux/arm64 -v "%cd%:/workspace" -w /workspace j360more-builder:linux-arm64 bash build_linux.sh
+
+if %errorlevel% neq 0 (
+    echo [ERROR] Fallo en la compilacion de Linux arm64.
+    exit /b 1
 )
 
 echo.
@@ -49,6 +66,7 @@ echo =======================================================
 echo    COMPILACION LOCAL PARA LINUX COMPLETADA CON EXITO!
 echo =======================================================
 echo Archivos generados en dist/:
-echo   - dist/j360More
-echo   - dist/j360More-v1.5.0-linux-x86_64.tar.gz
+echo   - dist/j360More (x86_64)
+echo   - dist/j360More-v1.5.0-linux-x86_64.tar.gz (incluye viiper-amd64)
+echo   - dist/j360More-v1.5.0-linux-arm64.tar.gz (incluye viiper-arm64)
 echo =======================================================

@@ -30,14 +30,30 @@ echo "[*] Instalando dependencias de Python..."
 pip3 install --upgrade pip
 pip3 install -r requirements.txt
 
-# 4. Limpiar carpetas temporales
+# 4. Detectar arquitectura de destino y binario de viiper correspondiente
+RAW_ARCH=$(uname -m)
+if [ "$RAW_ARCH" = "x86_64" ]; then
+    PKG_ARCH="x86_64"
+    VIIPER_SRC="bin/viiper-amd64"
+elif [ "$RAW_ARCH" = "aarch64" ] || [ "$RAW_ARCH" = "arm64" ]; then
+    PKG_ARCH="arm64"
+    VIIPER_SRC="bin/viiper-arm64"
+else
+    PKG_ARCH="$RAW_ARCH"
+    VIIPER_SRC="bin/viiper"
+fi
+
+echo "[*] Arquitectura detectada: $RAW_ARCH -> Destino: $PKG_ARCH"
+echo "[*] Binario VIIPER asignado: $VIIPER_SRC"
+
+# 5. Limpiar carpetas temporales
 echo "[*] Limpiando carpetas temporales..."
 rm -rf /tmp/pybuild /tmp/pydist
 mkdir -p /tmp/pybuild /tmp/pydist
 mkdir -p dist
 
-# 5. Compilar con PyInstaller en un solo binario dentro del contenedor
-echo "[*] Compilando ejecutable nativo de Linux (PyInstaller)..."
+# 6. Compilar con PyInstaller en un solo binario dentro del contenedor
+echo "[*] Compilando ejecutable nativo de Linux ($PKG_ARCH) con PyInstaller..."
 pyinstaller --noconfirm --onefile --windowed --noupx \
     --workpath /tmp/pybuild \
     --distpath /tmp/pydist \
@@ -48,23 +64,37 @@ pyinstaller --noconfirm --onefile --windowed --noupx \
     --collect-all "qrcode" \
     gui_app.py
 
-# 6. Preparar paquete final y empaquetar tar.gz
+# 7. Preparar paquete final con bin/viiper integrado
 echo "[*] Preparando paquete final en dist/..."
 chmod +x /tmp/pydist/j360More
 
+mkdir -p /tmp/pydist/bin
+if [ -f "/workspace/$VIIPER_SRC" ]; then
+    echo "[*] Copiando $VIIPER_SRC como bin/viiper ejecutable..."
+    cp -f "/workspace/$VIIPER_SRC" /tmp/pydist/bin/viiper
+    chmod +x /tmp/pydist/bin/viiper
+elif [ -f "/workspace/bin/viiper" ]; then
+    echo "[*] Copiando bin/viiper ejecutable..."
+    cp -f "/workspace/bin/viiper" /tmp/pydist/bin/viiper
+    chmod +x /tmp/pydist/bin/viiper
+else
+    echo "[!] Advertencia: No se encontro $VIIPER_SRC en el workspace."
+fi
+
 cd /tmp/pydist
-echo "[*] Creando archivo comprimido j360More-v1.5.0-linux-x86_64.tar.gz..."
-tar -czvf /workspace/dist/j360More-v1.5.0-linux-x86_64.tar.gz j360More
-cp -f /tmp/pydist/j360More /workspace/dist/j360More 2>/dev/null || true
+echo "[*] Creando archivo comprimido j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz..."
+tar -czvf "/workspace/dist/j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz" j360More bin/viiper
+cp -f /tmp/pydist/j360More "/workspace/dist/j360More-${PKG_ARCH}" 2>/dev/null || true
+if [ "$PKG_ARCH" = "x86_64" ]; then
+    cp -f /tmp/pydist/j360More /workspace/dist/j360More 2>/dev/null || true
+fi
 cd /workspace
 
 echo ""
 echo "======================================================="
-echo "     ¡COMPILACIÓN PARA LINUX COMPLETADA CON ÉXITO!     "
+echo "  ¡COMPILACIÓN PARA LINUX ($PKG_ARCH) EXITOSA!         "
 echo "======================================================="
-echo "Binario ejecutable: dist/j360More"
-echo "Archivo comprimido: dist/j360More-v1.5.0-linux-x86_64.tar.gz"
-echo ""
-echo "Para ejecutar en Linux:"
-echo "  ./dist/j360More"
+echo "Binario ejecutable: dist/j360More-${PKG_ARCH}"
+echo "Archivo comprimido: dist/j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz"
+echo "Contenido del tar:  j360More + bin/viiper ($PKG_ARCH)"
 echo "======================================================="
