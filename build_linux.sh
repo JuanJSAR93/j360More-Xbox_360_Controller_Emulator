@@ -30,15 +30,17 @@ echo "[*] Instalando dependencias de Python..."
 pip3 install --upgrade pip
 pip3 install -r requirements.txt
 
-# 4. Limpiar compilaciones anteriores de Linux
+# 4. Limpiar carpetas temporales
 echo "[*] Limpiando carpetas temporales..."
-rm -rf build
+rm -rf /tmp/pybuild /tmp/pydist
+mkdir -p /tmp/pybuild /tmp/pydist
 mkdir -p dist
-rm -f dist/j360More dist/*.tar.gz
 
-# 5. Compilar con PyInstaller en un solo binario
+# 5. Compilar con PyInstaller en un solo binario dentro del contenedor
 echo "[*] Compilando ejecutable nativo de Linux (PyInstaller)..."
 pyinstaller --noconfirm --onefile --windowed --noupx \
+    --workpath /tmp/pybuild \
+    --distpath /tmp/pydist \
     --name "j360More" \
     --add-data "assets:assets" \
     --collect-all "resvg_py" \
@@ -46,17 +48,15 @@ pyinstaller --noconfirm --onefile --windowed --noupx \
     --collect-all "qrcode" \
     gui_app.py
 
-# 6. Preparar paquete final en dist/
+# 6. Preparar paquete final y empaquetar tar.gz
 echo "[*] Preparando paquete final en dist/..."
-chmod +x dist/j360More
-rm -f dist/config_mapping.json
+chmod +x /tmp/pydist/j360More
 
-# 7. Empaquetar tar.gz listo para distribuir (solo j360More nativo)
+cd /tmp/pydist
 echo "[*] Creando archivo comprimido j360More-v1.5.0-linux-x86_64.tar.gz..."
-cd dist
-rm -f config_mapping.json
-tar -czvf j360More-v1.5.0-linux-x86_64.tar.gz j360More
-cd ..
+tar -czvf /workspace/dist/j360More-v1.5.0-linux-x86_64.tar.gz j360More
+cp -f /tmp/pydist/j360More /workspace/dist/j360More 2>/dev/null || true
+cd /workspace
 
 echo ""
 echo "======================================================="
