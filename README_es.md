@@ -163,8 +163,9 @@ xbox_multi_emulator/
 │   ├── controller_DS5.svg      # Diagrama vectorial de PlayStation 5
 │   └── web_pad/                # Interfaz táctil HTML5/JS AirPad para smartphones
 ├── bin/                        # Binarios auxiliares del backend
-│   ├── viiper.exe              # Servidor de emulación USB/IP VIIPER (Windows x64)
-│   ├── viiper-amd64            # Servidor de emulación USB/IP VIIPER (Linux x86_64)
+│   ├── viiper-amd64.exe        # Servidor de emulación USB/IP VIIPER (Windows x64 / AMD64)
+│   ├── viiper_arm64.exe        # Servidor de emulación USB/IP VIIPER (Windows ARM64)
+│   ├── viiper-amd64            # Servidor de emulación USB/IP VIIPER (Linux x86_64 / AMD64)
 │   └── viiper-arm64            # Servidor de emulación USB/IP VIIPER (Linux ARM64 / AArch64)
 ├── docs/                       # Página web oficial para GitHub Pages (Bilingüe)
 │   ├── assets/                 # Recursos gráficos web
@@ -173,8 +174,9 @@ xbox_multi_emulator/
 │   └── styles.css              # Estilos Cyber Gaming
 ├── dist/                       # Salida de compilación y empaquetado
 │   ├── j360More.exe            # Ejecutable portable standalone para Windows
-│   ├── j360More-*.zip          # Paquete de distribución para Windows (j360More.exe + bin/viiper.exe)
-│   ├── j360More-*-linux-x86_64.tar.gz # Paquete de distribución Linux x86_64 (j360More + viiper-amd64)
+│   ├── j360More-*-windows-amd64.zip # Paquete de distribución Windows AMD64 (j360More.exe + viiper-amd64.exe)
+│   ├── j360More-*-windows-arm64.zip # Paquete de distribución Windows ARM64 (j360More.exe + viiper_arm64.exe)
+│   ├── j360More-*-linux-amd64.tar.gz # Paquete de distribución Linux AMD64 (j360More + viiper-amd64)
 │   └── j360More-*-linux-arm64.tar.gz  # Paquete de distribución Linux ARM64 (j360More + viiper-arm64)
 ├── config_mapping.json         # Configuración base en JSON
 ├── driver_manager.py           # Administrador de detección de ViGEmBus, VIIPER e HidHide

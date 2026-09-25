@@ -116,11 +116,14 @@ def find_viiper_executable() -> Optional[str]:
     import shutil
     mach = platform.machine().lower()
     if sys.platform == 'win32':
-        bin_names = ['viiper.exe']
+        if mach in ('aarch64', 'arm64'):
+            bin_names = ['viiper.exe', 'viiper_arm64.exe', 'viiper-arm64.exe']
+        else:
+            bin_names = ['viiper.exe', 'viiper-amd64.exe', 'viiper_amd64.exe']
     elif mach in ('aarch64', 'arm64'):
-        bin_names = ['viiper', 'viiper-arm64', 'viiper-aarch64']
+        bin_names = ['viiper', 'viiper-arm64', 'viiper_arm64', 'viiper-aarch64']
     elif mach in ('x86_64', 'amd64'):
-        bin_names = ['viiper', 'viiper-amd64', 'viiper-x86_64']
+        bin_names = ['viiper', 'viiper-amd64', 'viiper_amd64', 'viiper-x86_64']
     else:
         bin_names = ['viiper']
 

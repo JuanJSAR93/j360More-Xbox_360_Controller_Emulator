@@ -32,8 +32,8 @@ pip3 install -r requirements.txt
 
 # 4. Detectar arquitectura de destino y binario de viiper correspondiente
 RAW_ARCH=$(uname -m)
-if [ "$RAW_ARCH" = "x86_64" ]; then
-    PKG_ARCH="x86_64"
+if [ "$RAW_ARCH" = "x86_64" ] || [ "$RAW_ARCH" = "amd64" ]; then
+    PKG_ARCH="amd64"
     VIIPER_SRC="bin/viiper-amd64"
 elif [ "$RAW_ARCH" = "aarch64" ] || [ "$RAW_ARCH" = "arm64" ]; then
     PKG_ARCH="arm64"
@@ -85,7 +85,7 @@ cd /tmp/pydist
 echo "[*] Creando archivo comprimido j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz..."
 tar -czvf "/workspace/dist/j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz" j360More bin/viiper
 cp -f /tmp/pydist/j360More "/workspace/dist/j360More-${PKG_ARCH}" 2>/dev/null || true
-if [ "$PKG_ARCH" = "x86_64" ]; then
+if [ "$PKG_ARCH" = "amd64" ] || [ "$PKG_ARCH" = "x86_64" ]; then
     cp -f /tmp/pydist/j360More /workspace/dist/j360More 2>/dev/null || true
 fi
 cd /workspace

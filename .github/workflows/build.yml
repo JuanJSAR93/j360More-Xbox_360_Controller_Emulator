@@ -5,12 +5,25 @@ on:
     branches: [ main ]
     tags:
       - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
 
 jobs:
   build-windows:
-    name: Build Windows Executable (.exe)
-    runs-on: windows-latest
+    name: Build Windows (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            os: windows-latest
+            python_arch: x64
+            viiper_src: bin/viiper-amd64.exe
+          - arch: arm64
+            os: windows-11-arm
+            python_arch: arm64
+            viiper_src: bin/viiper_arm64.exe
 
     steps:
       - name: Checkout Repository
@@ -20,6 +33,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          architecture: ${{ matrix.python_arch }}
           cache: 'pip'
 
       - name: Bypass ViGEmBus interactive GUI installer in CI
@@ -50,15 +64,20 @@ jobs:
           $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.5.0" }
           New-Item -ItemType Directory -Path "dist/pkg/bin" -Force | Out-Null
           Copy-Item "dist/j360More.exe" "dist/pkg/" -Force
-          if (Test-Path "bin/viiper.exe") { Copy-Item "bin/viiper.exe" "dist/pkg/bin/viiper.exe" -Force }
-          $zipName = "j360More-$ver-windows-x86_64.zip"
+          $vsrc = "${{ matrix.viiper_src }}"
+          if (Test-Path $vsrc) {
+              Copy-Item $vsrc "dist/pkg/bin/viiper.exe" -Force
+          } elseif (Test-Path "bin/viiper.exe") {
+              Copy-Item "bin/viiper.exe" "dist/pkg/bin/viiper.exe" -Force
+          }
+          $zipName = "j360More-$ver-windows-${{ matrix.arch }}.zip"
           Compress-Archive -Path "dist/pkg/*" -DestinationPath "dist/$zipName" -Force
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: j360More-Windows-x64
-          path: dist/*windows*.zip
+          name: j360More-Windows-${{ matrix.arch }}
+          path: dist/*windows-${{ matrix.arch }}*.zip
 
   build-linux:
     name: Build Linux (${{ matrix.arch }})
@@ -67,7 +86,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - arch: x86_64
+          - arch: amd64
             platform: linux/amd64
           - arch: arm64
             platform: linux/arm64
@@ -97,7 +116,7 @@ jobs:
   release:
     name: Publish GitHub Release
     needs: [build-windows, build-linux]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -109,13 +128,34 @@ jobs:
           path: release-artifacts
           merge-multiple: true
 
-      - name: List Artifacts for Release
+      - name: Inspect Artifacts for Release
         run: ls -la release-artifacts/
 
-      - name: Create GitHub Release
+      - name: Determine Release Metadata
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+            if [[ "$TAG" =~ -(pre|rc|beta|alpha) ]]; then
+              echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            fi
+            echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
+            echo "release_name=j360More $TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=v1.5.0-pre" >> "$GITHUB_OUTPUT"
+            echo "release_name=j360More v1.5.0 (Pre-release)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          files: release-artifacts/*
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          name: ${{ steps.meta.outputs.release_name }}
+          prerelease: ${{ steps.meta.outputs.is_prerelease == 'true' }}
           draft: false
-          prerelease: false
+          files: release-artifacts/*
           generate_release_notes: true
