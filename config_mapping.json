@@ -12,17 +12,17 @@
   "controllers": {
     "1": {
       "name": "Jugador 1",
-      "enabled": false,
-      "physical_device_id": "kbd_92d465e9",
+      "enabled": true,
+      "physical_device_id": "none",
       "mappings": {
-        "LEFT_TRIGGER": "Button 7",
+        "LEFT_TRIGGER": "Axis 3",
         "LEFT_SHOULDER": "Button 5",
-        "BACK": "Button 9",
-        "START": "Button 10",
+        "BACK": "Button 7",
+        "START": "Button 8",
         "GUIDE": "Button 11",
         "LEFT_STICK_X": "Axis 1",
         "LEFT_STICK_Y": "Axis 2",
-        "LEFT_THUMB": "Button 11",
+        "LEFT_THUMB": "Button 9",
         "LEFT_STICK_UP": "-- Ninguno --",
         "LEFT_STICK_DOWN": "-- Ninguno --",
         "LEFT_STICK_LEFT": "-- Ninguno --",
@@ -31,15 +31,15 @@
         "DPAD_DOWN": "POV 1 Down",
         "DPAD_LEFT": "POV 1 Left",
         "DPAD_RIGHT": "POV 1 Right",
-        "RIGHT_TRIGGER": "Button 8",
+        "RIGHT_TRIGGER": "Axis 6",
         "RIGHT_SHOULDER": "Button 6",
-        "Y": "Button 1",
-        "X": "Button 4",
+        "Y": "Button 4",
+        "X": "Button 3",
         "B": "Button 2",
-        "A": "Button 3",
+        "A": "Button 1",
         "RIGHT_STICK_X": "Axis 4",
-        "RIGHT_STICK_Y": "Axis 3",
-        "RIGHT_THUMB": "Button 12",
+        "RIGHT_STICK_Y": "Axis 5",
+        "RIGHT_THUMB": "Button 10",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
@@ -72,14 +72,21 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 200,
+        "right_intensity": 100
       }
     },
     "2": {
       "name": "Jugador 2",
-      "enabled": false,
-      "physical_device_id": "none",
+      "enabled": true,
+      "physical_device_id": "joy_0",
       "mappings": {
-        "LEFT_TRIGGER": "Axis 3",
+        "LEFT_TRIGGER": "Axis 5",
         "LEFT_SHOULDER": "Button 5",
         "BACK": "Button 7",
         "START": "Button 8",
@@ -101,8 +108,8 @@
         "X": "Button 3",
         "B": "Button 2",
         "A": "Button 1",
-        "RIGHT_STICK_X": "Axis 4",
-        "RIGHT_STICK_Y": "Axis 5",
+        "RIGHT_STICK_X": "Axis 3",
+        "RIGHT_STICK_Y": "Axis 4",
         "RIGHT_THUMB": "Button 10",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
@@ -136,17 +143,24 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "3": {
       "name": "Jugador 3",
-      "enabled": false,
-      "physical_device_id": "none",
+      "enabled": true,
+      "physical_device_id": "phone_1",
       "mappings": {
         "LEFT_TRIGGER": "Axis 3",
         "LEFT_SHOULDER": "Button 5",
         "BACK": "Button 7",
-        "START": "Button 8",
+        "START": "-- Ninguno --",
         "GUIDE": "Button 11",
         "LEFT_STICK_X": "Axis 1",
         "LEFT_STICK_Y": "Axis 2",
@@ -161,13 +175,13 @@
         "DPAD_RIGHT": "POV 1 Right",
         "RIGHT_TRIGGER": "Axis 6",
         "RIGHT_SHOULDER": "Button 6",
-        "Y": "Button 4",
-        "X": "Button 3",
-        "B": "Button 2",
+        "Y": "-- Ninguno --",
+        "X": "-- Ninguno --",
+        "B": "-- Ninguno --",
         "A": "Button 1",
-        "RIGHT_STICK_X": "Axis 4",
-        "RIGHT_STICK_Y": "Axis 5",
-        "RIGHT_THUMB": "Button 10",
+        "RIGHT_STICK_X": "-- Ninguno --",
+        "RIGHT_STICK_Y": "-- Ninguno --",
+        "RIGHT_THUMB": "-- Ninguno --",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
@@ -200,6 +214,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "4": {
@@ -264,6 +285,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "5": {
@@ -328,6 +356,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "6": {
@@ -392,6 +427,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "7": {
@@ -456,6 +498,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "8": {
@@ -520,6 +569,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "9": {
@@ -584,6 +640,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "10": {
@@ -648,6 +711,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "11": {
@@ -712,6 +782,13 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     },
     "12": {
@@ -776,14 +853,23 @@
           "invert_x": false,
           "invert_y": false
         }
+      },
+      "rumble": {
+        "enabled": true,
+        "left_motor_source": "left",
+        "right_motor_source": "right",
+        "left_intensity": 100,
+        "right_intensity": 100
       }
     }
   },
-  "driver_backend": "viiper",
-  "emulated_type": "mixed",
+  "driver_backend": "vigem",
+  "emulated_type": "xbox360",
   "hidhide_cli_path": "C:\\Program Files\\Nefarius Software Solutions\\HidHide\\x64\\HidHideCLI.exe",
   "suppress_hidhide_warning": false,
-  "hidden_devices": [],
+  "hidden_devices": [
+    "HID\\VID_045E&PID_02FF&IG_00\\7&24B93299&0&0000"
+  ],
   "airpad_bind_ip": "192.168.1.34",
   "airpad_ssl_enabled": true
 }

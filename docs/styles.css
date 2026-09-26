@@ -1094,6 +1094,79 @@ body::before {
   line-height: 1.55;
 }
 
+/* Interactive Image Switcher in Screenshot Card */
+.image-switch-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 3px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  margin-left: auto;
+}
+
+.img-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.img-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.img-tab-btn.active {
+  background: var(--xbox-neon);
+  color: #0b0f14;
+  font-weight: 700;
+}
+
+.card-mini-thumbs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mini-thumb {
+  width: 44px;
+  height: 24px;
+  border-radius: 4px;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid var(--border-color);
+  background: #000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.mini-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mini-thumb:hover {
+  opacity: 0.9;
+  border-color: rgba(16, 207, 101, 0.6);
+}
+
+.mini-thumb.active {
+  opacity: 1;
+  border-color: var(--xbox-neon);
+  box-shadow: 0 0 8px rgba(16, 207, 101, 0.4);
+}
+
 /* Lightbox Modal */
 .lightbox-modal {
   position: fixed;
@@ -1143,6 +1216,26 @@ body::before {
   border: 1px solid var(--border-color);
 }
 
+.lightbox-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.lightbox-counter {
+  background: rgba(16, 207, 101, 0.15);
+  color: var(--xbox-neon);
+  border: 1px solid rgba(16, 207, 101, 0.35);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
 .lightbox-close {
   position: absolute;
   top: 14px;
@@ -1167,6 +1260,44 @@ body::before {
   color: var(--xbox-neon);
   border-color: var(--xbox-neon);
   transform: scale(1.08);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  z-index: 2015;
+  backdrop-filter: blur(8px);
+}
+
+.lightbox-nav:hover {
+  color: var(--xbox-neon);
+  border-color: var(--xbox-neon);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 0 18px rgba(16, 207, 101, 0.45);
+}
+
+.lightbox-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.lightbox-prev {
+  left: 28px;
+}
+
+.lightbox-next {
+  right: 28px;
 }
 
 /* ==========================================================================
@@ -1584,6 +1715,20 @@ html, body {
     width: 38px;
     height: 38px;
     font-size: 1.3rem;
+  }
+
+  .lightbox-nav {
+    width: 42px;
+    height: 42px;
+    background: rgba(13, 17, 23, 0.92);
+  }
+
+  .lightbox-prev {
+    left: 8px;
+  }
+
+  .lightbox-next {
+    right: 8px;
   }
 }
 

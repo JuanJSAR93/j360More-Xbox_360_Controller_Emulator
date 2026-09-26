@@ -166,15 +166,16 @@ const translations = {
     s3_badge: "Configuración",
     s3_title: "Opciones de Emulación y Drivers",
     s3_desc: "Selección del motor (VIIPER / ViGEmBus), tipo de mando (Xbox 360, DualShock 4, DualSense, Switch 2 Pro o Mixto), cantidad de mandos e idioma.",
+    tab_airpad_default: "🎮 Mando",
+    tab_airpad_custom: "✏️ Personalización",
     s4_badge: "AirPad Server",
     s4_title: "Servidor AirPad & Conexión QR",
     s4_desc: "Convierte cualquier smartphone o tableta en mando virtual. Incluye código QR dinámico, detección de IPs de red local, lista de mandos activos y selector HTTPS/SSL para activar el Wake Lock de pantalla.",
     s5_badge: "AirPad Móvil",
-    s5_title: "Mando Virtual Táctil Completo",
-    s5_desc: "Mando táctil de ultra baja latencia con respuesta háptica (vibración), sticks analógicos duales, cruceta y gatillos directamente en el navegador de tu smartphone sin instalar aplicaciones.",
-    s6_badge: "Personalización",
-    s6_title: "Personalización Libre de Posiciones",
-    s6_desc: "Modo de edición en pantalla que permite arrastrar, reubicar y redimensionar cada botón y joystick libremente para adaptarse al tamaño de tu pantalla y a tu forma de agarrar el móvil.",
+    s5_title: "Mando Virtual Táctil & Personalización",
+    s5_title_gamepad: "AirPad Móvil - Mando Táctil Virtual",
+    s5_title_custom: "AirPad Móvil - Personalización Libre de Posiciones",
+    s5_desc: "Mando táctil completo de baja latencia con respuesta háptica (vibración), sticks analógicos duales y un potente modo de edición para mover, arrastrar y redimensionar libremente cada botón en pantalla para adaptarse al agarre de tu mano.",
     screenshot_zoom: "Haz clic para ampliar en alta resolución",
     footer_desc: "Emulador de mandos virtuales para Windows y Linux (Beta). Diseñado y desarrollado por JuanJSAR para ofrecer la máxima velocidad, estabilidad y flexibilidad en entornos multijugador de 1 a 12 participantes.",
     footer_drivers_title: "Controladores",
@@ -345,15 +346,16 @@ const translations = {
     s3_badge: "Settings",
     s3_title: "Emulation Options & Drivers",
     s3_desc: "Selection of driver engine (VIIPER / ViGEmBus), controller type (Xbox 360, DualShock 4, DualSense, Switch 2 Pro, or Mixed), controller count, and language.",
+    tab_airpad_default: "🎮 Gamepad",
+    tab_airpad_custom: "✏️ Customization",
     s4_badge: "AirPad Server",
     s4_title: "AirPad Server & QR Connection",
     s4_desc: "Turn any smartphone or tablet into a virtual gamepad. Features dynamic QR code generation, local network IP discovery, active client list, and HTTPS/SSL mode to enable Screen Wake Lock.",
     s5_badge: "AirPad Mobile",
-    s5_title: "Full Virtual Touch Gamepad",
-    s5_desc: "Ultra-low-latency touch controller with haptic feedback, dual analog sticks, D-pad, and triggers directly in your mobile browser without installing any apps.",
-    s6_badge: "Customization",
-    s6_title: "Free Touch Layout Customization",
-    s6_desc: "Interactive layout editor allowing you to freely drag, reposition, and resize every button, D-pad, and joystick to match your hand ergonomics and screen size.",
+    s5_title: "Virtual Touch Gamepad & Customization",
+    s5_title_gamepad: "AirPad Mobile - Virtual Touch Gamepad",
+    s5_title_custom: "AirPad Mobile - Free Layout Customization",
+    s5_desc: "Low-latency virtual touch controller with haptic feedback, dual analog sticks, and an interactive editor allowing you to freely drag, reposition, and resize every on-screen button and joystick for optimal hand grip ergonomics.",
     screenshot_zoom: "Click to view full resolution",
     footer_desc: "Virtual controller emulator for Windows & Linux (Beta). Designed and developed by JuanJSAR to provide unmatched speed, stability, and versatility for 1 to 12 local players.",
     footer_drivers_title: "Drivers",
@@ -472,30 +474,123 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Screenshot Lightbox Modal
+  // Screenshot Lightbox Modal with Full Carousel Gallery (Next/Prev Arrows, Keyboard & Swipe)
   const modal = document.getElementById('lightbox-modal');
   const modalImg = document.getElementById('lightbox-img');
   const modalCaption = document.getElementById('lightbox-caption');
+  const modalCounter = document.getElementById('lightbox-counter');
   const modalClose = document.getElementById('lightbox-close');
+  const btnPrev = document.getElementById('lightbox-prev');
+  const btnNext = document.getElementById('lightbox-next');
 
   if (modal && modalImg) {
-    document.querySelectorAll('.screenshot-zoomable').forEach(img => {
-      img.addEventListener('click', () => {
-        modalImg.src = img.src;
-        if (modalCaption) {
-          modalCaption.textContent = img.alt || '';
-        }
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      });
-    });
+    const galleryItems = [
+      {
+        src: 'assets/screenshot_main.png',
+        captionKey: 's1_title',
+        defaultCaption: 'j360More - Mapeo Xbox 360 (1 a 12 Mandos)'
+      },
+      {
+        src: 'assets/screenshot_main2.png',
+        captionKey: 's1b_title',
+        defaultCaption: 'j360More - Mapeo DualShock 4'
+      },
+      {
+        src: 'assets/screenshot_sticks.png',
+        captionKey: 's2_title',
+        defaultCaption: 'j360More - Calibración Analógica de Sticks'
+      },
+      {
+        src: 'assets/screenshot_settings.png',
+        captionKey: 's3_title',
+        defaultCaption: 'j360More - Configuración General & Drivers'
+      },
+      {
+        src: 'assets/screenshot_airpad.png',
+        captionKey: 's4_title',
+        defaultCaption: 'j360More - Servidor AirPad (Gamepad Móvil)'
+      },
+      {
+        src: 'assets/screenshot_android1.png',
+        captionKey: 's5_title_gamepad',
+        defaultCaption: 'AirPad Web - Mando Táctil Virtual (Android / iOS)'
+      },
+      {
+        src: 'assets/screenshot_android2.png',
+        captionKey: 's5_title_custom',
+        defaultCaption: 'AirPad Web - Personalización Libre de Posiciones'
+      }
+    ];
+
+    let currentGalleryIndex = 0;
+
+    const getCaption = (item) => {
+      if (translations[currentLang] && item.captionKey && translations[currentLang][item.captionKey]) {
+        return translations[currentLang][item.captionKey];
+      }
+      return item.defaultCaption;
+    };
+
+    const updateLightboxContent = (index, transition = false) => {
+      currentGalleryIndex = (index + galleryItems.length) % galleryItems.length;
+      const item = galleryItems[currentGalleryIndex];
+
+      const apply = () => {
+        modalImg.src = item.src;
+        const caption = getCaption(item);
+        modalImg.alt = caption;
+        if (modalCaption) modalCaption.textContent = caption;
+        if (modalCounter) modalCounter.textContent = `${currentGalleryIndex + 1} / ${galleryItems.length}`;
+        modalImg.style.opacity = '1';
+      };
+
+      if (transition) {
+        modalImg.style.opacity = '0.35';
+        setTimeout(apply, 110);
+      } else {
+        apply();
+      }
+    };
+
+    const openLightbox = (index) => {
+      updateLightboxContent(index, false);
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
 
     const closeModal = () => {
       modal.classList.remove('active');
       document.body.style.overflow = '';
     };
 
+    const prevImage = () => updateLightboxContent(currentGalleryIndex - 1, true);
+    const nextImage = () => updateLightboxContent(currentGalleryIndex + 1, true);
+
+    document.querySelectorAll('.screenshot-zoomable').forEach(img => {
+      img.addEventListener('click', () => {
+        const imgSrc = img.getAttribute('src') || '';
+        let idx = galleryItems.findIndex(g => imgSrc.includes(g.src.split('/').pop()));
+        if (idx === -1) idx = 0;
+        openLightbox(idx);
+      });
+    });
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        prevImage();
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nextImage();
+      });
+    }
+
     if (modalClose) modalClose.addEventListener('click', closeModal);
+
     modal.addEventListener('click', (e) => {
       if (e.target === modal || e.target === modalClose) {
         closeModal();
@@ -503,9 +598,89 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.classList.contains('active')) {
-        closeModal();
-      }
+      if (!modal.classList.contains('active')) return;
+      if (e.key === 'Escape') closeModal();
+      else if (e.key === 'ArrowLeft') prevImage();
+      else if (e.key === 'ArrowRight') nextImage();
     });
+
+    // Touch Swipe Navigation for Mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    modal.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+      }
+    }, { passive: true });
+
+    modal.addEventListener('touchend', (e) => {
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        touchEndX = e.changedTouches[0].clientX;
+        const diff = touchEndX - touchStartX;
+        if (Math.abs(diff) > 40) {
+          if (diff > 0) {
+            prevImage();
+          } else {
+            nextImage();
+          }
+        }
+      }
+    }, { passive: true });
   }
+
+  // AirPad Mobile Interactive Image Switcher (Touch Gamepad <-> Position Customization)
+  const airpadImg = document.getElementById('airpad-mobile-img');
+  const airpadTitle = document.getElementById('airpad-mobile-window-title');
+  const tabBtns = document.querySelectorAll('.img-tab-btn');
+  const miniThumbs = document.querySelectorAll('.mini-thumb');
+
+  const switchAirpadImage = (target) => {
+    if (!airpadImg) return;
+
+    tabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-img-target') === target);
+    });
+    miniThumbs.forEach(thumb => {
+      thumb.classList.toggle('active', thumb.getAttribute('data-thumb') === target);
+    });
+
+    airpadImg.style.opacity = '0.35';
+    setTimeout(() => {
+      if (target === 'android2') {
+        airpadImg.src = 'assets/screenshot_android2.png';
+        airpadImg.alt = airpadImg.getAttribute('data-alt2') || 'AirPad Móvil - Personalización Libre de Posiciones y Tamaño';
+        if (airpadTitle) {
+          airpadTitle.textContent = currentLang === 'en' 
+            ? 'AirPad Web - Layout Customization' 
+            : 'AirPad Web - Personalización de Posiciones';
+        }
+      } else {
+        airpadImg.src = 'assets/screenshot_android1.png';
+        airpadImg.alt = airpadImg.getAttribute('data-alt1') || 'AirPad Móvil - Mando Táctil Virtual en Navegador';
+        if (airpadTitle) {
+          airpadTitle.textContent = currentLang === 'en' 
+            ? 'AirPad Web - Virtual Touch Gamepad' 
+            : 'AirPad Web - Mando Táctil Virtual';
+        }
+      }
+      airpadImg.style.opacity = '1';
+    }, 140);
+  };
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const target = btn.getAttribute('data-img-target');
+      switchAirpadImage(target);
+    });
+  });
+
+  miniThumbs.forEach(thumb => {
+    thumb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const target = thumb.getAttribute('data-thumb');
+      switchAirpadImage(target);
+    });
+  });
 });

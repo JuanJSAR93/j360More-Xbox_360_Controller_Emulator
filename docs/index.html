@@ -583,19 +583,26 @@
         </div>
       </div>
 
-      <!-- Screenshot 6: AirPad Mobile Gamepad -->
+      <!-- Screenshot 6: AirPad Mobile Gamepad & Customization (Combined & Switchable) -->
       <div class="screenshot-card">
         <div class="window-mockup">
-          <div class="window-header">
-            <div class="window-dots">
-              <span class="window-dot red"></span>
-              <span class="window-dot yellow"></span>
-              <span class="window-dot green"></span>
+          <div class="window-header" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div class="window-dots">
+                <span class="window-dot red"></span>
+                <span class="window-dot yellow"></span>
+                <span class="window-dot green"></span>
+              </div>
+              <span class="window-title" id="airpad-mobile-window-title">AirPad Web - Mando Táctil Virtual</span>
             </div>
-            <span class="window-title">AirPad Web - Mando Táctil Virtual (Android / iOS)</span>
+            <!-- Interactive Switcher -->
+            <div class="image-switch-tabs">
+              <button type="button" class="img-tab-btn active" data-img-target="android1" data-i18n="tab_airpad_default">🎮 Mando</button>
+              <button type="button" class="img-tab-btn" data-img-target="android2" data-i18n="tab_airpad_custom">✏️ Personalización</button>
+            </div>
           </div>
           <div class="screenshot-img-wrapper">
-            <img src="assets/screenshot_android1.png" alt="AirPad Móvil - Mando Táctil Virtual en Navegador" class="screenshot-zoomable">
+            <img id="airpad-mobile-img" src="assets/screenshot_android1.png" alt="AirPad Móvil - Mando Táctil Virtual en Navegador" class="screenshot-zoomable" data-alt1="AirPad Móvil - Mando Táctil Virtual en Navegador" data-alt2="AirPad Móvil - Personalización Libre de Posiciones y Tamaño">
             <div class="screenshot-overlay">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/>
@@ -606,41 +613,20 @@
           </div>
         </div>
         <div class="screenshot-info">
-          <span class="screenshot-badge" data-i18n="s5_badge">AirPad Móvil</span>
-          <h3 class="screenshot-title" data-i18n="s5_title">Mando Virtual Táctil Completo</h3>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span class="screenshot-badge" data-i18n="s5_badge">AirPad Móvil</span>
+            <div class="card-mini-thumbs">
+              <button type="button" class="mini-thumb active" data-thumb="android1" title="Mando Táctil">
+                <img src="assets/screenshot_android1.png" alt="Vista Mando">
+              </button>
+              <button type="button" class="mini-thumb" data-thumb="android2" title="Personalización">
+                <img src="assets/screenshot_android2.png" alt="Vista Personalización">
+              </button>
+            </div>
+          </div>
+          <h3 class="screenshot-title" data-i18n="s5_title">Mando Virtual Táctil & Personalización</h3>
           <p class="screenshot-desc" data-i18n="s5_desc">
-            Mando táctil de ultra baja latencia con respuesta háptica (vibración), sticks analógicos duales, cruceta y gatillos directamente en el navegador de tu smartphone sin instalar aplicaciones.
-          </p>
-        </div>
-      </div>
-
-      <!-- Screenshot 7: AirPad Layout Customization -->
-      <div class="screenshot-card">
-        <div class="window-mockup">
-          <div class="window-header">
-            <div class="window-dots">
-              <span class="window-dot red"></span>
-              <span class="window-dot yellow"></span>
-              <span class="window-dot green"></span>
-            </div>
-            <span class="window-title">AirPad Web - Personalización Libre de Posiciones</span>
-          </div>
-          <div class="screenshot-img-wrapper">
-            <img src="assets/screenshot_android2.png" alt="AirPad Móvil - Personalización Libre de Posiciones y Tamaño" class="screenshot-zoomable">
-            <div class="screenshot-overlay">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <span data-i18n="screenshot_zoom">Haz clic para ampliar</span>
-            </div>
-          </div>
-        </div>
-        <div class="screenshot-info">
-          <span class="screenshot-badge" data-i18n="s6_badge">Personalización</span>
-          <h3 class="screenshot-title" data-i18n="s6_title">Personalización Libre de Posiciones</h3>
-          <p class="screenshot-desc" data-i18n="s6_desc">
-            Modo de edición en pantalla que permite arrastrar, reubicar y redimensionar cada botón y joystick libremente para adaptarse al tamaño de tu pantalla y a tu forma de agarrar el móvil.
+            Mando táctil completo de baja latencia con respuesta háptica (vibración), sticks analógicos duales y un potente modo de edición para mover, arrastrar y redimensionar libremente cada botón en pantalla para adaptarse al agarre de tu mano.
           </p>
         </div>
       </div>
@@ -986,11 +972,26 @@
 
   <!-- Lightbox Modal for Full-Size Screenshot View -->
   <div id="lightbox-modal" class="lightbox-modal" role="dialog" aria-modal="true">
+    <button id="lightbox-prev" class="lightbox-nav lightbox-prev" aria-label="Foto anterior" title="Anterior (←)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+
     <div class="lightbox-content">
       <button id="lightbox-close" class="lightbox-close" aria-label="Cerrar">&times;</button>
       <img id="lightbox-img" src="" alt="Captura ampliada">
-      <div id="lightbox-caption" class="lightbox-caption"></div>
+      <div class="lightbox-footer">
+        <span id="lightbox-counter" class="lightbox-counter"></span>
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+      </div>
     </div>
+
+    <button id="lightbox-next" class="lightbox-nav lightbox-next" aria-label="Siguiente foto" title="Siguiente (→)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
   </div>
 
   <!-- Script with i18n support -->

@@ -414,7 +414,7 @@ class ViiperClient:
         print(f'[!] Error creando bus en VIIPER: {res}')
         return False
 
-    def add_device(self, slot: int, dev_type: str) -> bool:
+    def add_device(self, slot: int, dev_type: str, feedback_cb: Optional[Callable[[int, int, int], None]] = None) -> bool:
         if not self.bus_id:
             if not self.start_bus():
                 return False
@@ -427,7 +427,7 @@ class ViiperClient:
 
         # Soporte para Xbox One vía flujo retenido autenticado
         if vtype in ('xboxone', 'xbox_one', 'xboxseries'):
-            return self._add_xboxone_device(slot, vtype)
+            return self._add_xboxone_device(slot, vtype, feedback_cb=feedback_cb)
 
         res = self._send_cmd(f'bus/{self.bus_id}/add', {'type': vtype})
         if 'devId' not in res:
@@ -441,6 +441,27 @@ class ViiperClient:
         stream_sock.connect((self.host, self.port))
         stream_sock.sendall(f'bus/{self.bus_id}/{dev_id}\0'.encode('utf-8'))
 
+        stop_evt = threading.Event()
+        t = None
+        if feedback_cb:
+            def stream_feedback_worker():
+                while not stop_evt.is_set():
+                    try:
+                        stream_sock.settimeout(0.5)
+                        data = stream_sock.recv(64)
+                        if not data:
+                            break
+                        if len(data) >= 2:
+                            l_mot = data[0]
+                            r_mot = data[1] if len(data) > 1 else 0
+                            feedback_cb(slot, l_mot, r_mot)
+                    except (socket.timeout, TimeoutError):
+                        continue
+                    except Exception:
+                        break
+            t = threading.Thread(target=stream_feedback_worker, daemon=True, name=f"viiper-stream-feedback-{slot}")
+            t.start()
+
         self.devices[slot] = {
             'devId': dev_id,
             'type': vtype,
@@ -453,10 +474,12 @@ class ViiperClient:
             'rx': 0,
             'ry': 0,
             'dpad': 0,
+            'stop_event': stop_evt,
+            'thread': t,
         }
         return True
 
-    def _add_xboxone_device(self, slot: int, profile: str) -> bool:
+    def _add_xboxone_device(self, slot: int, profile: str, feedback_cb: Optional[Callable[[int, int, int], None]] = None) -> bool:
         key = get_viiper_key()
         if not key:
             print('[!] VIIPER Xbox One: No se encontro el archivo de clave de autenticacion en %APPDATA%\\VIIPER\\viiper.key.txt')
@@ -543,6 +566,10 @@ class ViiperClient:
                             if ftype == 0x83: # xboxOneCanonicalFeedback
                                 ack_frame = b'X1BR\x01\x03' + struct.pack('<HQ', 1, corr) + b'\x01'
                                 c_stream.write(ack_frame)
+                                if feedback_cb and length > 0:
+                                    payload = record[16:16+length]
+                                    if len(payload) >= 2:
+                                        feedback_cb(slot, payload[0], payload[1])
                     except (socket.timeout, TimeoutError):
                         continue
                     except Exception:

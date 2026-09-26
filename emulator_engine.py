@@ -250,7 +250,9 @@ class EmulatorEngine:
                 "lx_raw": 0.0, "lx": 0.0,
                 "ly_raw": 0.0, "ly": 0.0,
                 "rx_raw": 0.0, "rx": 0.0,
-                "ry_raw": 0.0, "ry": 0.0
+                "ry_raw": 0.0, "ry": 0.0,
+                "rumble_v_left": 0, "rumble_v_right": 0,
+                "rumble_left": 0, "rumble_right": 0
             }
             for i in range(1, 13)
         }
@@ -276,6 +278,80 @@ class EmulatorEngine:
                 m_dict[target_btn] = compile_mapping(map_str)
             new_compiled[p_id] = m_dict
         self.compiled_mappings = new_compiled
+
+    def get_assigned_device(self, slot: int) -> str:
+        """Retorna el physical_device_id configurado para un slot de mando dado."""
+        with self.lock:
+            cfg = self.config.get("controllers", {}).get(str(slot), {})
+            return cfg.get("physical_device_id", "none")
+
+    def route_virtual_rumble(self, slot_idx: int, v_large: int, v_small: int):
+        """
+        Aplica el mapeo, enrutamiento y ganancia de vibración configurado para el slot,
+        y lo envía al periférico físico/móvil asignado.
+        """
+        with self.lock:
+            if not self.running:
+                return
+            ctrl_cfg = self.config.get("controllers", {}).get(str(slot_idx), {})
+            p_dev = ctrl_cfg.get("physical_device_id", "none")
+            if not p_dev or p_dev == "none":
+                return
+            rumble_cfg = ctrl_cfg.get("rumble", {})
+
+        # Si la vibración está desactivada en la configuración de este mando
+        if not rumble_cfg.get("enabled", True):
+            self.device_manager.send_rumble(p_dev, 0, 0)
+            with self.lock:
+                if slot_idx in self.active_states:
+                    self.active_states[slot_idx]["rumble_v_left"] = v_large
+                    self.active_states[slot_idx]["rumble_v_right"] = v_small
+                    self.active_states[slot_idx]["rumble_left"] = 0
+                    self.active_states[slot_idx]["rumble_right"] = 0
+            return
+
+        # 1. Determinar fuente del Motor Pesado Físico (Izquierdo)
+        src_left = rumble_cfg.get("left_motor_source", "left")
+        if src_left == "left":
+            raw_l = v_large
+        elif src_left == "right":
+            raw_l = v_small
+        elif src_left == "both":
+            raw_l = max(v_large, v_small)
+        elif src_left == "none":
+            raw_l = 0
+        else:
+            raw_l = v_large
+
+        # 2. Determinar fuente del Motor Ligero Físico (Derecho)
+        src_right = rumble_cfg.get("right_motor_source", "right")
+        if src_right == "right":
+            raw_r = v_small
+        elif src_right == "left":
+            raw_r = v_large
+        elif src_right == "both":
+            raw_r = max(v_large, v_small)
+        elif src_right == "none":
+            raw_r = 0
+        else:
+            raw_r = v_small
+
+        # 3. Aplicar multiplicador de intensidad / ganancia (0% a 200%)
+        l_gain = max(0.0, min(2.0, rumble_cfg.get("left_intensity", 100) / 100.0))
+        r_gain = max(0.0, min(2.0, rumble_cfg.get("right_intensity", 100) / 100.0))
+
+        final_l = max(0, min(255, int(raw_l * l_gain)))
+        final_r = max(0, min(255, int(raw_r * r_gain)))
+
+        # Actualizar estado activo en tiempo real para el monitor de la GUI
+        with self.lock:
+            if slot_idx in self.active_states:
+                self.active_states[slot_idx]["rumble_v_left"] = v_large
+                self.active_states[slot_idx]["rumble_v_right"] = v_small
+                self.active_states[slot_idx]["rumble_left"] = final_l
+                self.active_states[slot_idx]["rumble_right"] = final_r
+
+        self.device_manager.send_rumble(p_dev, final_l, final_r)
 
     def trigger_input_event(self):
         """Despierta el bucle de emulacion reactivamente ante nueva entrada."""
@@ -319,7 +395,12 @@ class EmulatorEngine:
                     p_dev = cfg.get("physical_device_id", "none")
                     if cfg.get("enabled", True) and p_dev and p_dev != "none":
                         pad_type = get_pad_emulated_type(self.config, i)
-                        if not self.viiper_client.add_device(i, pad_type):
+                        def _make_viiper_feedback_cb(slot_idx: int):
+                            def _vcb(slot, l_mot, r_mot):
+                                self.route_virtual_rumble(slot_idx, int(l_mot), int(r_mot))
+                            return _vcb
+
+                        if not self.viiper_client.add_device(i, pad_type, feedback_cb=_make_viiper_feedback_cb(i)):
                             pad_label = pad_type.upper()
                             print(f"  [!] Error creando mando virtual #{i} ({pad_label}) en VIIPER.")
                 active_count = len(self.viiper_client.devices)
@@ -341,17 +422,17 @@ class EmulatorEngine:
                             pad.update()
                             self.gamepads[i] = pad
 
-                            # Reenvío de vibración háptica a smartphone AirPad
-                            if p_dev.startswith("phone_"):
-                                try:
-                                    def _make_rumble_cb(target_phone):
-                                        def _rcb(client, target, large_motor, small_motor, led_number):
-                                            srv = web_gamepad_server.get_server_instance()
-                                            srv.send_rumble(target_phone, large_motor * 256, small_motor * 256)
-                                        return _rcb
-                                    pad.register_notification(callback_function=_make_rumble_cb(p_dev))
-                                except Exception:
-                                    pass
+                            # Reenvío de vibración háptica / Force Feedback al mando asignado (físico o AirPad)
+                            try:
+                                def _make_vigem_rumble_cb(slot_idx: int):
+                                    def _rcb(client, target, large_motor, small_motor, led_number, user_data):
+                                        self.route_virtual_rumble(slot_idx, int(large_motor), int(small_motor))
+                                    return _rcb
+                                cb = _make_vigem_rumble_cb(i)
+                                pad.register_notification(callback_function=cb)
+                                pad._vigem_rumble_cb = cb
+                            except Exception as e:
+                                print(f"  [!] Error registrando vibración ViGEm #{i}: {e}")
                         except Exception as e:
                             pad_label = "DualShock 4" if pad_type == "ds4" else "Xbox 360"
                             print(f"  [!] Error creando mando virtual #{i} ({pad_label}): {e}")
@@ -382,11 +463,23 @@ class EmulatorEngine:
             else:
                 for i, pad in list(self.gamepads.items()):
                     try:
+                        if hasattr(pad, "unregister_notification"):
+                            try:
+                                pad.unregister_notification()
+                            except Exception:
+                                pass
                         pad.reset()
                         pad.update()
                     except Exception:
                         pass
                 self.gamepads.clear()
+
+            # Detener cualquier vibración residual activa en mandos físicos o AirPad
+            if self.device_manager:
+                try:
+                    self.device_manager.stop_all_rumble()
+                except Exception:
+                    pass
 
             for i in range(1, 13):
                 self.active_states[i] = {
@@ -396,7 +489,9 @@ class EmulatorEngine:
                     "lx_raw": 0.0, "lx": 0.0,
                     "ly_raw": 0.0, "ly": 0.0,
                     "rx_raw": 0.0, "rx": 0.0,
-                    "ry_raw": 0.0, "ry": 0.0
+                    "ry_raw": 0.0, "ry": 0.0,
+                    "rumble_v_left": 0, "rumble_v_right": 0,
+                    "rumble_left": 0, "rumble_right": 0
                 }
             print("[+] Emulacion detenida y mandos liberados.")
 
@@ -678,15 +773,28 @@ class EmulatorEngine:
 
                 # Actualizar estado de visualizacion para la GUI
                 with self.lock:
-                    self.active_states[pad_id] = {
-                        "buttons": pressed_buttons,
-                        "lt_raw": lt_norm, "lt": lt_byte,
-                        "rt_raw": rt_norm, "rt": rt_byte,
-                        "lx_raw": lx_raw, "lx": lx_calib,
-                        "ly_raw": ly_raw, "ly": ly_calib,
-                        "rx_raw": rx_raw, "rx": rx_calib,
-                        "ry_raw": ry_raw, "ry": ry_calib
-                    }
+                    if pad_id in self.active_states:
+                        self.active_states[pad_id].update({
+                            "buttons": pressed_buttons,
+                            "lt_raw": lt_norm, "lt": lt_byte,
+                            "rt_raw": rt_norm, "rt": rt_byte,
+                            "lx_raw": lx_raw, "lx": lx_calib,
+                            "ly_raw": ly_raw, "ly": ly_calib,
+                            "rx_raw": rx_raw, "rx": rx_calib,
+                            "ry_raw": ry_raw, "ry": ry_calib
+                        })
+                    else:
+                        self.active_states[pad_id] = {
+                            "buttons": pressed_buttons,
+                            "lt_raw": lt_norm, "lt": lt_byte,
+                            "rt_raw": rt_norm, "rt": rt_byte,
+                            "lx_raw": lx_raw, "lx": lx_calib,
+                            "ly_raw": ly_raw, "ly": ly_calib,
+                            "rx_raw": rx_raw, "rx": rx_calib,
+                            "ry_raw": ry_raw, "ry": ry_calib,
+                            "rumble_v_left": 0, "rumble_v_right": 0,
+                            "rumble_left": 0, "rumble_right": 0
+                        }
 
             # Despertar reactivo con límite de espera de 8 ms (~120 Hz)
             # para sincronizar con VIIPER write-batch sin demora

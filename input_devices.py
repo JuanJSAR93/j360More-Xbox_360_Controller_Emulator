@@ -6,6 +6,14 @@ from typing import Dict, List, Optional, Tuple, Any, Set, Callable
 
 # Permitir ejecucion de pygame sin crear ventana grafica propia
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+# Habilitar soporte completo de vibracion haptica HIDAPI en SDL2 para PS4, PS5, Switch y segundo plano
+os.environ['SDL_JOYSTICK_HIDAPI'] = '1'
+os.environ['SDL_JOYSTICK_HIDAPI_PS4'] = '1'
+os.environ['SDL_JOYSTICK_HIDAPI_PS4_RUMBLE'] = '1'
+os.environ['SDL_JOYSTICK_HIDAPI_PS5'] = '1'
+os.environ['SDL_JOYSTICK_HIDAPI_PS5_RUMBLE'] = '1'
+os.environ['SDL_JOYSTICK_HIDAPI_SWITCH'] = '1'
+os.environ['SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS'] = '1'
 import threading
 import pygame
 from driver_manager import DriverManager
@@ -69,13 +77,32 @@ def _get_present_pnp_device_instance_paths() -> List[str]:
     except Exception:
         return []
 
+# Estructuras y cargador para Force Feedback / Vibración XInput (Windows)
+class XINPUT_VIBRATION(ctypes.Structure):
+    _fields_ = [
+        ('wLeftMotorSpeed', ctypes.c_ushort),
+        ('wRightMotorSpeed', ctypes.c_ushort)
+    ]
+
+def _load_xinput_dll():
+    if sys.platform != "win32":
+        return None
+    for name in ["xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll"]:
+        try:
+            return ctypes.windll.LoadLibrary(name)
+        except Exception:
+            pass
+    return None
+
 class DeviceManager:
     def __init__(self, driver_manager: Optional[DriverManager] = None):
         self.driver_backend: str = "vigem" if sys.platform == "win32" else "viiper"
         self.driver_manager = driver_manager or DriverManager()
         self.keyboard_manager = RawKeyboardManager.get_instance()
-        self.joysticks: Dict[str, pygame.joystick.Joystick] = {}
-        self._physical_map: Dict[str, str] = {}
+        self.joysticks: Dict[int, pygame.joystick.Joystick] = {}
+        self._physical_map: Dict[str, int] = {}
+        self._xinput_dll = _load_xinput_dll()
+        self._joy_xinput_map: Dict[str, int] = {}
         self._on_devices_changed_callbacks: List[Callable[[List[Dict[str, Any]]], None]] = []
         self._auto_reconnect_job = None
         self._pending_hotplug_check = False
@@ -282,6 +309,8 @@ class DeviceManager:
             candidates_by_vid_pid[key] = sorted(candidates_by_vid_pid[key])
 
         used_instance_paths: Set[str] = set()
+        new_xinput_map: Dict[str, int] = {}
+        xinput_slot_counter = 0
 
         for i in range(count):
             try:
@@ -315,6 +344,18 @@ class DeviceManager:
                 new_joysticks[i] = joy
                 dev_id = f"joy_{phys_idx}"
                 new_physical_map[dev_id] = i
+
+                # Detectar si es un mando compatible XInput en Windows
+                if sys.platform == "win32":
+                    is_xinput = (
+                        vid == "045E"
+                        or "xbox" in name.lower()
+                        or "xinput" in name.lower()
+                        or guid.lower().endswith("7200")
+                    )
+                    if is_xinput and xinput_slot_counter < 4:
+                        new_xinput_map[dev_id] = xinput_slot_counter
+                        xinput_slot_counter += 1
 
                 name = joy.get_name().strip()
                 guid = joy.get_guid()
@@ -410,6 +451,7 @@ class DeviceManager:
 
         self.joysticks = new_joysticks
         self._physical_map = new_physical_map
+        self._joy_xinput_map = new_xinput_map
 
         self._device_cache = list(device_list)
         return device_list
@@ -455,6 +497,90 @@ class DeviceManager:
                 except Exception:
                     return None
         return self.joysticks.get(sdl_idx)
+
+    def send_rumble(self, dev_id: str, large_motor: int, small_motor: int, duration_ms: int = 1000):
+        """
+        Transfiere vibración háptica / Force Feedback al mando real (físico o smartphone).
+        - dev_id: 'joy_0', 'phone_1', etc.
+        - large_motor: 0 a 255 (motor pesado / baja frecuencia)
+        - small_motor: 0 a 255 (motor ligero / alta frecuencia)
+        """
+        if not dev_id or dev_id in ("none", "keyboard", "mouse"):
+            return
+
+        # 1. Smartphone AirPad
+        if dev_id.startswith("phone_"):
+            try:
+                import web_gamepad_server
+                srv = web_gamepad_server.get_server_instance()
+                if srv and srv.is_running:
+                    w_l = min(65535, max(0, int(large_motor * 257)))
+                    w_r = min(65535, max(0, int(small_motor * 257)))
+                    srv.send_rumble(dev_id, w_l, w_r)
+            except Exception:
+                pass
+            return
+
+        # 2. Mando físico (USB / Bluetooth)
+        if dev_id.startswith("joy_"):
+            # A) Mandos compatibles XInput en Windows (Xbox 360, Xbox One, Xbox Series, etc.)
+            if sys.platform == "win32" and self._xinput_dll:
+                x_slot = self._joy_xinput_map.get(dev_id)
+                if x_slot is not None:
+                    try:
+                        w_l = min(65535, max(0, int(large_motor * 257)))
+                        w_r = min(65535, max(0, int(small_motor * 257)))
+                        v = XINPUT_VIBRATION(w_l, w_r)
+                        res = self._xinput_dll.XInputSetState(x_slot, ctypes.byref(v))
+                        if res == 0:
+                            return
+                    except Exception:
+                        pass
+
+            # B) Mandos DirectInput / SDL2 (DualShock 4, DualSense, Switch, genéricos)
+            sdl_idx = self._physical_map.get(dev_id)
+            if sdl_idx is not None and sdl_idx in self.joysticks:
+                joy = self.joysticks[sdl_idx]
+                try:
+                    if large_motor == 0 and small_motor == 0:
+                        if hasattr(joy, "stop_rumble"):
+                            joy.stop_rumble()
+                    else:
+                        low_f = min(1.0, max(0.0, large_motor / 255.0))
+                        high_f = min(1.0, max(0.0, small_motor / 255.0))
+                        if hasattr(joy, "rumble"):
+                            joy.rumble(low_f, high_f, duration_ms)
+                except Exception:
+                    pass
+
+    def stop_all_rumble(self):
+        """Detiene de forma segura toda vibración activa en todos los mandos y teléfonos."""
+        for dev_id in list(self._physical_map.keys()):
+            self.send_rumble(dev_id, 0, 0)
+        try:
+            import web_gamepad_server
+            srv = web_gamepad_server.get_server_instance()
+            if srv and srv.is_running:
+                for c in srv.get_clients_info():
+                    if c.get("connected"):
+                        srv.send_rumble(c["slot_id"], 0, 0)
+        except Exception:
+            pass
+
+    def test_rumble(self, dev_id: str, duration_sec: float = 0.8, large_motor: int = 200, small_motor: int = 200):
+        """Envía un pulso de prueba de vibración al dispositivo físico o celular con intensidades personalizables."""
+        if not dev_id or dev_id in ("none", "keyboard", "mouse"):
+            return
+        def _worker():
+            self.send_rumble(dev_id, large_motor, small_motor, int(duration_sec * 1000))
+            time.sleep(duration_sec)
+            self.send_rumble(dev_id, 0, 0)
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
+
+    def stop_rumble(self, dev_id: str):
+        """Detiene de inmediato la vibración de un dispositivo específico."""
+        self.send_rumble(dev_id, 0, 0)
 
     def pump_events(self):
         """Actualiza el estado de eventos de pygame y procesa hotplug selectivo."""

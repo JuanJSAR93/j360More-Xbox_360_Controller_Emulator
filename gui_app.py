@@ -371,6 +371,14 @@ DEFAULT_CALIBRATION = {
     "right_stick": {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "invert_x": False, "invert_y": False}
 }
 
+DEFAULT_RUMBLE_CONFIG = {
+    "enabled": True,
+    "left_motor_source": "left",
+    "right_motor_source": "right",
+    "left_intensity": 100,
+    "right_intensity": 100
+}
+
 DEFAULT_PHONE_MAPPINGS = {
     "LEFT_TRIGGER": "Axis 3",
     "LEFT_SHOULDER": "Button 5",
@@ -1335,13 +1343,16 @@ class J360MoreApp:
                         if str_i in data["controllers"]:
                             if "calibration" not in data["controllers"][str_i]:
                                 data["controllers"][str_i]["calibration"] = json.loads(json.dumps(DEFAULT_CALIBRATION))
+                            if "rumble" not in data["controllers"][str_i]:
+                                data["controllers"][str_i]["rumble"] = json.loads(json.dumps(DEFAULT_RUMBLE_CONFIG))
                         else:
                             data["controllers"][str_i] = {
                                 "name": f"Jugador {i}",
                                 "enabled": False,
                                 "physical_device_id": "none",
                                 "mappings": dict(DEFAULT_MAPPINGS),
-                                "calibration": json.loads(json.dumps(DEFAULT_CALIBRATION))
+                                "calibration": json.loads(json.dumps(DEFAULT_CALIBRATION)),
+                                "rumble": json.loads(json.dumps(DEFAULT_RUMBLE_CONFIG))
                             }
                     if "games" not in data or not isinstance(data["games"], list):
                         data["games"] = []
@@ -1368,7 +1379,8 @@ class J360MoreApp:
                 "enabled": False,
                 "physical_device_id": "none",
                 "mappings": dict(DEFAULT_MAPPINGS),
-                "calibration": json.loads(json.dumps(DEFAULT_CALIBRATION))
+                "calibration": json.loads(json.dumps(DEFAULT_CALIBRATION)),
+                "rumble": json.loads(json.dumps(DEFAULT_RUMBLE_CONFIG))
             }
         return cfg
 
@@ -1554,7 +1566,7 @@ class J360MoreApp:
                     self._update_tab_state(pad_id, has_dev)
 
     def _build_tab_content(self, pad_id: int, parent: ttk.Frame):
-        widgets = {"combos": {}, "buttons": {}, "calib": {}, "mapping_controls": []}
+        widgets = {"combos": {}, "buttons": {}, "calib": {}, "rumble": {}, "mapping_controls": []}
 
         # Barra de asignación de periférico físico
         top_bar = ttk.Frame(parent, padding=2)
@@ -1584,7 +1596,12 @@ class J360MoreApp:
         widgets["mapping_controls"].append(btn_wizard)
         widgets["btn_wizard"] = btn_wizard
 
-        # Sub-notebook: General, Triggers, Sticks
+        btn_rumble = ttk.Button(top_bar, text=self.t("btn_test_rumble"), command=lambda p=pad_id: self._test_controller_rumble(p))
+        btn_rumble.pack(side=tk.LEFT, padx=4)
+        widgets["mapping_controls"].append(btn_rumble)
+        widgets["btn_rumble"] = btn_rumble
+
+        # Sub-notebook: General, Triggers, Sticks, Vibración
         sub_nb = ttk.Notebook(parent)
         sub_nb.pack(fill=tk.BOTH, expand=True, pady=2)
         widgets["sub_nb"] = sub_nb
@@ -1603,6 +1620,11 @@ class J360MoreApp:
         sub_sticks = ttk.Frame(sub_nb, padding=4)
         sub_nb.add(sub_sticks, text=f" {self.t('subtab_sticks')} ")
         self._build_subtab_sticks(pad_id, sub_sticks, widgets)
+
+        # Sub-pestaña 4: Vibración (Force Feedback / Rumble)
+        sub_rumble = ttk.Frame(sub_nb, padding=4)
+        sub_nb.add(sub_rumble, text=f" {self.t('subtab_rumble')} ")
+        self._build_subtab_rumble(pad_id, sub_rumble, widgets)
 
         self.tab_widgets[pad_id] = widgets
 
@@ -2094,6 +2116,238 @@ class J360MoreApp:
         make_stick_box(parent, "left_stick", t_ls)
         make_stick_box(parent, "right_stick", t_rs)
 
+    def _build_subtab_rumble(self, pad_id: int, parent: ttk.Frame, widgets: dict):
+        cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+        rumble_cfg = cfg.get("rumble", json.loads(json.dumps(DEFAULT_RUMBLE_CONFIG)))
+
+        # Frame superior: Checkbox habilitar vibración
+        top_frame = ttk.Frame(parent, padding=4)
+        top_frame.pack(fill=tk.X, pady=(0, 4))
+
+        enabled_var = tk.BooleanVar(value=rumble_cfg.get("enabled", True))
+        chk_rumble = ttk.Checkbutton(
+            top_frame,
+            text=self.t("rumble_enable_label"),
+            variable=enabled_var,
+            command=self._sync_ui_to_config
+        )
+        chk_rumble.pack(side=tk.LEFT)
+        widgets["mapping_controls"].append(chk_rumble)
+
+        # Contenedor principal en dos columnas (Izquierda: Mapeo / Redirección, Derecha: Pruebas y Monitor)
+        main_cols = ttk.Frame(parent)
+        main_cols.pack(fill=tk.BOTH, expand=True)
+
+        # ---------------- COLUMNA IZQUIERDA: Mapeo y Redirección ----------------
+        left_col = ttk.LabelFrame(main_cols, text=self.t("rumble_mapping_title"), padding=8)
+        left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 4))
+
+        source_options = [
+            ("left", self.t("rumble_src_left")),
+            ("right", self.t("rumble_src_right")),
+            ("both", self.t("rumble_src_both")),
+            ("none", self.t("rumble_src_none"))
+        ]
+        source_display_to_val = {disp: val for val, disp in source_options}
+        source_val_to_disp = {val: disp for val, disp in source_options}
+
+        # 1. Motor Pesado Físico (Izquierdo)
+        ttk.Label(left_col, text=self.t("rumble_phys_left_label"), font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(2, 2))
+
+        cur_l_val = rumble_cfg.get("left_motor_source", "left")
+        left_src_display_var = tk.StringVar(value=source_val_to_disp.get(cur_l_val, source_options[0][1]))
+        left_src_raw_var = tk.StringVar(value=cur_l_val)
+
+        cb_left_src = ttk.Combobox(left_col, values=[disp for _, disp in source_options], textvariable=left_src_display_var, state="readonly")
+        cb_left_src.pack(fill=tk.X, pady=(0, 6))
+        def _on_left_src_changed(e=None):
+            left_src_raw_var.set(source_display_to_val.get(left_src_display_var.get(), "left"))
+            self._sync_ui_to_config()
+        cb_left_src.bind("<<ComboboxSelected>>", _on_left_src_changed)
+        widgets["mapping_controls"].append(cb_left_src)
+
+        # Fuerza / Intensidad Motor Pesado (Slider 0% a 200%)
+        l_int_frame = ttk.Frame(left_col)
+        l_int_frame.pack(fill=tk.X, pady=(0, 2))
+        ttk.Label(l_int_frame, text=self.t("rumble_intensity_label")).pack(side=tk.LEFT)
+        lbl_l_int_val = ttk.Label(l_int_frame, text=f"{rumble_cfg.get('left_intensity', 100)}%", font=("Segoe UI", 9, "bold"), width=6)
+        lbl_l_int_val.pack(side=tk.RIGHT)
+
+        left_int_var = tk.IntVar(value=int(rumble_cfg.get("left_intensity", 100)))
+        def _on_left_int_changed(v):
+            val = int(float(v))
+            lbl_l_int_val.config(text=f"{val}%")
+            self._sync_ui_to_config()
+        scale_l_int = ttk.Scale(left_col, from_=0, to=200, variable=left_int_var, command=_on_left_int_changed)
+        scale_l_int.pack(fill=tk.X, pady=(0, 8))
+        widgets["mapping_controls"].append(scale_l_int)
+
+        ttk.Separator(left_col, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+
+        # 2. Motor Ligero Físico (Derecho)
+        ttk.Label(left_col, text=self.t("rumble_phys_right_label"), font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(2, 2))
+
+        cur_r_val = rumble_cfg.get("right_motor_source", "right")
+        right_src_display_var = tk.StringVar(value=source_val_to_disp.get(cur_r_val, source_options[1][1]))
+        right_src_raw_var = tk.StringVar(value=cur_r_val)
+
+        cb_right_src = ttk.Combobox(left_col, values=[disp for _, disp in source_options], textvariable=right_src_display_var, state="readonly")
+        cb_right_src.pack(fill=tk.X, pady=(0, 6))
+        def _on_right_src_changed(e=None):
+            right_src_raw_var.set(source_display_to_val.get(right_src_display_var.get(), "right"))
+            self._sync_ui_to_config()
+        cb_right_src.bind("<<ComboboxSelected>>", _on_right_src_changed)
+        widgets["mapping_controls"].append(cb_right_src)
+
+        # Fuerza / Intensidad Motor Ligero (Slider 0% a 200%)
+        r_int_frame = ttk.Frame(left_col)
+        r_int_frame.pack(fill=tk.X, pady=(0, 2))
+        ttk.Label(r_int_frame, text=self.t("rumble_intensity_label")).pack(side=tk.LEFT)
+        lbl_r_int_val = ttk.Label(r_int_frame, text=f"{rumble_cfg.get('right_intensity', 100)}%", font=("Segoe UI", 9, "bold"), width=6)
+        lbl_r_int_val.pack(side=tk.RIGHT)
+
+        right_int_var = tk.IntVar(value=int(rumble_cfg.get("right_intensity", 100)))
+        def _on_right_int_changed(v):
+            val = int(float(v))
+            lbl_r_int_val.config(text=f"{val}%")
+            self._sync_ui_to_config()
+        scale_r_int = ttk.Scale(left_col, from_=0, to=200, variable=right_int_var, command=_on_right_int_changed)
+        scale_r_int.pack(fill=tk.X, pady=(0, 8))
+        widgets["mapping_controls"].append(scale_r_int)
+
+        # ---------------- COLUMNA DERECHA: Pruebas y Monitor en Vivo ----------------
+        right_col = ttk.LabelFrame(main_cols, text=self.t("rumble_test_title"), padding=8)
+        right_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
+
+        test_slider_frame = ttk.Frame(right_col)
+        test_slider_frame.pack(fill=tk.X, pady=(0, 4))
+
+        l_test_frame = ttk.Frame(test_slider_frame)
+        l_test_frame.pack(fill=tk.X, pady=1)
+        ttk.Label(l_test_frame, text=self.t("rumble_phys_left_label")[:28] + "...:").pack(side=tk.LEFT)
+        test_l_lbl = ttk.Label(l_test_frame, text="80%", font=("Segoe UI", 8, "bold"), width=5)
+        test_l_lbl.pack(side=tk.RIGHT)
+        test_l_var = tk.IntVar(value=80)
+        def _on_test_l_scale(v): test_l_lbl.config(text=f"{int(float(v))}%")
+        scale_test_l = ttk.Scale(test_slider_frame, from_=0, to=100, variable=test_l_var, command=_on_test_l_scale)
+        scale_test_l.pack(fill=tk.X, pady=(0, 2))
+        widgets["mapping_controls"].append(scale_test_l)
+
+        r_test_frame = ttk.Frame(test_slider_frame)
+        r_test_frame.pack(fill=tk.X, pady=1)
+        ttk.Label(r_test_frame, text=self.t("rumble_phys_right_label")[:28] + "...:").pack(side=tk.LEFT)
+        test_r_lbl = ttk.Label(r_test_frame, text="80%", font=("Segoe UI", 8, "bold"), width=5)
+        test_r_lbl.pack(side=tk.RIGHT)
+        test_r_var = tk.IntVar(value=80)
+        def _on_test_r_scale(v): test_r_lbl.config(text=f"{int(float(v))}%")
+        scale_test_r = ttk.Scale(test_slider_frame, from_=0, to=100, variable=test_r_var, command=_on_test_r_scale)
+        scale_test_r.pack(fill=tk.X, pady=(0, 4))
+        widgets["mapping_controls"].append(scale_test_r)
+
+        btn_action_row = ttk.Frame(right_col)
+        btn_action_row.pack(fill=tk.X, pady=(2, 4))
+
+        def _do_custom_test():
+            dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            if dev_id and dev_id not in ("none", "keyboard", "mouse"):
+                l_mot = int(test_l_var.get() * 2.55)
+                r_mot = int(test_r_var.get() * 2.55)
+                self.device_manager.test_rumble(dev_id, duration_sec=1.0, large_motor=l_mot, small_motor=r_mot)
+
+        def _do_stop_test():
+            dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            if dev_id and dev_id not in ("none", "keyboard", "mouse"):
+                self.device_manager.stop_rumble(dev_id)
+
+        btn_test_custom = ttk.Button(btn_action_row, text=self.t("rumble_btn_test_custom"), command=_do_custom_test)
+        btn_test_custom.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
+        widgets["mapping_controls"].append(btn_test_custom)
+
+        btn_stop = ttk.Button(btn_action_row, text=self.t("rumble_btn_stop"), command=_do_stop_test)
+        btn_stop.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(2, 0))
+        widgets["mapping_controls"].append(btn_stop)
+
+        preset_row = ttk.Frame(right_col)
+        preset_row.pack(fill=tk.X, pady=(2, 4))
+
+        def _do_preset_test(l_pct, r_pct):
+            dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            if dev_id and dev_id not in ("none", "keyboard", "mouse"):
+                self.device_manager.test_rumble(dev_id, duration_sec=0.8, large_motor=int(l_pct * 2.55), small_motor=int(r_pct * 2.55))
+
+        btn_p_l = ttk.Button(preset_row, text=self.t("rumble_btn_test_left"), command=lambda: _do_preset_test(100, 0))
+        btn_p_l.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=1)
+        widgets["mapping_controls"].append(btn_p_l)
+
+        btn_p_r = ttk.Button(preset_row, text=self.t("rumble_btn_test_right"), command=lambda: _do_preset_test(0, 100))
+        btn_p_r.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=1)
+        widgets["mapping_controls"].append(btn_p_r)
+
+        btn_p_both = ttk.Button(preset_row, text=self.t("rumble_btn_test_both"), command=lambda: _do_preset_test(100, 100))
+        btn_p_both.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=1)
+        widgets["mapping_controls"].append(btn_p_both)
+
+        # Monitor de Señales en Tiempo Real (Juego -> Mando)
+        ttk.Separator(right_col, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=3)
+        ttk.Label(right_col, text=self.t("rumble_monitor_title"), font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 1))
+
+        v_bars_frame = ttk.Frame(right_col)
+        v_bars_frame.pack(fill=tk.X, pady=1)
+        ttk.Label(v_bars_frame, text=self.t("rumble_lbl_game_signal"), font=("Segoe UI", 8)).pack(anchor="w")
+
+        bar_v_row = ttk.Frame(v_bars_frame)
+        bar_v_row.pack(fill=tk.X, pady=1)
+        ttk.Label(bar_v_row, text="L:", width=2).pack(side=tk.LEFT)
+        bar_v_left = ttk.Progressbar(bar_v_row, maximum=255, length=80)
+        bar_v_left.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        lbl_v_left = ttk.Label(bar_v_row, text="0%", font=("Consolas", 8), width=5)
+        lbl_v_left.pack(side=tk.LEFT)
+
+        ttk.Label(bar_v_row, text="R:", width=2).pack(side=tk.LEFT, padx=(4, 0))
+        bar_v_right = ttk.Progressbar(bar_v_row, maximum=255, length=80)
+        bar_v_right.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        lbl_v_right = ttk.Label(bar_v_row, text="0%", font=("Consolas", 8), width=5)
+        lbl_v_right.pack(side=tk.LEFT)
+
+        p_bars_frame = ttk.Frame(right_col)
+        p_bars_frame.pack(fill=tk.X, pady=1)
+        ttk.Label(p_bars_frame, text=self.t("rumble_lbl_phys_output"), font=("Segoe UI", 8)).pack(anchor="w")
+
+        bar_p_row = ttk.Frame(p_bars_frame)
+        bar_p_row.pack(fill=tk.X, pady=1)
+        ttk.Label(bar_p_row, text="L:", width=2).pack(side=tk.LEFT)
+        bar_p_left = ttk.Progressbar(bar_p_row, maximum=255, length=80)
+        bar_p_left.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        lbl_p_left = ttk.Label(bar_p_row, text="0%", font=("Consolas", 8), width=5)
+        lbl_p_left.pack(side=tk.LEFT)
+
+        ttk.Label(bar_p_row, text="R:", width=2).pack(side=tk.LEFT, padx=(4, 0))
+        bar_p_right = ttk.Progressbar(bar_p_row, maximum=255, length=80)
+        bar_p_right.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        lbl_p_right = ttk.Label(bar_p_row, text="0%", font=("Consolas", 8), width=5)
+        lbl_p_right.pack(side=tk.LEFT)
+
+        widgets["rumble"] = {
+            "enabled_var": enabled_var,
+            "left_src_var": left_src_raw_var,
+            "right_src_var": right_src_raw_var,
+            "left_src_display_var": left_src_display_var,
+            "right_src_display_var": right_src_display_var,
+            "left_int_var": left_int_var,
+            "right_int_var": right_int_var,
+            "lbl_l_int_val": lbl_l_int_val,
+            "lbl_r_int_val": lbl_r_int_val,
+            "source_val_to_disp": source_val_to_disp,
+            "bar_v_left": bar_v_left,
+            "bar_v_right": bar_v_right,
+            "lbl_v_left": lbl_v_left,
+            "lbl_v_right": lbl_v_right,
+            "bar_p_left": bar_p_left,
+            "bar_p_right": bar_p_right,
+            "lbl_p_left": lbl_p_left,
+            "lbl_p_right": lbl_p_right,
+        }
+
     def _update_tab_state(self, pad_id: int, has_dev: bool):
         """Si el control no tiene un periférico asignado, no se puede activar y todas las funciones de mapeo se desactivan (opacas)."""
         widgets = self.tab_widgets.get(pad_id)
@@ -2317,6 +2571,16 @@ class J360MoreApp:
                         "invert_y": c_widgets[key]["inv_y_var"].get()
                     }
             self.config["controllers"][str_id]["calibration"] = calib
+
+            r_widgets = widgets.get("rumble", {})
+            if r_widgets and "enabled_var" in r_widgets:
+                self.config["controllers"][str_id]["rumble"] = {
+                    "enabled": r_widgets["enabled_var"].get(),
+                    "left_motor_source": r_widgets["left_src_var"].get(),
+                    "right_motor_source": r_widgets["right_src_var"].get(),
+                    "left_intensity": int(r_widgets["left_int_var"].get()),
+                    "right_intensity": int(r_widgets["right_int_var"].get()),
+                }
 
         self.engine.set_config(self.config)
 
@@ -2656,6 +2920,20 @@ class J360MoreApp:
                     if f"{vkey}_entry" in c_w[k]: c_w[k][f"{vkey}_entry"].set(str(def_v))
                 c_w[k]["inv_x_var"].set(False)
                 c_w[k]["inv_y_var"].set(False)
+
+        r_w = widgets.get("rumble", {})
+        if r_w:
+            if "enabled_var" in r_w: r_w["enabled_var"].set(True)
+            if "left_src_var" in r_w: r_w["left_src_var"].set("left")
+            if "right_src_var" in r_w: r_w["right_src_var"].set("right")
+            if "left_src_display_var" in r_w:
+                r_w["left_src_display_var"].set(r_w["source_val_to_disp"].get("left", "left"))
+            if "right_src_display_var" in r_w:
+                r_w["right_src_display_var"].set(r_w["source_val_to_disp"].get("right", "right"))
+            if "left_int_var" in r_w: r_w["left_int_var"].set(100)
+            if "right_int_var" in r_w: r_w["right_int_var"].set(100)
+            if "lbl_l_int_val" in r_w: r_w["lbl_l_int_val"].config(text="100%")
+            if "lbl_r_int_val" in r_w: r_w["lbl_r_int_val"].config(text="100%")
 
         self._sync_ui_to_config()
         messagebox.showinfo(self.t("preset_title"), self.t("preset_restored", i=cur_pad_id))
@@ -3714,6 +3992,7 @@ class J360MoreApp:
         src_cfg = self.config.get("controllers", {}).get(str(source_pad_id), {})
         src_maps = json.loads(json.dumps(src_cfg.get("mappings", {})))
         src_calib = json.loads(json.dumps(src_cfg.get("calibration", {})))
+        src_rumble = json.loads(json.dumps(src_cfg.get("rumble", {})))
 
         max_ctrls = self.config.get("max_controllers", 12)
 
@@ -3768,6 +4047,8 @@ class J360MoreApp:
                 self.config["controllers"][str_tid]["mappings"] = json.loads(json.dumps(src_maps))
                 if inc_calib_var.get():
                     self.config["controllers"][str_tid]["calibration"] = json.loads(json.dumps(src_calib))
+                    if src_rumble:
+                        self.config["controllers"][str_tid]["rumble"] = json.loads(json.dumps(src_rumble))
 
                 if tid in self.tab_widgets:
                     t_w = self.tab_widgets[tid]
@@ -3794,6 +4075,24 @@ class J360MoreApp:
                                 c_w[k]["inv_x_var"].set(src_calib[k].get("invert_x", False))
                                 c_w[k]["inv_y_var"].set(src_calib[k].get("invert_y", False))
 
+                        if src_rumble:
+                            r_w = t_w.get("rumble", {})
+                            if r_w and "enabled_var" in r_w:
+                                r_w["enabled_var"].set(src_rumble.get("enabled", True))
+                                src_l = src_rumble.get("left_motor_source", "left")
+                                src_r = src_rumble.get("right_motor_source", "right")
+                                r_w["left_src_var"].set(src_l)
+                                r_w["right_src_var"].set(src_r)
+                                if "source_val_to_disp" in r_w:
+                                    r_w["left_src_display_var"].set(r_w["source_val_to_disp"].get(src_l, src_l))
+                                    r_w["right_src_display_var"].set(r_w["source_val_to_disp"].get(src_r, src_r))
+                                l_int = int(src_rumble.get("left_intensity", 100))
+                                r_int = int(src_rumble.get("right_intensity", 100))
+                                r_w["left_int_var"].set(l_int)
+                                r_w["right_int_var"].set(r_int)
+                                if "lbl_l_int_val" in r_w: r_w["lbl_l_int_val"].config(text=f"{l_int}%")
+                                if "lbl_r_int_val" in r_w: r_w["lbl_r_int_val"].config(text=f"{r_int}%")
+
             self.engine.set_config(self.config)
             dlg.destroy()
             dest_msg = all_others_label if choice == all_others_label else choice
@@ -3804,6 +4103,14 @@ class J360MoreApp:
 
         btn_cancel = ttk.Button(btn_box, text=self.t("set_btn_cancel"), command=dlg.destroy)
         btn_cancel.pack(side=tk.RIGHT, padx=4)
+
+    def _test_controller_rumble(self, pad_id: int):
+        cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+        dev_id = cfg.get("physical_device_id", "none")
+        if not dev_id or dev_id in ("none", "keyboard", "mouse"):
+            return
+        if hasattr(self, "device_manager") and self.device_manager:
+            self.device_manager.test_rumble(dev_id, duration_sec=0.8)
 
     def _open_wizard_dialog(self, pad_id: int):
         cfg = self.config.get("controllers", {}).get(str(pad_id), {})
@@ -4404,6 +4711,24 @@ class J360MoreApp:
                 else:
                     state = self.engine.compute_controller_state(cur_pad_id)
 
+                r_widgets = widgets.get("rumble", {})
+                if r_widgets and "bar_v_left" in r_widgets:
+                    try:
+                        v_l = state.get("rumble_v_left", 0)
+                        v_r = state.get("rumble_v_right", 0)
+                        p_l = state.get("rumble_left", 0)
+                        p_r = state.get("rumble_right", 0)
+                        r_widgets["bar_v_left"]["value"] = v_l
+                        r_widgets["bar_v_right"]["value"] = v_r
+                        r_widgets["lbl_v_left"].config(text=f"{int(v_l / 2.55)}%")
+                        r_widgets["lbl_v_right"].config(text=f"{int(v_r / 2.55)}%")
+                        r_widgets["bar_p_left"]["value"] = p_l
+                        r_widgets["bar_p_right"]["value"] = p_r
+                        r_widgets["lbl_p_left"].config(text=f"{int(p_l / 2.55)}%")
+                        r_widgets["lbl_p_right"].config(text=f"{int(p_r / 2.55)}%")
+                    except Exception:
+                        pass
+
                 canvas = widgets.get("canvas")
                 if not canvas or not canvas.winfo_exists():
                     self.root.after(30, self._update_loop)
@@ -4896,8 +5221,10 @@ class J360MoreApp:
             print(f"[!] Error deteniendo motor de emulación al cerrar: {e}")
 
         try:
-            if hasattr(self, "device_manager") and hasattr(self.device_manager, "stop"):
-                self.device_manager.stop()
+            if hasattr(self, "device_manager") and self.device_manager:
+                self.device_manager.stop_all_rumble()
+                if hasattr(self.device_manager, "stop"):
+                    self.device_manager.stop()
         except Exception as e:
             print(f"[!] Error deteniendo gestor de dispositivos al cerrar: {e}")
 
