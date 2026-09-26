@@ -143,7 +143,7 @@ build_windows.bat
 ```
 
 ### Linux (Docker):
-To compile the native Linux ELF executable and release archive (`dist/j360More` and `dist/j360More-v1.5.0-linux-x86_64.tar.gz`):
+To compile the native Linux ELF executable and release archive (`dist/j360More` and `dist/j360More-v1.5.1-linux-amd64.tar.gz`):
 ```cmd
 build_linux.bat
 ```

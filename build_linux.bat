@@ -39,8 +39,8 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-if exist "dist\j360More-v1.5.0-linux-amd64.tar.gz" (
-    python -c "import tarfile; t = tarfile.open('dist/j360More-v1.5.0-linux-amd64.tar.gz'); t.extractall('dist'); t.close()" >nul 2>nul
+if exist "dist\j360More-v1.5.1-linux-amd64.tar.gz" (
+    python -c "import tarfile; t = tarfile.open('dist/j360More-v1.5.1-linux-amd64.tar.gz'); t.extractall('dist'); t.close()" >nul 2>nul
 )
 
 echo.
@@ -67,6 +67,6 @@ echo    COMPILACION LOCAL PARA LINUX COMPLETADA CON EXITO!
 echo =======================================================
 echo Archivos generados en dist/:
 echo   - dist/j360More (amd64)
-echo   - dist/j360More-v1.5.0-linux-amd64.tar.gz (incluye viiper-amd64)
-echo   - dist/j360More-v1.5.0-linux-arm64.tar.gz (incluye viiper-arm64)
+echo   - dist/j360More-v1.5.1-linux-amd64.tar.gz (incluye viiper-amd64)
+echo   - dist/j360More-v1.5.1-linux-arm64.tar.gz (incluye viiper-arm64)
 echo =======================================================

@@ -82,8 +82,8 @@ else
 fi
 
 cd /tmp/pydist
-echo "[*] Creando archivo comprimido j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz..."
-tar -czvf "/workspace/dist/j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz" j360More bin/viiper
+echo "[*] Creando archivo comprimido j360More-v1.5.1-linux-${PKG_ARCH}.tar.gz..."
+tar -czvf "/workspace/dist/j360More-v1.5.1-linux-${PKG_ARCH}.tar.gz" j360More bin/viiper
 cp -f /tmp/pydist/j360More "/workspace/dist/j360More-${PKG_ARCH}" 2>/dev/null || true
 if [ "$PKG_ARCH" = "amd64" ] || [ "$PKG_ARCH" = "x86_64" ]; then
     cp -f /tmp/pydist/j360More /workspace/dist/j360More 2>/dev/null || true
@@ -95,6 +95,6 @@ echo "======================================================="
 echo "  ¡COMPILACIÓN PARA LINUX ($PKG_ARCH) EXITOSA!         "
 echo "======================================================="
 echo "Binario ejecutable: dist/j360More-${PKG_ARCH}"
-echo "Archivo comprimido: dist/j360More-v1.5.0-linux-${PKG_ARCH}.tar.gz"
+echo "Archivo comprimido: dist/j360More-v1.5.1-linux-${PKG_ARCH}.tar.gz"
 echo "Contenido del tar:  j360More + bin/viiper ($PKG_ARCH)"
 echo "======================================================="

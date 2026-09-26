@@ -20,3 +20,4 @@ venv/
 GEMINI.md
 AGENTS.md
 RULES.md
+assets/*auto.pem

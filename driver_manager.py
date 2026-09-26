@@ -23,6 +23,9 @@ class DriverManager:
     # ==========================================
     def is_vigem_installed(self) -> bool:
         """Verifica si el controlador ViGEmBus está instalado en el sistema."""
+        if sys.platform != "win32":
+            self._vigem_available = False
+            return False
         if self._vigem_available is not None:
             return self._vigem_available
 
@@ -123,6 +126,9 @@ class DriverManager:
 
     def is_hidhide_installed(self) -> bool:
         """Comprueba si HidHide está instalado en el sistema de forma instantánea y sin abrir consolas."""
+        if sys.platform != "win32":
+            self._hidhide_available = False
+            return False
         if self._hidhide_available is not None:
             return self._hidhide_available
 

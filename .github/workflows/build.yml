@@ -61,7 +61,7 @@ jobs:
       - name: Package Windows Release
         shell: pwsh
         run: |
-          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.5.0" }
+          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.5.1" }
           New-Item -ItemType Directory -Path "dist/pkg/bin" -Force | Out-Null
           Copy-Item "dist/j360More.exe" "dist/pkg/" -Force
           $vsrc = "${{ matrix.viiper_src }}"
@@ -146,8 +146,8 @@ jobs:
             echo "release_name=j360More $TAG" >> "$GITHUB_OUTPUT"
           else
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-            echo "tag_name=v1.5.0-pre" >> "$GITHUB_OUTPUT"
-            echo "release_name=j360More v1.5.0 (Pre-release)" >> "$GITHUB_OUTPUT"
+            echo "tag_name=v1.5.1-pre" >> "$GITHUB_OUTPUT"
+            echo "release_name=j360More v1.5.1 (Pre-release)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish to GitHub Releases

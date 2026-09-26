@@ -17,6 +17,7 @@ import struct
 import socket
 import select
 import threading
+import ssl
 from typing import Dict, List, Any, Optional, Callable
 
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -100,6 +101,89 @@ def get_local_ip(preferred_ip: Optional[str] = None) -> str:
             return socket.gethostbyname(socket.gethostname())
         except Exception:
             return "127.0.0.1"
+
+
+def ensure_ssl_certificates(custom_dir: Optional[str] = None, preferred_ip: Optional[str] = None) -> tuple:
+    """
+    Garantiza la disponibilidad de certificados SSL/TLS para el servidor AirPad HTTPS.
+    Si cryptography esta disponible, genera o renueva un certificado autofirmado con SAN para
+    todas las IPs locales detectadas (evitando errores de nombre de host en el movil).
+    Si no, recurre a los certificados empaquetados en assets/airpad_cert.pem y assets/airpad_key.pem.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    if getattr(sys, "frozen", False):
+        bundle_dir = getattr(sys, "_MEIPASS", base_dir)
+        fallback_cert = os.path.join(bundle_dir, "assets", "airpad_cert.pem")
+        fallback_key = os.path.join(bundle_dir, "assets", "airpad_key.pem")
+    else:
+        fallback_cert = os.path.join(base_dir, "assets", "airpad_cert.pem")
+        fallback_key = os.path.join(base_dir, "assets", "airpad_key.pem")
+
+    target_dir = custom_dir or (os.path.join(base_dir, "assets") if os.path.isdir(os.path.join(base_dir, "assets")) else base_dir)
+    auto_cert = os.path.join(target_dir, "airpad_cert_auto.pem")
+    auto_key = os.path.join(target_dir, "airpad_key_auto.pem")
+
+    try:
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives import serialization
+        import datetime
+        import ipaddress
+
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        subject = issuer = x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, "j360More AirPad Gamepad"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "j360More"),
+        ])
+        san_entries = [
+            x509.DNSName("localhost"),
+            x509.DNSName("airpad.local"),
+            x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+        ]
+
+        # Agregar todas las IPs locales detectadas en SAN
+        all_ips = get_all_local_ips()
+        for item in all_ips:
+            ip_val = item.get("ip") if isinstance(item, dict) else str(item)
+            try:
+                ip_obj = ipaddress.ip_address(ip_val.strip())
+                if ip_obj not in [e.value for e in san_entries if isinstance(e, x509.IPAddress)]:
+                    san_entries.append(x509.IPAddress(ip_obj))
+            except Exception:
+                pass
+
+        if preferred_ip:
+            try:
+                p_obj = ipaddress.ip_address(preferred_ip.strip())
+                if p_obj not in [e.value for e in san_entries if isinstance(e, x509.IPAddress)]:
+                    san_entries.append(x509.IPAddress(p_obj))
+            except Exception:
+                pass
+
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1))
+            .not_valid_after(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7300))
+            .add_extension(x509.SubjectAlternativeName(san_entries), critical=False)
+            .sign(key, hashes.SHA256())
+        )
+
+        with open(auto_cert, "wb") as f:
+            f.write(cert.public_bytes(serialization.Encoding.PEM))
+        with open(auto_key, "wb") as f:
+            f.write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.TraditionalOpenSSL, serialization.NoEncryption()))
+        return auto_cert, auto_key
+    except Exception as ex:
+        # Fallback a certificados pre-empaquetados
+        if os.path.isfile(fallback_cert) and os.path.isfile(fallback_key):
+            return fallback_cert, fallback_key
+        return None, None
 
 
 class TelemetryCollector:
@@ -409,6 +493,12 @@ class WebGamepadServer:
         self.haptics_enabled = True
         self.auto_assign_enabled = True
 
+        # Soporte HTTPS / SSL
+        self.ssl_enabled: bool = False
+        self.ssl_cert_file: Optional[str] = None
+        self.ssl_key_file: Optional[str] = None
+        self.ssl_context: Optional[ssl.SSLContext] = None
+
         # Telemetría
         self.telemetry = TelemetryCollector()
 
@@ -422,17 +512,39 @@ class WebGamepadServer:
         if self.running:
             return True
 
+        if self.ssl_enabled:
+            cert_f, key_f = ensure_ssl_certificates(preferred_ip=self.preferred_ip)
+            if cert_f and key_f:
+                try:
+                    self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                    self.ssl_context.load_cert_chain(certfile=cert_f, keyfile=key_f)
+                    self.ssl_cert_file = cert_f
+                    self.ssl_key_file = key_f
+                except Exception as ex:
+                    print(f"[!] Error configurando SSLContext: {ex}. Continuando en modo HTTP.")
+                    self.ssl_enabled = False
+                    self.ssl_context = None
+            else:
+                print("[!] No se encontraron certificados SSL validos. Continuando en modo HTTP.")
+                self.ssl_enabled = False
+                self.ssl_context = None
+        else:
+            self.ssl_context = None
+
         try:
             self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.server_sock.bind((self.host, self.port))
+            self.port = self.server_sock.getsockname()[1]
             self.server_sock.listen(16)
             self.server_sock.settimeout(0.5)
 
             self.running = True
             self.thread = threading.Thread(target=self._run_loop, daemon=True, name="AirPadServer")
             self.thread.start()
-            print(f"[*] Servidor AirPad iniciado en http://{get_local_ip(self.preferred_ip)}:{self.port}")
+            scheme = "https" if self.ssl_enabled else "http"
+            mode_desc = "HTTPS (SSL Seguro)" if self.ssl_enabled else "HTTP"
+            print(f"[*] Servidor AirPad iniciado en {scheme}://{get_local_ip(self.preferred_ip)}:{self.port} [{mode_desc}]")
             return True
         except Exception as e:
             print(f"[!] Error iniciando Servidor AirPad en puerto {self.port}: {e}")
@@ -463,13 +575,16 @@ class WebGamepadServer:
                 pass
             self.server_sock = None
 
+        self.ssl_context = None
+
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=0.5)
             self.thread = None
 
     def get_url(self) -> str:
         """Retorna la URL local para el QR y el portapapeles."""
-        return f"http://{get_local_ip(self.preferred_ip)}:{self.port}"
+        scheme = "https" if self.ssl_enabled else "http"
+        return f"{scheme}://{get_local_ip(self.preferred_ip)}:{self.port}"
 
     def get_connected_count(self) -> int:
         with self.lock:
@@ -584,14 +699,65 @@ class WebGamepadServer:
                     if slot_id:
                         self._disconnect_client(slot_id)
 
+                # Drenar sockets SSL con datos pendientes en el bufer interno de OpenSSL
+                if self.ssl_enabled:
+                    for slot_id, client in list(self.clients.items()):
+                        if client.active and client.sock and hasattr(client.sock, "pending"):
+                            try:
+                                if client.sock.pending() > 0:
+                                    self._handle_ws_data(slot_id, client.sock)
+                            except Exception:
+                                pass
+
             except Exception:
                 if not self.running:
                     break
 
     def _handle_initial_connection(self, conn: socket.socket, addr: tuple):
-        """Procesa la peticion HTTP inicial (servir estaticos o upgrade a WebSocket)."""
+        """Procesa la peticion HTTP/HTTPS inicial (servir estaticos o upgrade a WebSocket)."""
         try:
             conn.settimeout(3.0)
+
+            # Si el modo HTTPS esta activo, verificar si es TLS o peticion HTTP en texto plano
+            if self.ssl_enabled and self.ssl_context:
+                try:
+                    peek_data = conn.recv(1, socket.MSG_PEEK)
+                    if not peek_data:
+                        conn.close()
+                        return
+                    if peek_data[0] != 0x16:
+                        # Peticion HTTP plana en puerto HTTPS -> Redirigir suavemente a https://
+                        raw_req = conn.recv(2048).decode("utf-8", errors="ignore")
+                        host_hdr = f"{get_local_ip(self.preferred_ip)}:{self.port}"
+                        for line in raw_req.split("\r\n"):
+                            if line.lower().startswith("host:"):
+                                host_hdr = line.split(":", 1)[1].strip()
+                                break
+                        redirect_html = (
+                            f"<html><head><meta http-equiv='refresh' content='0;url=https://{host_hdr}/'></head>"
+                            f"<body><p>Redirigiendo a AirPad HTTPS seguro... <a href='https://{host_hdr}/'>Continuar</a></p></body></html>"
+                        )
+                        redirect_bytes = redirect_html.encode("utf-8")
+                        resp = (
+                            f"HTTP/1.1 301 Moved Permanently\r\n"
+                            f"Location: https://{host_hdr}/\r\n"
+                            f"Content-Type: text/html; charset=utf-8\r\n"
+                            f"Content-Length: {len(redirect_bytes)}\r\n"
+                            f"Connection: close\r\n\r\n"
+                        ).encode("utf-8") + redirect_bytes
+                        conn.sendall(resp)
+                        conn.close()
+                        return
+
+                    # Handshake TLS
+                    conn = self.ssl_context.wrap_socket(conn, server_side=True)
+                except Exception:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    return
+
             data = conn.recv(4096).decode("utf-8", errors="ignore")
             if not data:
                 conn.close()
@@ -769,8 +935,11 @@ class WebGamepadServer:
                 if len(client.rx_buffer) > 262144:  # Protección contra desbordamiento
                     self._disconnect_client(slot_id)
                     return
-        except (BlockingIOError, socket.timeout):
+        except (BlockingIOError, socket.timeout, ssl.SSLWantReadError):
             pass
+        except (ssl.SSLEOFError, ssl.SSLError):
+            self._disconnect_client(slot_id)
+            return
         except Exception:
             self._disconnect_client(slot_id)
             return

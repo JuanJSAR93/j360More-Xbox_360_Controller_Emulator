@@ -38,13 +38,13 @@ if exist "dist\config_mapping.json" (
 )
 
 echo.
-echo [*] Creando paquete ZIP de Windows (j360More-v1.5.0-windows-amd64.zip)...
-python -c "import zipfile, os; z = zipfile.ZipFile('dist/j360More-v1.5.0-windows-amd64.zip', 'w', zipfile.ZIP_DEFLATED); z.write('dist/j360More.exe', 'j360More.exe'); v_src = 'bin/viiper-amd64.exe' if os.path.exists('bin/viiper-amd64.exe') else ('dist/bin/viiper.exe' if os.path.exists('dist/bin/viiper.exe') else ('bin/viiper.exe' if os.path.exists('bin/viiper.exe') else None)); (z.write(v_src, 'bin/viiper.exe') if v_src else None); z.close()"
+echo [*] Creando paquete ZIP de Windows (j360More-v1.5.1-windows-amd64.zip)...
+python -c "import zipfile, os; z = zipfile.ZipFile('dist/j360More-v1.5.1-windows-amd64.zip', 'w', zipfile.ZIP_DEFLATED); z.write('dist/j360More.exe', 'j360More.exe'); v_src = 'bin/viiper-amd64.exe' if os.path.exists('bin/viiper-amd64.exe') else ('dist/bin/viiper.exe' if os.path.exists('dist/bin/viiper.exe') else ('bin/viiper.exe' if os.path.exists('bin/viiper.exe') else None)); (z.write(v_src, 'bin/viiper.exe') if v_src else None); z.close()"
 
 echo.
 echo =======================================================
 echo   ¡COMPILACION PARA WINDOWS COMPLETADA CON EXITO!
 echo =======================================================
 echo Ejecutable: dist\j360More.exe
-echo Paquete ZIP: dist\j360More-v1.5.0-windows-amd64.zip
+echo Paquete ZIP: dist\j360More-v1.5.1-windows-amd64.zip
 echo =======================================================

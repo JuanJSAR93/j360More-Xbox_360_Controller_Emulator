@@ -35,7 +35,7 @@ from i18n import (
     canonicalize_mapping, localize_mapping
 )
 
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.5.1"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
@@ -87,6 +87,20 @@ CONTROLLER_PNG_FALLBACK = os.path.join(ASSETS_DIR, "controller_360_render.png")
 ICON_SVG_PATH = os.path.join(ASSETS_DIR, "icon.svg")
 ICON_PNG_PATH = os.path.join(ASSETS_DIR, "icon.png")
 ICON_ICO_PATH = os.path.join(ASSETS_DIR, "icon.ico")
+
+
+def get_clean_env() -> dict:
+    """Retorna una copia de os.environ con variables de carga dinamica (como LD_LIBRARY_PATH)
+    limpias o restauradas a su valor original, para evitar conflictos de bibliotecas compartidas
+    al lanzar programas externos del sistema (ej. jstest-gtk, juegos) desde un binario
+    empaquetado por PyInstaller en Linux."""
+    env = os.environ.copy()
+    if sys.platform != "win32":
+        if "LD_LIBRARY_PATH_ORIG" in env:
+            env["LD_LIBRARY_PATH"] = env.pop("LD_LIBRARY_PATH_ORIG")
+        else:
+            env.pop("LD_LIBRARY_PATH", None)
+    return env
 
 # Coordenadas relativas en el canvas para Xbox 360 (350x275)
 XBOX_HITBOXES = {
@@ -838,6 +852,7 @@ class J360MoreApp:
         self.airpad_server = web_gamepad_server.get_server_instance()
         self.airpad_server.preferred_ip = self.config.get("airpad_bind_ip", None)
         self.airpad_server.port = self.config.get("airpad_server_port", 8080)
+        self.airpad_server.ssl_enabled = self.config.get("airpad_ssl_enabled", False)
         self.airpad_server.haptics_enabled = self.config.get("airpad_haptics_enabled", True)
         self.airpad_server.max_slots = self.config.get("max_controllers", 8)
         self.airpad_server.on_input_event = self.engine.trigger_input_event
@@ -1071,8 +1086,9 @@ class J360MoreApp:
         if hasattr(self, "btn_airpad"):
             self.btn_airpad.config(text=self.t("btn_airpad_main"))
         if hasattr(self, "btn_joy_cpl"):
-            self.btn_joy_cpl.config(text=self.t("btn_joy_cpl"))
-        if hasattr(self, "btn_hidhide"):
+            btn_cpl_text = self.t("btn_joy_cpl") if sys.platform == "win32" else self.t("btn_jstest_gtk")
+            self.btn_joy_cpl.config(text=btn_cpl_text)
+        if hasattr(self, "btn_hidhide") and sys.platform == "win32":
             self.btn_hidhide.config(text=self.t("btn_hidhide_client"))
         if hasattr(self, "btn_save"):
             self.btn_save.config(text=self.t("btn_save"))
@@ -1310,6 +1326,8 @@ class J360MoreApp:
                         data["max_controllers"] = 8
                     if "airpad_server_enabled" not in data:
                         data["airpad_server_enabled"] = False
+                    if "airpad_ssl_enabled" not in data:
+                        data["airpad_ssl_enabled"] = False
                     if "controllers" not in data or not isinstance(data["controllers"], dict):
                         data["controllers"] = {}
                     for i in range(1, 13):
@@ -1340,6 +1358,7 @@ class J360MoreApp:
             "driver_backend": "viiper",
             "emulated_type": "xbox360",
             "airpad_server_enabled": False,
+            "airpad_ssl_enabled": False,
             "games": [],
             "controllers": {}
         }
@@ -1431,11 +1450,13 @@ class J360MoreApp:
         self.btn_toggle_emu = ttk.Button(bottom_frame, text=self.t("btn_start_emu"), command=self._toggle_emulation)
         self.btn_toggle_emu.pack(side=tk.LEFT, padx=4)
 
-        self.btn_joy_cpl = ttk.Button(bottom_frame, text=self.t("btn_joy_cpl"), command=self._open_joy_cpl)
+        btn_cpl_text = self.t("btn_joy_cpl") if sys.platform == "win32" else self.t("btn_jstest_gtk")
+        self.btn_joy_cpl = ttk.Button(bottom_frame, text=btn_cpl_text, command=self._open_joy_cpl)
         self.btn_joy_cpl.pack(side=tk.LEFT, padx=4)
 
         self.btn_hidhide = ttk.Button(bottom_frame, text=self.t("btn_hidhide_client"), command=self._open_hidhide_client)
-        self.btn_hidhide.pack(side=tk.LEFT, padx=4)
+        if sys.platform == "win32":
+            self.btn_hidhide.pack(side=tk.LEFT, padx=4)
 
         self.btn_save = ttk.Button(bottom_frame, text=self.t("btn_save"), command=self.save_config)
         self.btn_save.pack(side=tk.RIGHT, padx=4)
@@ -2661,10 +2682,11 @@ class J360MoreApp:
                     self.t("usbip_missing_msg")
                 )
 
-        # 2. HidHide es opcional con aviso leve y checkbox 'No volver a preguntar'
-        suppress_hidhide = self.config.get("suppress_hidhide_warning", False)
-        if not suppress_hidhide and not self.driver_manager.is_hidhide_installed():
-            self._show_hidhide_warning_dialog()
+        # 2. HidHide es opcional con aviso leve y checkbox 'No volver a preguntar' (solo en Windows)
+        if sys.platform == "win32":
+            suppress_hidhide = self.config.get("suppress_hidhide_warning", False)
+            if not suppress_hidhide and not self.driver_manager.is_hidhide_installed():
+                self._show_hidhide_warning_dialog()
 
     def _check_update_once(self):
         """Dispara la comprobacion de nueva version en GitHub una unica vez al iniciar."""
@@ -2920,44 +2942,46 @@ class J360MoreApp:
         ttk.Label(ticks_frame, text=self.t("set_6_controllers"), font=("Segoe UI", 8)).pack(side=tk.LEFT, expand=True)
         ttk.Label(ticks_frame, text=self.t("set_12_controllers"), font=("Segoe UI", 8)).pack(side=tk.RIGHT)
 
-        # SECCION 5: Integración con HidHide (Opcional)
-        box_hidhide = ttk.LabelFrame(tab_general, text=self.t("set_hidhide_title"), padding=8)
-        box_hidhide.pack(fill=tk.X, pady=(0, 6))
-
-        is_installed = self.driver_manager.is_hidhide_installed()
-        status_text = self.t("set_status_installed") if is_installed else self.t("set_status_missing")
-        status_color = "#16a34a" if is_installed else "#d97706"
-
-        status_lbl = ttk.Label(box_hidhide, text=self.t("set_status_lbl", status=status_text), font=("Segoe UI", 8, "bold"), foreground=status_color)
-        status_lbl.pack(anchor="w", pady=(0, 2))
-
-        path_row = ttk.Frame(box_hidhide)
-        path_row.pack(fill=tk.X, pady=(2, 2))
-
+        # SECCION 5: Integración con HidHide (Opcional, solo en Windows)
         current_path = self.driver_manager.get_hidhide_cli_path() or ""
         path_var = tk.StringVar(value=current_path)
-        entry_path = ttk.Entry(path_row, textvariable=path_var, font=("Segoe UI", 8))
-        entry_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
-
-        def on_browse_hidhide():
-            chosen = filedialog.askopenfilename(
-                title=self.t("set_browse_title"),
-                filetypes=[(self.t("filetype_hidhide_cli"), "HidHideCLI.exe"), (self.t("ft_executables"), "*.exe"), (self.t("ft_all_files"), "*.*")]
-            )
-            if chosen:
-                path_var.set(chosen)
-
-        btn_browse = ttk.Button(path_row, text=self.t("set_btn_browse"), command=on_browse_hidhide)
-        btn_browse.pack(side=tk.RIGHT)
-
+        is_installed = self.driver_manager.is_hidhide_installed()
         cloak_active_var = tk.BooleanVar(value=self.driver_manager.is_cloak_active() if is_installed else True)
-        chk_cloak = ttk.Checkbutton(box_hidhide, text=self.t("set_chk_cloak"), variable=cloak_active_var)
-        chk_cloak.pack(anchor="w", pady=1)
-
         warn_suppressed = self.config.get("suppress_hidhide_warning", False)
         show_warn_var = tk.BooleanVar(value=not warn_suppressed)
-        chk_warn = ttk.Checkbutton(box_hidhide, text=self.t("set_chk_warn"), variable=show_warn_var)
-        chk_warn.pack(anchor="w", pady=1)
+
+        if sys.platform == "win32":
+            box_hidhide = ttk.LabelFrame(tab_general, text=self.t("set_hidhide_title"), padding=8)
+            box_hidhide.pack(fill=tk.X, pady=(0, 6))
+
+            status_text = self.t("set_status_installed") if is_installed else self.t("set_status_missing")
+            status_color = "#16a34a" if is_installed else "#d97706"
+
+            status_lbl = ttk.Label(box_hidhide, text=self.t("set_status_lbl", status=status_text), font=("Segoe UI", 8, "bold"), foreground=status_color)
+            status_lbl.pack(anchor="w", pady=(0, 2))
+
+            path_row = ttk.Frame(box_hidhide)
+            path_row.pack(fill=tk.X, pady=(2, 2))
+
+            entry_path = ttk.Entry(path_row, textvariable=path_var, font=("Segoe UI", 8))
+            entry_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+
+            def on_browse_hidhide():
+                chosen = filedialog.askopenfilename(
+                    title=self.t("set_browse_title"),
+                    filetypes=[(self.t("filetype_hidhide_cli"), "HidHideCLI.exe"), (self.t("ft_executables"), "*.exe"), (self.t("ft_all_files"), "*.*")]
+                )
+                if chosen:
+                    path_var.set(chosen)
+
+            btn_browse = ttk.Button(path_row, text=self.t("set_btn_browse"), command=on_browse_hidhide)
+            btn_browse.pack(side=tk.RIGHT)
+
+            chk_cloak = ttk.Checkbutton(box_hidhide, text=self.t("set_chk_cloak"), variable=cloak_active_var)
+            chk_cloak.pack(anchor="w", pady=1)
+
+            chk_warn = ttk.Checkbutton(box_hidhide, text=self.t("set_chk_warn"), variable=show_warn_var)
+            chk_warn.pack(anchor="w", pady=1)
 
         # SECCION 6: Auto-asignación para mandos USB
         auto_assign_usb_var = tk.BooleanVar(value=self.config.get("auto_assign_usb", True))
@@ -2982,8 +3006,9 @@ class J360MoreApp:
 
         def update_srv_status_label():
             if srv.running:
+                badge = self.t("airpad_ssl_badge_on") if srv.ssl_enabled else self.t("airpad_ssl_badge_off")
                 lbl_srv_status.config(
-                    text=self.t("airpad_server_active", url=srv.get_url()),
+                    text=f"{self.t('airpad_server_active', url=srv.get_url())}  •  {badge}",
                     foreground="#16a34a"
                 )
                 btn_toggle_srv.config(text=self.t("airpad_btn_turn_off"))
@@ -3004,6 +3029,7 @@ class J360MoreApp:
                     srv.port = int(port_var.get().strip())
                 except Exception:
                     srv.port = 8080
+                srv.ssl_enabled = bool(self.config.get("airpad_ssl_enabled", False))
                 srv.start()
                 airpad_srv_enabled_var.set(True)
                 self.config["airpad_server_enabled"] = True
@@ -3020,6 +3046,7 @@ class J360MoreApp:
                 p = 8080
                 port_var.set("8080")
                 srv.port = 8080
+            srv.ssl_enabled = bool(self.config.get("airpad_ssl_enabled", False))
             srv.stop()
             if airpad_srv_enabled_var.get():
                 srv.start()
@@ -3199,6 +3226,27 @@ class J360MoreApp:
         chk_haptics = ttk.Checkbutton(bot_options, text=self.t("airpad_chk_haptics"), variable=airpad_haptics_var)
         chk_haptics.pack(anchor="w", pady=2)
 
+        airpad_ssl_var = tk.BooleanVar(value=self.config.get("airpad_ssl_enabled", False))
+
+        def on_toggle_ssl():
+            is_ssl = airpad_ssl_var.get()
+            srv.ssl_enabled = is_ssl
+            self.config["airpad_ssl_enabled"] = is_ssl
+            self.save_config(silent=True)
+            if is_ssl:
+                messagebox.showinfo(
+                    self.t("airpad_ssl_info_title"),
+                    self.t("airpad_ssl_info_msg")
+                )
+            if srv.running:
+                restart_airpad()
+            else:
+                update_srv_status_label()
+                update_qr_code()
+
+        chk_ssl = ttk.Checkbutton(bot_options, text=self.t("airpad_chk_ssl"), variable=airpad_ssl_var, command=on_toggle_ssl)
+        chk_ssl.pack(anchor="w", pady=2)
+
         # Actualización en vivo de la lista de teléfonos mientras el diálogo esté abierto
         timer_active = [True]
 
@@ -3303,8 +3351,10 @@ class J360MoreApp:
             self.config["airpad_server_port"] = p_val
             self.config["airpad_auto_assign"] = airpad_auto_assign_var.get()
             self.config["airpad_haptics_enabled"] = airpad_haptics_var.get()
+            self.config["airpad_ssl_enabled"] = airpad_ssl_var.get()
 
             srv.haptics_enabled = airpad_haptics_var.get()
+            srv.ssl_enabled = airpad_ssl_var.get()
             srv.port = p_val
             srv.max_slots = new_count
             if airpad_srv_enabled_var.get():
@@ -3651,10 +3701,11 @@ class J360MoreApp:
 
         ttk.Button(bottom_box, text=self.t("dev_btn_assign"), command=assign_to_current_tab).pack(side=tk.LEFT, padx=4)
 
-        hidhide_status_text = self.t("dev_hidhide_active_bar") if has_hidhide else self.t("dev_hidhide_missing_bar")
-        hidhide_status_color = "#008800" if has_hidhide else "#888888"
-        lbl_hid_status = ttk.Label(bottom_box, text=hidhide_status_text, font=("Segoe UI", 8, "italic"), foreground=hidhide_status_color)
-        lbl_hid_status.pack(side=tk.LEFT, padx=8)
+        if sys.platform == "win32":
+            hidhide_status_text = self.t("dev_hidhide_active_bar") if has_hidhide else self.t("dev_hidhide_missing_bar")
+            hidhide_status_color = "#008800" if has_hidhide else "#888888"
+            lbl_hid_status = ttk.Label(bottom_box, text=hidhide_status_text, font=("Segoe UI", 8, "italic"), foreground=hidhide_status_color)
+            lbl_hid_status.pack(side=tk.LEFT, padx=8)
 
         ttk.Button(bottom_box, text=self.t("dev_btn_close"), command=dlg.destroy).pack(side=tk.RIGHT, padx=4)
 
@@ -4171,6 +4222,26 @@ class J360MoreApp:
 
 
     def _open_joy_cpl(self):
+        if sys.platform != "win32":
+            import shutil
+            jstest_bin = shutil.which("jstest-gtk")
+            if not jstest_bin:
+                for cand in ["/usr/bin/jstest-gtk", "/usr/local/bin/jstest-gtk"]:
+                    if os.path.isfile(cand) and os.access(cand, os.X_OK):
+                        jstest_bin = cand
+                        break
+            if jstest_bin:
+                try:
+                    subprocess.Popen([jstest_bin], env=get_clean_env())
+                except Exception as e:
+                    messagebox.showerror(self.t("msg_error"), self.t("jstest_gtk_error", e=e))
+            else:
+                messagebox.showwarning(
+                    self.t("jstest_gtk_missing_title"),
+                    self.t("jstest_gtk_missing_msg")
+                )
+            return
+
         try:
             flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
             subprocess.Popen(["joy.cpl"], shell=True, creationflags=flags)
@@ -4782,7 +4853,7 @@ class J360MoreApp:
             return
 
         # Construir entorno enriquecido
-        env = os.environ.copy()
+        env = get_clean_env()
         for v_name, v_cfg in game.get("env_vars", {}).items():
             if isinstance(v_cfg, dict) and v_cfg.get("enabled", False):
                 if v_name == "FNA_GAMEPAD_NUM_GAMEPADS":
