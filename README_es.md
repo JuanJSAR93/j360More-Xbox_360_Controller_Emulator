@@ -22,6 +22,8 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 | [![Mapeo Xbox 360](assets/screenshot_main.png)](assets/screenshot_main.png) | [![Mapeo DualShock 4](assets/screenshot_main2.png)](assets/screenshot_main2.png) |
 | **Calibración de Sticks Analógicos** | **Configuración y Selección de Drivers** |
 | [![Calibración de Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Configuración](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
+| **Servidor AirPad (QR y HTTPS/SSL)** | **Mando Táctil Móvil y Personalización de Posiciones** |
+| [![Servidor AirPad](assets/screenshot_airpad.png)](assets/screenshot_airpad.png) | [![Mando Táctil AirPad](assets/screenshot_android1.png)](assets/screenshot_android1.png)<br>[![Personalización de Posiciones](assets/screenshot_android2.png)](assets/screenshot_android2.png) |
 
 ---
 

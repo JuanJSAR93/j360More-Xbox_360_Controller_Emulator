@@ -4,7 +4,7 @@
   "language": "en",
   "max_controllers": 8,
   "auto_assign_usb": true,
-  "airpad_server_enabled": false,
+  "airpad_server_enabled": true,
   "airpad_server_port": 8080,
   "airpad_auto_assign": true,
   "airpad_haptics_enabled": true,
@@ -784,5 +784,6 @@
   "hidhide_cli_path": "C:\\Program Files\\Nefarius Software Solutions\\HidHide\\x64\\HidHideCLI.exe",
   "suppress_hidhide_warning": false,
   "hidden_devices": [],
-  "airpad_bind_ip": "192.168.1.34"
+  "airpad_bind_ip": "192.168.1.34",
+  "airpad_ssl_enabled": true
 }

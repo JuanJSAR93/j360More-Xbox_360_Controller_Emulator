@@ -22,6 +22,8 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 | [![Xbox 360 Mapping](assets/screenshot_main.png)](assets/screenshot_main.png) | [![DualShock 4 Mapping](assets/screenshot_main2.png)](assets/screenshot_main2.png) |
 | **Analog Sticks Calibration** | **Settings & Driver Selection** |
 | [![Analog Sticks](assets/screenshot_sticks.png)](assets/screenshot_sticks.png) | [![Settings](assets/screenshot_settings.png)](assets/screenshot_settings.png) |
+| **AirPad Server (QR & HTTPS/SSL)** | **AirPad Mobile Touch & Layout Customization** |
+| [![AirPad Server](assets/screenshot_airpad.png)](assets/screenshot_airpad.png) | [![AirPad Touch](assets/screenshot_android1.png)](assets/screenshot_android1.png)<br>[![AirPad Custom Positions](assets/screenshot_android2.png)](assets/screenshot_android2.png) |
 
 ---
 
