@@ -151,21 +151,32 @@
 
     ws.onmessage = (event) => {
       try {
+        let textData = null;
         if (typeof event.data === 'string') {
-          const msg = JSON.parse(event.data);
+          textData = event.data;
+        } else if (event.data instanceof ArrayBuffer) {
+          try {
+            textData = new TextDecoder('utf-8').decode(event.data);
+          } catch (e) {}
+        }
+        if (textData) {
+          const msg = JSON.parse(textData);
           if (msg.type === 'welcome') {
             currentSlot = msg.slot;
             playerBadge.textContent = `P${msg.slot}`;
             if (msg.haptics !== undefined) hapticsEnabled = msg.haptics;
             if (msg.binary) useBinaryProtocol = true;
           } else if (msg.type === 'rumble') {
-            handleRumble(msg.low, msg.high);
+            console.log('[AirPad] WS Rumble recibido:', msg);
+            handleRumble(msg.low, msg.high, msg.duration);
           } else if (msg.type === 'pong') {
             const rtt = Math.round(performance.now() - msg.t);
             pingText.textContent = `${rtt} ms`;
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[AirPad] Error en onmessage:', e);
+      }
     };
 
     ws.onclose = () => {
@@ -260,20 +271,258 @@
     }
   }, 2000);
 
-  // --- 5. Hápticos y Vibración ---
-  function vibrateShort() {
-    if (hapticsEnabled && 'vibrate' in navigator) {
-      try { navigator.vibrate(20); } catch (e) {}
-    }
+  // --- 5. Hápticos y Vibración (Basado en HTML5-Vibrate-API-Exploit) ---
+  try {
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+  } catch (e) {}
+
+  let rumbleTimer = null;
+  let toastTimer = null;
+
+  function showToast(text) {
+    const toast = document.getElementById('airpad-toast');
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.remove('hidden');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.add('hidden');
+      toastTimer = null;
+    }, 2500);
   }
 
-  function handleRumble(low, high) {
-    if (!hapticsEnabled || !('vibrate' in navigator)) return;
-    const intensity = Math.max(low, high) / 65535.0;
-    if (intensity > 0.1) {
-      const ms = Math.min(150, Math.round(intensity * 120));
-      try { navigator.vibrate(ms); } catch (e) {}
+  let pendingRumbleSec = 0;
+  let pendingRumbleExpiry = 0;
+  let mustVibrateUntil = 0;
+  let rumbleStopTimeout = null;
+  let isRumbling = false;
+
+  // Cargar tiempo mínimo de vibración configurado por el usuario (por defecto 350ms)
+  let minRumbleMs = parseInt(localStorage.getItem('airpad_min_rumble_ms') || '350', 10);
+  if (isNaN(minRumbleMs) || minRumbleMs < 50) minRumbleMs = 350;
+  if (minRumbleMs > 2000) minRumbleMs = 2000;
+
+  function doPhysicalVibrate(ms) {
+    const fn = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (!fn) return false;
+    let res = false;
+    try {
+      res = fn.call(navigator, ms);
+      if (!res && ms > 0) {
+        res = fn.call(navigator, [ms]);
+      }
+    } catch (e) {
+      try { res = fn.call(navigator, [ms]); } catch (e2) {}
     }
+    return res;
+  }
+
+  // Función de vibración háptica directa sin avisos que tapen la pantalla
+  function vibrate_now(seconds) {
+    const ms = Math.max(50, Math.round((seconds || (minRumbleMs / 1000.0)) * 1000));
+    const res = doPhysicalVibrate(ms);
+    if (res === false) {
+      pendingRumbleSec = ms / 1000.0;
+      pendingRumbleExpiry = Date.now() + 6000;
+      showToast('📳 Toca la pantalla para permitir vibración');
+      return false;
+    }
+
+    pendingRumbleSec = 0;
+    pendingRumbleExpiry = 0;
+    document.body.classList.add('rumble-active');
+    return true;
+  }
+
+  function stopvibration(force = false) {
+    if (force) {
+      mustVibrateUntil = 0;
+      isRumbling = false;
+      if (rumbleStopTimeout) {
+        clearTimeout(rumbleStopTimeout);
+        rumbleStopTimeout = null;
+      }
+    }
+    pendingRumbleSec = 0;
+    pendingRumbleExpiry = 0;
+    const fn = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (fn) {
+      try { fn.call(navigator, 0); } catch (e) {}
+    }
+    document.body.classList.remove('rumble-active');
+  }
+
+  // Exponer en window para permitir llamadas directas
+  window.vibrate_now = vibrate_now;
+  window.stopvibration = stopvibration;
+  window.doVibrate = (ms) => vibrate_now(ms / 1000.0);
+
+  // Desbloqueo universal de User Activation en móviles (touchend, pointerup, click, pointerdown)
+  let hapticsUnlocked = false;
+  const unlockHaptics = () => {
+    if (!hapticsUnlocked) {
+      hapticsUnlocked = true;
+    }
+    if (pendingRumbleSec > 0 && Date.now() < pendingRumbleExpiry) {
+      const sec = pendingRumbleSec;
+      pendingRumbleSec = 0;
+      pendingRumbleExpiry = 0;
+      vibrate_now(sec);
+    }
+  };
+  window.addEventListener('pointerdown', unlockHaptics, { passive: true });
+  window.addEventListener('touchstart', unlockHaptics, { passive: true });
+  window.addEventListener('touchend', unlockHaptics, { passive: true });
+  window.addEventListener('pointerup', unlockHaptics, { passive: true });
+  window.addEventListener('click', unlockHaptics, { passive: true });
+
+  // Modal de Ajustes de Vibración Háptica
+  const vibrateModal = document.getElementById('vibrate-modal');
+  const btnVibrateTest = document.getElementById('btn-vibrate-test');
+  const btnVibModalClose = document.getElementById('btn-vibrate-modal-close');
+  const btnVibCancel = document.getElementById('btn-vibrate-cancel');
+  const btnVibSave = document.getElementById('btn-vibrate-save');
+  const btnVibTestNow = document.getElementById('btn-vibrate-test-now');
+  const sliderVibMin = document.getElementById('slider-vibrate-min');
+  const lblVibMinMs = document.getElementById('lbl-vibrate-min-ms');
+  const presetVibBtns = document.querySelectorAll('.preset-vib-btn');
+
+  function openVibrateModal() {
+    if (!vibrateModal) return;
+    if (sliderVibMin) sliderVibMin.value = minRumbleMs;
+    if (lblVibMinMs) lblVibMinMs.textContent = `${minRumbleMs} ms`;
+    vibrateModal.classList.remove('hidden');
+  }
+
+  function closeVibrateModal() {
+    if (vibrateModal) vibrateModal.classList.add('hidden');
+  }
+
+  if (btnVibrateTest) {
+    btnVibrateTest.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      unlockHaptics();
+      openVibrateModal();
+    });
+  }
+
+  if (btnVibModalClose) btnVibModalClose.addEventListener('click', closeVibrateModal);
+  if (btnVibCancel) btnVibCancel.addEventListener('click', closeVibrateModal);
+
+  if (vibrateModal) {
+    vibrateModal.addEventListener('click', (e) => {
+      if (e.target === vibrateModal) closeVibrateModal();
+    });
+  }
+
+  if (sliderVibMin) {
+    sliderVibMin.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10) || 350;
+      minRumbleMs = Math.max(50, Math.min(2000, val));
+      if (lblVibMinMs) lblVibMinMs.textContent = `${minRumbleMs} ms`;
+      try {
+        localStorage.setItem('airpad_min_rumble_ms', minRumbleMs.toString());
+      } catch (err) {}
+    });
+  }
+
+  presetVibBtns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const val = parseInt(btn.getAttribute('data-ms'), 10) || 350;
+      minRumbleMs = Math.max(50, Math.min(2000, val));
+      if (sliderVibMin) sliderVibMin.value = minRumbleMs;
+      if (lblVibMinMs) lblVibMinMs.textContent = `${minRumbleMs} ms`;
+      try {
+        localStorage.setItem('airpad_min_rumble_ms', minRumbleMs.toString());
+      } catch (err) {}
+    });
+  });
+
+  if (btnVibTestNow) {
+    btnVibTestNow.addEventListener('click', (e) => {
+      e.preventDefault();
+      unlockHaptics();
+      mustVibrateUntil = Date.now() + minRumbleMs;
+      isRumbling = true;
+      vibrate_now(minRumbleMs / 1000.0);
+      setTimeout(() => {
+        isRumbling = false;
+        if (Date.now() >= mustVibrateUntil) {
+          stopvibration();
+        }
+      }, minRumbleMs);
+    });
+  }
+
+  if (btnVibSave) {
+    btnVibSave.addEventListener('click', (e) => {
+      e.preventDefault();
+      const val = sliderVibMin ? parseInt(sliderVibMin.value, 10) : minRumbleMs;
+      minRumbleMs = Math.max(50, Math.min(2000, val));
+      try {
+        localStorage.setItem('airpad_min_rumble_ms', minRumbleMs.toString());
+      } catch (err) {}
+      closeVibrateModal();
+    });
+  }
+
+  function vibrateShort() {
+    // Desactivado intencionalmente para no consumir la User Activation de Chrome/Android
+    // y no colisionar ni cancelar la vibración háptica real enviada por los juegos.
+  }
+
+  function handleRumble(low, high, durationMs) {
+    if (!hapticsEnabled) return;
+    const fn = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+    if (!fn) return;
+
+    const maxVal = Math.max(low || 0, high || 0);
+    const intensity = maxVal / 65535.0;
+
+    if (intensity <= 0.02) {
+      // El juego o emulador ordenó detener la vibración
+      isRumbling = false;
+      const now = Date.now();
+      if (now < mustVibrateUntil) {
+        // Forzar continuación: el pulso del juego fue muy corto (ej: 50ms o 1 frame de TowerFall),
+        // pero se garantiza que el teléfono vibre el tiempo mínimo X configurado (minRumbleMs).
+        // NO se corta la vibración física de inmediato.
+        const remainingMs = mustVibrateUntil - now;
+        if (rumbleStopTimeout) clearTimeout(rumbleStopTimeout);
+        rumbleStopTimeout = setTimeout(() => {
+          rumbleStopTimeout = null;
+          if (!isRumbling && Date.now() >= mustVibrateUntil) {
+            stopvibration();
+          }
+        }, remainingMs);
+      } else {
+        if (rumbleStopTimeout) {
+          clearTimeout(rumbleStopTimeout);
+          rumbleStopTimeout = null;
+        }
+        stopvibration();
+      }
+      return;
+    }
+
+    // Señal activa de vibración
+    isRumbling = true;
+    if (rumbleStopTimeout) {
+      clearTimeout(rumbleStopTimeout);
+      rumbleStopTimeout = null;
+    }
+
+    const now = Date.now();
+    // Tomar la duración especificada (ej: 50ms) o por defecto minRumbleMs
+    const reqMs = (durationMs !== undefined && durationMs !== null && durationMs > 0) ? durationMs : minRumbleMs;
+    // Forzar que la duración nunca sea menor al mínimo configurado por el usuario
+    const forcedMs = Math.min(3000, Math.max(minRumbleMs, reqMs));
+
+    mustVibrateUntil = Math.max(mustVibrateUntil, now + forcedMs);
+
+    vibrate_now(forcedMs / 1000.0);
   }
 
   // --- 6. Manejo de Botones Digitales y Gatillos Individuales ---

@@ -498,7 +498,7 @@ class DeviceManager:
                     return None
         return self.joysticks.get(sdl_idx)
 
-    def send_rumble(self, dev_id: str, large_motor: int, small_motor: int, duration_ms: int = 1000):
+    def send_rumble(self, dev_id: str, large_motor: int, small_motor: int, duration_ms: int = 0):
         """
         Transfiere vibración háptica / Force Feedback al mando real (físico o smartphone).
         - dev_id: 'joy_0', 'phone_1', etc.
@@ -513,10 +513,10 @@ class DeviceManager:
             try:
                 import web_gamepad_server
                 srv = web_gamepad_server.get_server_instance()
-                if srv and srv.is_running:
+                if srv and getattr(srv, "running", False):
                     w_l = min(65535, max(0, int(large_motor * 257)))
                     w_r = min(65535, max(0, int(small_motor * 257)))
-                    srv.send_rumble(dev_id, w_l, w_r)
+                    srv.send_rumble(dev_id, w_l, w_r, duration_ms)
             except Exception:
                 pass
             return
@@ -560,10 +560,10 @@ class DeviceManager:
         try:
             import web_gamepad_server
             srv = web_gamepad_server.get_server_instance()
-            if srv and srv.is_running:
+            if srv and getattr(srv, "running", False):
                 for c in srv.get_clients_info():
                     if c.get("connected"):
-                        srv.send_rumble(c["slot_id"], 0, 0)
+                        srv.send_rumble(c["slot_id"], 0, 0, 0)
         except Exception:
             pass
 
@@ -573,7 +573,10 @@ class DeviceManager:
             return
         def _worker():
             self.send_rumble(dev_id, large_motor, small_motor, int(duration_sec * 1000))
-            time.sleep(duration_sec)
+            if dev_id.startswith("phone_"):
+                time.sleep(duration_sec + 0.15)
+            else:
+                time.sleep(duration_sec)
             self.send_rumble(dev_id, 0, 0)
         t = threading.Thread(target=_worker, daemon=True)
         t.start()

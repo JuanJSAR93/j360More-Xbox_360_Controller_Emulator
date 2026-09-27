@@ -641,14 +641,27 @@ class WebGamepadServer:
             "telemetry": {"seq": 0, "t_client_ms": 0, "t_server_recv_ns": 0}
         }
 
-    def send_rumble(self, slot_id: str, low: int, high: int):
+    @property
+    def is_running(self) -> bool:
+        """Indica si el servidor AirPad está activo."""
+        return self.running
+
+    def send_rumble(self, slot_id: str, low: int, high: int, duration_ms: int = 500):
         """Envia vibracion al smartphone si los hapticos estan habilitados."""
         if not self.haptics_enabled:
             return
+        duration_ms = max(0, int(duration_ms))
         with self.lock:
+            if slot_id in ("all", "phone_all"):
+                active_clients = [c for c in self.clients.values() if c and c.active]
+                for c in active_clients:
+                    msg = json.dumps({"type": "rumble", "low": low, "high": high, "duration": duration_ms})
+                    self._send_ws_frame(c.sock, msg)
+                return
+
             client = self.clients.get(slot_id)
             if client and client.active:
-                msg = json.dumps({"type": "rumble", "low": low, "high": high})
+                msg = json.dumps({"type": "rumble", "low": low, "high": high, "duration": duration_ms})
                 self._send_ws_frame(client.sock, msg)
 
     def notify_input(self):
@@ -837,7 +850,10 @@ class WebGamepadServer:
                 f"Content-Type: {mime}\r\n"
                 f"Content-Length: {len(body)}\r\n"
                 f"Access-Control-Allow-Origin: *\r\n"
-                f"Cache-Control: no-cache\r\n"
+                f"Permissions-Policy: vibrate=*\r\n"
+                f"Cache-Control: no-cache, no-store, must-revalidate\r\n"
+                f"Pragma: no-cache\r\n"
+                f"Expires: 0\r\n"
                 f"Connection: close\r\n\r\n"
             ).encode("utf-8") + body
 

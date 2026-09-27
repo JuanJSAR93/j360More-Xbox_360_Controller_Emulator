@@ -285,7 +285,7 @@ class EmulatorEngine:
             cfg = self.config.get("controllers", {}).get(str(slot), {})
             return cfg.get("physical_device_id", "none")
 
-    def route_virtual_rumble(self, slot_idx: int, v_large: int, v_small: int):
+    def route_virtual_rumble(self, slot_idx: int, v_large: int, v_small: int, duration_ms: int = 0):
         """
         Aplica el mapeo, enrutamiento y ganancia de vibración configurado para el slot,
         y lo envía al periférico físico/móvil asignado.
@@ -296,12 +296,25 @@ class EmulatorEngine:
             ctrl_cfg = self.config.get("controllers", {}).get(str(slot_idx), {})
             p_dev = ctrl_cfg.get("physical_device_id", "none")
             if not p_dev or p_dev == "none":
+                try:
+                    import web_gamepad_server
+                    srv = web_gamepad_server.get_server_instance()
+                    if srv and srv.running:
+                        cand = f"phone_{slot_idx}"
+                        if cand in srv.clients and srv.clients[cand].active:
+                            p_dev = cand
+                        elif len([c for c in srv.clients.values() if c and c.active]) == 1 and slot_idx == 1:
+                            active_c = [c for c in srv.clients.values() if c and c.active][0]
+                            p_dev = active_c.slot_id
+                except Exception:
+                    pass
+            if not p_dev or p_dev == "none":
                 return
             rumble_cfg = ctrl_cfg.get("rumble", {})
 
         # Si la vibración está desactivada en la configuración de este mando
         if not rumble_cfg.get("enabled", True):
-            self.device_manager.send_rumble(p_dev, 0, 0)
+            self.device_manager.send_rumble(p_dev, 0, 0, duration_ms=0)
             with self.lock:
                 if slot_idx in self.active_states:
                     self.active_states[slot_idx]["rumble_v_left"] = v_large
@@ -351,7 +364,7 @@ class EmulatorEngine:
                 self.active_states[slot_idx]["rumble_left"] = final_l
                 self.active_states[slot_idx]["rumble_right"] = final_r
 
-        self.device_manager.send_rumble(p_dev, final_l, final_r)
+        self.device_manager.send_rumble(p_dev, final_l, final_r, duration_ms=duration_ms)
 
     def trigger_input_event(self):
         """Despierta el bucle de emulacion reactivamente ante nueva entrada."""

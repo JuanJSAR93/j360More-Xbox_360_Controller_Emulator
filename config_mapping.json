@@ -8,12 +8,49 @@
   "airpad_server_port": 8080,
   "airpad_auto_assign": true,
   "airpad_haptics_enabled": true,
-  "games": [],
+  "games": [
+    {
+      "title": "TowerFall - FortRise",
+      "path": "C:/Program Files (x86)/Steam/steamapps/common/TowerFall - FortRise/FortRise.exe",
+      "args": "",
+      "working_dir": "C:/Program Files (x86)/Steam/steamapps/common/TowerFall - FortRise",
+      "env_vars": {
+        "FNA_GAMEPAD_NUM_GAMEPADS": {
+          "enabled": true,
+          "value": "8"
+        },
+        "SDL_JOYSTICK_DIRECTINPUT": {
+          "enabled": true,
+          "value": "1"
+        },
+        "SDL_JOYSTICK_RAWINPUT": {
+          "enabled": true,
+          "value": "1"
+        },
+        "SDL_JOYSTICK_RAWINPUT_CORRELATE_XINPUT": {
+          "enabled": true,
+          "value": "0"
+        },
+        "SDL_XINPUT_ENABLED": {
+          "enabled": true,
+          "value": "0"
+        },
+        "SDL_JOYSTICK_GAMEINPUT": {
+          "enabled": true,
+          "value": "1"
+        },
+        "SDL_JOYSTICK_THREAD": {
+          "enabled": true,
+          "value": "1"
+        }
+      }
+    }
+  ],
   "controllers": {
     "1": {
       "name": "Jugador 1",
       "enabled": true,
-      "physical_device_id": "none",
+      "physical_device_id": "phone_1",
       "mappings": {
         "LEFT_TRIGGER": "Axis 3",
         "LEFT_SHOULDER": "Button 5",
@@ -154,8 +191,8 @@
     },
     "3": {
       "name": "Jugador 3",
-      "enabled": true,
-      "physical_device_id": "phone_1",
+      "enabled": false,
+      "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "Axis 3",
         "LEFT_SHOULDER": "Button 5",

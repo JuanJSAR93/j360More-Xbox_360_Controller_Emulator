@@ -658,3 +658,43 @@ body.layout-editing .layout-item.selected::after {
     align-items: center;
   }
 }
+
+/* Indicador visual de vibración activa / hápticos */
+body.rumble-active #top-bar {
+  box-shadow: inset 0 0 18px rgba(255, 75, 43, 0.75);
+  border-bottom-color: rgba(255, 75, 43, 0.9);
+  transition: box-shadow 0.08s ease, border-color 0.08s ease;
+}
+
+body.rumble-active #player-badge {
+  background: #cb2027 !important;
+  box-shadow: 0 0 12px rgba(203, 32, 39, 0.85);
+  transition: background 0.08s ease, box-shadow 0.08s ease;
+}
+
+/* Toast de notificaciones de estado */
+.airpad-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 20, 24, 0.95);
+  color: #fff;
+  border: 1px solid var(--accent-color);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 2000;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.airpad-toast.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+  pointer-events: none;
+}
+
+

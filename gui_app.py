@@ -2247,15 +2247,36 @@ class J360MoreApp:
         btn_action_row = ttk.Frame(right_col)
         btn_action_row.pack(fill=tk.X, pady=(2, 4))
 
+        def _get_active_dev_id():
+            if pad_id in self.tab_widgets:
+                cb = self.tab_widgets[pad_id].get("dev_combo")
+                if cb:
+                    sel_idx = cb.current()
+                    if 0 <= sel_idx < len(self.available_devices):
+                        d_id = self.available_devices[sel_idx]["id"]
+                        if d_id != "none":
+                            return d_id
+            d_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            if d_id != "none":
+                return d_id
+            return "none"
+
         def _do_custom_test():
-            dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            dev_id = _get_active_dev_id()
             if dev_id and dev_id not in ("none", "keyboard", "mouse"):
                 l_mot = int(test_l_var.get() * 2.55)
                 r_mot = int(test_r_var.get() * 2.55)
-                self.device_manager.test_rumble(dev_id, duration_sec=1.0, large_motor=l_mot, small_motor=r_mot)
+                if dev_id.startswith("phone_"):
+                    m_val = max(l_mot, r_mot)
+                    if m_val == 0:
+                        self.device_manager.stop_rumble(dev_id)
+                    else:
+                        self.device_manager.test_rumble(dev_id, duration_sec=1.2, large_motor=m_val, small_motor=m_val)
+                else:
+                    self.device_manager.test_rumble(dev_id, duration_sec=1.0, large_motor=l_mot, small_motor=r_mot)
 
         def _do_stop_test():
-            dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            dev_id = _get_active_dev_id()
             if dev_id and dev_id not in ("none", "keyboard", "mouse"):
                 self.device_manager.stop_rumble(dev_id)
 
@@ -2271,9 +2292,14 @@ class J360MoreApp:
         preset_row.pack(fill=tk.X, pady=(2, 4))
 
         def _do_preset_test(l_pct, r_pct):
-            dev_id = self.config.get("controllers", {}).get(str(pad_id), {}).get("physical_device_id", "none")
+            dev_id = _get_active_dev_id()
             if dev_id and dev_id not in ("none", "keyboard", "mouse"):
-                self.device_manager.test_rumble(dev_id, duration_sec=0.8, large_motor=int(l_pct * 2.55), small_motor=int(r_pct * 2.55))
+                if dev_id.startswith("phone_"):
+                    pct = max(l_pct, r_pct)
+                    val = int(pct * 2.55)
+                    self.device_manager.test_rumble(dev_id, duration_sec=1.2, large_motor=val, small_motor=val)
+                else:
+                    self.device_manager.test_rumble(dev_id, duration_sec=0.8, large_motor=int(l_pct * 2.55), small_motor=int(r_pct * 2.55))
 
         btn_p_l = ttk.Button(preset_row, text=self.t("rumble_btn_test_left"), command=lambda: _do_preset_test(100, 0))
         btn_p_l.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=1)
@@ -2327,6 +2353,47 @@ class J360MoreApp:
         lbl_p_right = ttk.Label(bar_p_row, text="0%", font=("Consolas", 8), width=5)
         lbl_p_right.pack(side=tk.LEFT)
 
+        virt_btn_row = ttk.Frame(right_col)
+        virt_btn_row.pack(fill=tk.X, pady=(4, 2))
+
+        def _do_test_virtual_rumble():
+            if not self.engine.is_running():
+                return
+            self._sync_ui_to_config()
+            self.engine.set_config(self.config)
+            def _worker():
+                self.engine.route_virtual_rumble(pad_id, 255, 255, duration_ms=800)
+                time.sleep(0.8)
+                self.engine.route_virtual_rumble(pad_id, 0, 0, duration_ms=0)
+            threading.Thread(target=_worker, daemon=True).start()
+
+        def _do_test_virtual_rumble_short():
+            if not self.engine.is_running():
+                return
+            self._sync_ui_to_config()
+            self.engine.set_config(self.config)
+            def _worker():
+                self.engine.route_virtual_rumble(pad_id, 255, 255, duration_ms=50)
+                time.sleep(0.12)
+                self.engine.route_virtual_rumble(pad_id, 0, 0, duration_ms=0)
+            threading.Thread(target=_worker, daemon=True).start()
+
+        btn_test_virt = ttk.Button(
+            virt_btn_row,
+            text=self.t("rumble_btn_test_virtual"),
+            command=_do_test_virtual_rumble,
+            state=(tk.NORMAL if self.engine.is_running() else tk.DISABLED)
+        )
+        btn_test_virt.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
+
+        btn_test_virt_short = ttk.Button(
+            virt_btn_row,
+            text=self.t("rumble_btn_test_virtual_short"),
+            command=_do_test_virtual_rumble_short,
+            state=(tk.NORMAL if self.engine.is_running() else tk.DISABLED)
+        )
+        btn_test_virt_short.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(2, 0))
+
         widgets["rumble"] = {
             "enabled_var": enabled_var,
             "left_src_var": left_src_raw_var,
@@ -2346,6 +2413,8 @@ class J360MoreApp:
             "bar_p_right": bar_p_right,
             "lbl_p_left": lbl_p_left,
             "lbl_p_right": lbl_p_right,
+            "btn_test_virt": btn_test_virt,
+            "btn_test_virt_short": btn_test_virt_short,
         }
 
     def _update_tab_state(self, pad_id: int, has_dev: bool):
@@ -2488,6 +2557,7 @@ class J360MoreApp:
                             cur_p_id = cfg.get("physical_device_id", "none")
                             if cur_p_id == "none":
                                 cfg["physical_device_id"] = new_id
+                                cfg["enabled"] = True
                                 assigned_now.add(new_id)
 
                                 if is_phone:
@@ -2502,6 +2572,8 @@ class J360MoreApp:
                                     if dev["id"] == new_id:
                                         widgets["dev_combo"].current(idx)
                                         break
+                                if widgets.get("enabled_var"):
+                                    widgets["enabled_var"].set(True)
                                 self._update_tab_state(pad_id, True)
                                 break
 
@@ -2529,6 +2601,10 @@ class J360MoreApp:
                         cb.set(self.localize_mapping(DEFAULT_PHONE_MAPPINGS.get(target, "-- Ninguno --")))
 
             has_dev = (dev_id != "none")
+            if has_dev:
+                self.config["controllers"][str(pad_id)]["enabled"] = True
+                if widgets.get("enabled_var"):
+                    widgets["enabled_var"].set(True)
             self._update_tab_state(pad_id, has_dev)
             self._sync_ui_to_config()
             self.engine.set_config(self.config)
@@ -2870,6 +2946,7 @@ class J360MoreApp:
             self.btn_toggle_emu.config(text=self.t("btn_start_emu"))
             self.status_dot.itemconfig(self.status_circle, fill="#888888")
             self.status_text_lbl.config(text=self.t("status_stopped"))
+            self._update_virtual_rumble_buttons_state(False)
         else:
             # Comprobar si al menos un control tiene periférico asignado y está habilitado
             max_ctrls = self.config.get("max_controllers", 12)
@@ -2880,6 +2957,15 @@ class J360MoreApp:
                 if c_cfg.get("enabled", True) and p_dev and p_dev != "none":
                     has_active_pad = True
                     break
+
+            if not has_active_pad:
+                try:
+                    import web_gamepad_server
+                    srv = web_gamepad_server.get_server_instance()
+                    if srv and getattr(srv, "running", False) and srv.clients:
+                        has_active_pad = True
+                except Exception:
+                    pass
 
             if not has_active_pad:
                 messagebox.showwarning(
@@ -2893,6 +2979,19 @@ class J360MoreApp:
             self.btn_toggle_emu.config(text=self.t("btn_stop_emu"))
             self.status_dot.itemconfig(self.status_circle, fill="#00cc44")
             self.status_text_lbl.config(text=self.t("status_active"))
+            self._update_virtual_rumble_buttons_state(True)
+
+    def _update_virtual_rumble_buttons_state(self, is_running: bool):
+        st = tk.NORMAL if is_running else tk.DISABLED
+        for w_dict in self.tab_widgets.values():
+            r_w = w_dict.get("rumble", {})
+            for b_key in ("btn_test_virt", "btn_test_virt_short"):
+                btn = r_w.get(b_key)
+                if btn:
+                    try:
+                        btn.config(state=st)
+                    except Exception:
+                        pass
 
     def _reset_current_preset(self):
         cur_pad_id = self.notebook.index(self.notebook.select()) + 1
@@ -4105,12 +4204,26 @@ class J360MoreApp:
         btn_cancel.pack(side=tk.RIGHT, padx=4)
 
     def _test_controller_rumble(self, pad_id: int):
-        cfg = self.config.get("controllers", {}).get(str(pad_id), {})
-        dev_id = cfg.get("physical_device_id", "none")
+        dev_id = "none"
+        if pad_id in self.tab_widgets:
+            cb = self.tab_widgets[pad_id].get("dev_combo")
+            if cb:
+                sel_idx = cb.current()
+                if 0 <= sel_idx < len(self.available_devices):
+                    d_id = self.available_devices[sel_idx]["id"]
+                    if d_id != "none":
+                        dev_id = d_id
+        if dev_id == "none":
+            cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+            dev_id = cfg.get("physical_device_id", "none")
+
         if not dev_id or dev_id in ("none", "keyboard", "mouse"):
             return
         if hasattr(self, "device_manager") and self.device_manager:
-            self.device_manager.test_rumble(dev_id, duration_sec=0.8)
+            if dev_id.startswith("phone_"):
+                self.device_manager.test_rumble(dev_id, duration_sec=1.2, large_motor=255, small_motor=255)
+            else:
+                self.device_manager.test_rumble(dev_id, duration_sec=0.8)
 
     def _open_wizard_dialog(self, pad_id: int):
         cfg = self.config.get("controllers", {}).get(str(pad_id), {})

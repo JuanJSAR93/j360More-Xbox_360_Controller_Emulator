@@ -7,9 +7,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#121212">
   <title>j360More AirPad</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2.5">
+  <script>
+    navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+  </script>
 </head>
 <body>
+
+  <!-- Toast de notificaciones de estado -->
+  <div id="airpad-toast" class="airpad-toast hidden"></div>
 
   <!-- Barra Superior de Estado y Controles -->
   <header id="top-bar">
@@ -20,6 +26,7 @@
       <span id="ping-text">0 ms</span>
     </div>
     <div class="actions-group">
+      <button id="btn-vibrate-test" class="icon-btn" title="Ajustes de Vibración">📳</button>
       <button id="btn-layout" class="icon-btn" title="Editar / Mover controles">📐</button>
       <button id="btn-theme" class="icon-btn" title="Cambiar tema Xbox / PS">🎮</button>
       <button id="btn-fullscreen" class="icon-btn" title="Pantalla completa">⛶</button>
@@ -63,6 +70,47 @@
         <button id="modal-btn-download" class="toolbar-btn">💾 Descargar .json</button>
         <button id="modal-btn-upload" class="toolbar-btn">📂 Cargar archivo</button>
         <button id="modal-btn-apply" class="toolbar-btn primary hidden">✓ Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Configuración de Vibración Háptica -->
+  <div id="vibrate-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="vibrate-modal-title">📳 Ajustes de Vibración Háptica</h3>
+        <button id="btn-vibrate-modal-close" class="modal-close">&times;</button>
+      </div>
+      <p class="modal-desc">
+        Configura el tiempo mínimo que vibrará el teléfono ante cualquier pulso del juego. En muchos móviles, vibraciones menores a 300 ms no activan el motor físico.
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; margin: 10px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">Tiempo mínimo de vibración:</span>
+          <span id="lbl-vibrate-min-ms" style="font-size: 15px; font-weight: 700; color: var(--accent-color);">350 ms</span>
+        </div>
+        <input type="range" id="slider-vibrate-min" min="50" max="2000" step="25" value="350" style="width: 100%; accent-color: var(--accent-color); cursor: pointer; height: 28px;">
+        
+        <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="50">50 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="100">100 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="250">250 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="350">350 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="500">500 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="800">800 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="1000">1000 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="1500">1500 ms</button>
+          <button type="button" class="toolbar-btn preset-vib-btn" data-ms="2000">2000 ms</button>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="justify-content: space-between; align-items: center; margin-top: 6px;">
+        <button id="btn-vibrate-test-now" class="toolbar-btn" style="border-color: #ff9800; color: #ff9800;">▶ Probar ahora</button>
+        <div style="display: flex; gap: 6px;">
+          <button id="btn-vibrate-save" class="toolbar-btn primary">💾 Guardar</button>
+          <button id="btn-vibrate-cancel" class="toolbar-btn">✕ Cerrar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -143,6 +191,6 @@
 
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3.3"></script>
 </body>
 </html>
