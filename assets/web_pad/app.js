@@ -26,6 +26,11 @@
   const btnScaleDown = document.getElementById('btn-scale-down');
   const lblScaleVal = document.getElementById('lbl-scale-val');
   const btnScaleUp = document.getElementById('btn-scale-up');
+  const btnLayerBottom = document.getElementById('btn-layer-bottom');
+  const btnLayerDown = document.getElementById('btn-layer-down');
+  const lblLayerVal = document.getElementById('lbl-layer-val');
+  const btnLayerUp = document.getElementById('btn-layer-up');
+  const btnLayerTop = document.getElementById('btn-layer-top');
   const btnLayoutExport = document.getElementById('btn-layout-export');
   const btnLayoutImport = document.getElementById('btn-layout-import');
   const btnLayoutSave = document.getElementById('btn-layout-save');
@@ -845,6 +850,15 @@
     }
   }
 
+  function getItemZIndex(layoutId) {
+    if (!layoutId) return 1;
+    const item = tempSessionPositions[layoutId] || layoutPositions[layoutId];
+    if (!item) return layoutId.startsWith('stick-') ? 1 : 5;
+    if (typeof item.zIndex === 'number') return item.zIndex;
+    if (typeof item.z === 'number') return item.z;
+    return layoutId.startsWith('stick-') ? 1 : 5;
+  }
+
   function applyPositions(posMap) {
     document.querySelectorAll('.layout-item[data-layout-id]').forEach((el) => {
       const id = el.getAttribute('data-layout-id');
@@ -858,6 +872,15 @@
       } else {
         el.style.transform = 'translate(0px, 0px) scale(1)';
       }
+
+      // Jerarquía / Capas (Z-Index)
+      const z = (item && typeof item.zIndex === 'number') ? item.zIndex : (item && typeof item.z === 'number' ? item.z : null);
+      if (z !== null) {
+        el.style.zIndex = z.toString();
+      } else {
+        // Por defecto: Joysticks en capa 1 (fondo), botones y cruceta en capa 5 (frente)
+        el.style.zIndex = (id.startsWith('stick-') ? '1' : '5');
+      }
     });
   }
 
@@ -870,18 +893,21 @@
     if (layoutId) {
       const item = tempSessionPositions[layoutId] || { x: 0, y: 0, scale: 1.0 };
       const curScale = (typeof item.scale === 'number') ? item.scale : 1.0;
+      const curZ = getItemZIndex(layoutId);
       lblScaleVal.textContent = `${Math.round(curScale * 100)}%`;
+      if (lblLayerVal) lblLayerVal.textContent = `${curZ}`;
       layoutToolbarTitle.textContent = `${FRIENDLY_NAMES[layoutId] || layoutId}`;
     } else {
       lblScaleVal.textContent = '100%';
-      layoutToolbarTitle.textContent = 'Toca un control para moverlo o escalarlo';
+      if (lblLayerVal) lblLayerVal.textContent = '1';
+      layoutToolbarTitle.textContent = 'Toca un control para moverlo';
     }
   }
 
   function adjustScale(delta) {
     if (!selectedLayoutId) return;
     if (!tempSessionPositions[selectedLayoutId]) {
-      tempSessionPositions[selectedLayoutId] = { x: 0, y: 0, scale: 1.0 };
+      tempSessionPositions[selectedLayoutId] = { x: 0, y: 0, scale: 1.0, zIndex: getItemZIndex(selectedLayoutId) };
     }
     const item = tempSessionPositions[selectedLayoutId];
     let curScale = (typeof item.scale === 'number') ? item.scale : 1.0;
@@ -896,8 +922,80 @@
     }
   }
 
+  function adjustLayer(delta) {
+    if (!selectedLayoutId) return;
+    if (!tempSessionPositions[selectedLayoutId]) {
+      tempSessionPositions[selectedLayoutId] = { x: 0, y: 0, scale: 1.0, zIndex: getItemZIndex(selectedLayoutId) };
+    }
+    const item = tempSessionPositions[selectedLayoutId];
+    let curZ = getItemZIndex(selectedLayoutId);
+    curZ = Math.max(1, Math.min(99, curZ + delta));
+    item.zIndex = curZ;
+    delete item.z;
+
+    if (lblLayerVal) lblLayerVal.textContent = curZ.toString();
+
+    const el = document.querySelector(`.layout-item[data-layout-id="${selectedLayoutId}"]`);
+    if (el) {
+      el.style.zIndex = curZ.toString();
+    }
+  }
+
+  function sendToBottom() {
+    if (!selectedLayoutId) return;
+    if (!tempSessionPositions[selectedLayoutId]) {
+      tempSessionPositions[selectedLayoutId] = { x: 0, y: 0, scale: 1.0, zIndex: 1 };
+    }
+    const item = tempSessionPositions[selectedLayoutId];
+    item.zIndex = 1;
+    delete item.z;
+
+    // Asegurar que los demás controles queden al menos en capa 2 para que este quede atrás de todo
+    document.querySelectorAll('.layout-item[data-layout-id]').forEach((el) => {
+      const id = el.getAttribute('data-layout-id');
+      if (id !== selectedLayoutId) {
+        if (!tempSessionPositions[id]) {
+          tempSessionPositions[id] = { x: 0, y: 0, scale: 1.0, zIndex: getItemZIndex(id) };
+        }
+        if (getItemZIndex(id) <= 1) {
+          tempSessionPositions[id].zIndex = 2;
+          el.style.zIndex = '2';
+        }
+      }
+    });
+
+    if (lblLayerVal) lblLayerVal.textContent = '1';
+    const el = document.querySelector(`.layout-item[data-layout-id="${selectedLayoutId}"]`);
+    if (el) el.style.zIndex = '1';
+  }
+
+  function bringToTop() {
+    if (!selectedLayoutId) return;
+    if (!tempSessionPositions[selectedLayoutId]) {
+      tempSessionPositions[selectedLayoutId] = { x: 0, y: 0, scale: 1.0, zIndex: 5 };
+    }
+    const item = tempSessionPositions[selectedLayoutId];
+    let maxZ = 5;
+    document.querySelectorAll('.layout-item[data-layout-id]').forEach((el) => {
+      const id = el.getAttribute('data-layout-id');
+      const z = getItemZIndex(id);
+      if (z > maxZ) maxZ = z;
+    });
+    const targetZ = Math.min(99, maxZ + 1);
+    item.zIndex = targetZ;
+    delete item.z;
+
+    if (lblLayerVal) lblLayerVal.textContent = targetZ.toString();
+    const el = document.querySelector(`.layout-item[data-layout-id="${selectedLayoutId}"]`);
+    if (el) el.style.zIndex = targetZ.toString();
+  }
+
   btnScaleDown.addEventListener('click', () => adjustScale(-0.1));
   btnScaleUp.addEventListener('click', () => adjustScale(0.1));
+  if (btnLayerBottom) btnLayerBottom.addEventListener('click', sendToBottom);
+  if (btnLayerDown) btnLayerDown.addEventListener('click', () => adjustLayer(-1));
+  if (btnLayerUp) btnLayerUp.addEventListener('click', () => adjustLayer(1));
+  if (btnLayerTop) btnLayerTop.addEventListener('click', bringToTop);
 
   function toggleEditLayout(forceState) {
     isEditingLayout = (forceState !== undefined) ? forceState : !isEditingLayout;

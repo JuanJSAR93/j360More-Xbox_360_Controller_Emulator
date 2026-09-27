@@ -195,6 +195,39 @@ html, body {
   text-overflow: ellipsis;
 }
 
+.layout-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.layout-layer-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.layer-title-badge {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.layer-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ff9800;
+  min-width: 16px;
+  text-align: center;
+  margin-right: 2px;
+}
+
 .layout-scale-controls {
   display: flex;
   align-items: center;
@@ -367,6 +400,7 @@ body.layout-editing .layout-item {
   outline: 1px dashed rgba(255, 255, 255, 0.4) !important;
   outline-offset: 4px;
   cursor: move !important;
+  pointer-events: auto !important;
 }
 
 body.layout-editing .layout-item.selected {
@@ -534,6 +568,8 @@ body.layout-editing .layout-item.selected::after {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .joystick-base {
@@ -548,6 +584,7 @@ body.layout-editing .layout-item.selected::after {
   position: relative;
   box-shadow: inset 0 3px 6px rgba(0,0,0,0.5);
   touch-action: none;
+  pointer-events: auto;
 }
 
 .joystick-knob {
