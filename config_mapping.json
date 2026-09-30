@@ -4,7 +4,7 @@
   "language": "en",
   "max_controllers": 8,
   "auto_assign_usb": true,
-  "airpad_server_enabled": true,
+  "airpad_server_enabled": false,
   "airpad_server_port": 8080,
   "airpad_auto_assign": true,
   "airpad_haptics_enabled": true,
@@ -50,16 +50,16 @@
     "1": {
       "name": "Jugador 1",
       "enabled": true,
-      "physical_device_id": "phone_1",
+      "physical_device_id": "kbd_92d465e9",
       "mappings": {
-        "LEFT_TRIGGER": "Axis 3",
+        "LEFT_TRIGGER": "Button 7",
         "LEFT_SHOULDER": "Button 5",
-        "BACK": "Button 7",
-        "START": "Button 8",
-        "GUIDE": "Button 11",
+        "BACK": "Button 9",
+        "START": "Button 10",
+        "GUIDE": "-- Ninguno --",
         "LEFT_STICK_X": "Axis 1",
         "LEFT_STICK_Y": "Axis 2",
-        "LEFT_THUMB": "Button 9",
+        "LEFT_THUMB": "Button 11",
         "LEFT_STICK_UP": "-- Ninguno --",
         "LEFT_STICK_DOWN": "-- Ninguno --",
         "LEFT_STICK_LEFT": "-- Ninguno --",
@@ -68,15 +68,15 @@
         "DPAD_DOWN": "POV 1 Down",
         "DPAD_LEFT": "POV 1 Left",
         "DPAD_RIGHT": "POV 1 Right",
-        "RIGHT_TRIGGER": "Axis 6",
+        "RIGHT_TRIGGER": "Button 8",
         "RIGHT_SHOULDER": "Button 6",
-        "Y": "Button 4",
-        "X": "Button 3",
+        "Y": "Button 1",
+        "X": "Button 4",
         "B": "Button 2",
-        "A": "Button 1",
+        "A": "Button 3",
         "RIGHT_STICK_X": "Axis 4",
-        "RIGHT_STICK_Y": "Axis 5",
-        "RIGHT_THUMB": "Button 10",
+        "RIGHT_STICK_Y": "Axis 3",
+        "RIGHT_THUMB": "Button 12",
         "RIGHT_STICK_UP": "-- Ninguno --",
         "RIGHT_STICK_DOWN": "-- Ninguno --",
         "RIGHT_STICK_LEFT": "-- Ninguno --",
@@ -87,27 +87,59 @@
           "deadzone": 0.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert": false
         },
         "right_trigger": {
           "deadzone": 0.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert": false
         },
         "left_stick": {
           "deadzone": 8.0,
           "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
+          "sensitivity": -150.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert_x": false,
           "invert_y": false
         },
         "right_stick": {
           "deadzone": 8.0,
           "anti_deadzone": 0.0,
-          "sensitivity": 0.0,
-          "invert_x": false,
-          "invert_y": false
+          "sensitivity": -150.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
+          "invert_x": true,
+          "invert_y": true
         }
       },
       "rumble": {
@@ -120,8 +152,8 @@
     },
     "2": {
       "name": "Jugador 2",
-      "enabled": true,
-      "physical_device_id": "joy_0",
+      "enabled": false,
+      "physical_device_id": "none",
       "mappings": {
         "LEFT_TRIGGER": "Axis 5",
         "LEFT_SHOULDER": "Button 5",
@@ -158,18 +190,42 @@
           "deadzone": 0.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert": false
         },
         "right_trigger": {
           "deadzone": 0.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert": false
         },
         "left_stick": {
           "deadzone": 8.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert_x": false,
           "invert_y": false
         },
@@ -177,6 +233,14 @@
           "deadzone": 8.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert_x": false,
           "invert_y": false
         }
@@ -241,6 +305,14 @@
           "deadzone": 8.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert_x": false,
           "invert_y": false
         },
@@ -248,6 +320,14 @@
           "deadzone": 8.0,
           "anti_deadzone": 0.0,
           "sensitivity": 0.0,
+          "curve_type": "exponential",
+          "custom_nodes": [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0
+          ],
           "invert_x": false,
           "invert_y": false
         }

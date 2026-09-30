@@ -3,7 +3,8 @@ import sys
 import time
 import math
 import threading
-from typing import Dict, Any, Optional, Set, Tuple
+from typing import Dict, Any, Optional, Set, Tuple, List
+import easings
 
 try:
     import vgamepad as vg
@@ -120,26 +121,88 @@ def apply_axis_calibration(val: float, deadzone_pct: float, anti_deadzone_pct: f
     sign = 1.0 if val >= 0 else -1.0
     return max(-1.0, min(1.0, sign * anti_v))
 
-def apply_trigger_calibration(val: float, deadzone_pct: float, anti_deadzone_pct: float, sensitivity_pct: float, invert: bool = False) -> float:
-    """Aplica zona muerta, anti-deadzone, sensibilidad exponencial e inversion a un gatillo [0.0, 1.0]."""
+def apply_stick_radial_calibration(
+    x: float,
+    y: float,
+    deadzone_pct: float = 8.0,
+    anti_deadzone_pct: float = 0.0,
+    sensitivity_pct: float = 0.0,
+    curve_type: str = "exponential",
+    custom_nodes: Optional[List[float]] = None,
+    invert_x: bool = False,
+    invert_y: bool = False
+) -> Tuple[float, float, float, float]:
+    """
+    Aplica calibración radial / polar 2D uniforme:
+    1. Inversión de signos de ejes
+    2. Magnitud euclidiana r y ángulo theta
+    3. Zona muerta circular
+    4. Curva de respuesta (Exponencial, easings.net o Nodos PCHIP)
+    5. Anti-deadzone
+    6. Re-proyección cartesiana 2D
+    Retorna: (cal_x, cal_y, raw_mag, out_mag)
+    """
+    if invert_x:
+        x = -x
+    if invert_y:
+        y = -y
+
+    raw_mag = math.sqrt(x * x + y * y)
+    if raw_mag == 0.0:
+        return 0.0, 0.0, 0.0, 0.0
+
+    d = max(0.0, min(0.99, deadzone_pct / 100.0))
+    a = max(0.0, min(0.99, anti_deadzone_pct / 100.0))
+
+    clamped_r = min(1.0, raw_mag)
+
+    if clamped_r <= d:
+        return 0.0, 0.0, clamped_r, 0.0
+
+    norm_r = (clamped_r - d) / (1.0 - d)
+    curved_r = easings.evaluate_curve(curve_type, norm_r, sensitivity_pct, custom_nodes)
+
+    if a > 0.0:
+        out_mag = a + (1.0 - a) * curved_r
+    else:
+        out_mag = curved_r
+
+    out_mag = max(0.0, min(1.0, out_mag))
+
+    cos_th = x / raw_mag
+    sin_th = y / raw_mag
+
+    cal_x = max(-1.0, min(1.0, out_mag * cos_th))
+    cal_y = max(-1.0, min(1.0, out_mag * sin_th))
+
+    return cal_x, cal_y, clamped_r, out_mag
+
+def apply_trigger_calibration(
+    val: float,
+    deadzone_pct: float,
+    anti_deadzone_pct: float,
+    sensitivity_pct: float,
+    invert: bool = False,
+    curve_type: str = "exponential",
+    custom_nodes: list = None
+) -> float:
+    """Aplica zona muerta, anti-deadzone, curva de respuesta (easings/custom) e inversion a un gatillo [0.0, 1.0]."""
     if invert:
         val = 1.0 - val
 
     d = max(0.0, min(0.99, deadzone_pct / 100.0))
     a = max(0.0, min(0.99, anti_deadzone_pct / 100.0))
-    s = max(-10.0, min(10.0, sensitivity_pct / 100.0))
 
     if val <= d:
         return 0.0
 
     norm_v = (val - d) / (1.0 - d)
-    gamma = 2.0 ** (-s)
-    sens_v = norm_v ** gamma
+    curved_v = easings.evaluate_curve(curve_type, norm_v, sensitivity_pct, custom_nodes)
 
     if a > 0.0:
-        res = a + (1.0 - a) * sens_v
+        res = a + (1.0 - a) * curved_v
     else:
-        res = sens_v
+        res = curved_v
 
     return max(0.0, min(1.0, res))
 
@@ -591,7 +654,9 @@ class EmulatorEngine:
                     deadzone_pct=c_lt.get("deadzone", 0),
                     anti_deadzone_pct=c_lt.get("anti_deadzone", 0),
                     sensitivity_pct=c_lt.get("sensitivity", 0),
-                    invert=c_lt.get("invert", False)
+                    invert=c_lt.get("invert", False),
+                    curve_type=c_lt.get("curve_type", "exponential"),
+                    custom_nodes=c_lt.get("custom_nodes", None)
                 )
                 lt_byte = int(lt_calib * 255)
 
@@ -609,7 +674,9 @@ class EmulatorEngine:
                     deadzone_pct=c_rt.get("deadzone", 0),
                     anti_deadzone_pct=c_rt.get("anti_deadzone", 0),
                     sensitivity_pct=c_rt.get("sensitivity", 0),
-                    invert=c_rt.get("invert", False)
+                    invert=c_rt.get("invert", False),
+                    curve_type=c_rt.get("curve_type", "exponential"),
+                    custom_nodes=c_rt.get("custom_nodes", None)
                 )
                 rt_byte = int(rt_calib * 255)
 
@@ -636,19 +703,15 @@ class EmulatorEngine:
                 lx_raw = lx_axis if abs(lx_axis) > 0.0 else dig_lx
                 ly_raw = ly_axis if abs(ly_axis) > 0.0 else dig_ly
 
-                lx_calib = apply_axis_calibration(
-                    lx_raw,
+                lx_calib, ly_calib, ls_raw_mag, ls_out_mag = apply_stick_radial_calibration(
+                    lx_raw, ly_raw,
                     deadzone_pct=c_ls.get("deadzone", 8),
                     anti_deadzone_pct=c_ls.get("anti_deadzone", 0),
                     sensitivity_pct=c_ls.get("sensitivity", 0),
-                    invert=c_ls.get("invert_x", False)
-                )
-                ly_calib = apply_axis_calibration(
-                    ly_raw,
-                    deadzone_pct=c_ls.get("deadzone", 8),
-                    anti_deadzone_pct=c_ls.get("anti_deadzone", 0),
-                    sensitivity_pct=c_ls.get("sensitivity", 0),
-                    invert=c_ls.get("invert_y", False)
+                    curve_type=c_ls.get("curve_type", "exponential"),
+                    custom_nodes=c_ls.get("custom_nodes", None),
+                    invert_x=c_ls.get("invert_x", False),
+                    invert_y=c_ls.get("invert_y", False)
                 )
 
                 # 4. Stick Derecho (RS)
@@ -671,19 +734,15 @@ class EmulatorEngine:
                 rx_raw = rx_axis if abs(rx_axis) > 0.0 else dig_rx
                 ry_raw = ry_axis if abs(ry_axis) > 0.0 else dig_ry
 
-                rx_calib = apply_axis_calibration(
-                    rx_raw,
+                rx_calib, ry_calib, rs_raw_mag, rs_out_mag = apply_stick_radial_calibration(
+                    rx_raw, ry_raw,
                     deadzone_pct=c_rs.get("deadzone", 8),
                     anti_deadzone_pct=c_rs.get("anti_deadzone", 0),
                     sensitivity_pct=c_rs.get("sensitivity", 0),
-                    invert=c_rs.get("invert_x", False)
-                )
-                ry_calib = apply_axis_calibration(
-                    ry_raw,
-                    deadzone_pct=c_rs.get("deadzone", 8),
-                    anti_deadzone_pct=c_rs.get("anti_deadzone", 0),
-                    sensitivity_pct=c_rs.get("sensitivity", 0),
-                    invert=c_rs.get("invert_y", False)
+                    curve_type=c_rs.get("curve_type", "exponential"),
+                    custom_nodes=c_rs.get("custom_nodes", None),
+                    invert_x=c_rs.get("invert_x", False),
+                    invert_y=c_rs.get("invert_y", False)
                 )
 
                 # 5. Envio al backend correspondiente
@@ -794,7 +853,9 @@ class EmulatorEngine:
                             "lx_raw": lx_raw, "lx": lx_calib,
                             "ly_raw": ly_raw, "ly": ly_calib,
                             "rx_raw": rx_raw, "rx": rx_calib,
-                            "ry_raw": ry_raw, "ry": ry_calib
+                            "ry_raw": ry_raw, "ry": ry_calib,
+                            "ls_raw_mag": ls_raw_mag, "ls_out_mag": ls_out_mag,
+                            "rs_raw_mag": rs_raw_mag, "rs_out_mag": rs_out_mag
                         })
                     else:
                         self.active_states[pad_id] = {
@@ -805,6 +866,8 @@ class EmulatorEngine:
                             "ly_raw": ly_raw, "ly": ly_calib,
                             "rx_raw": rx_raw, "rx": rx_calib,
                             "ry_raw": ry_raw, "ry": ry_calib,
+                            "ls_raw_mag": ls_raw_mag, "ls_out_mag": ls_out_mag,
+                            "rs_raw_mag": rs_raw_mag, "rs_out_mag": rs_out_mag,
                             "rumble_v_left": 0, "rumble_v_right": 0,
                             "rumble_left": 0, "rumble_right": 0
                         }
@@ -851,7 +914,15 @@ class EmulatorEngine:
             lt_norm = 1.0
         else:
             lt_norm = max(0.0, min(1.0, (lt_raw + 1.0) / 2.0 if ("Axis" in lt_map and not ("+" in lt_map or "-" in lt_map)) else lt_raw))
-        lt_calib = apply_trigger_calibration(lt_norm, c_lt.get("deadzone", 0), c_lt.get("anti_deadzone", 0), c_lt.get("sensitivity", 0), c_lt.get("invert", False))
+        lt_calib = apply_trigger_calibration(
+            lt_norm,
+            c_lt.get("deadzone", 0),
+            c_lt.get("anti_deadzone", 0),
+            c_lt.get("sensitivity", 0),
+            c_lt.get("invert", False),
+            curve_type=c_lt.get("curve_type", "exponential"),
+            custom_nodes=c_lt.get("custom_nodes", None)
+        )
         lt_byte = int(lt_calib * 255)
 
         rt_map = canonicalize_mapping(mappings.get("RIGHT_TRIGGER", ""))
@@ -860,7 +931,15 @@ class EmulatorEngine:
             rt_norm = 1.0
         else:
             rt_norm = max(0.0, min(1.0, (rt_raw + 1.0) / 2.0 if ("Axis" in rt_map and not ("+" in rt_map or "-" in rt_map)) else rt_raw))
-        rt_calib = apply_trigger_calibration(rt_norm, c_rt.get("deadzone", 0), c_rt.get("anti_deadzone", 0), c_rt.get("sensitivity", 0), c_rt.get("invert", False))
+        rt_calib = apply_trigger_calibration(
+            rt_norm,
+            c_rt.get("deadzone", 0),
+            c_rt.get("anti_deadzone", 0),
+            c_rt.get("sensitivity", 0),
+            c_rt.get("invert", False),
+            curve_type=c_rt.get("curve_type", "exponential"),
+            custom_nodes=c_rt.get("custom_nodes", None)
+        )
         rt_byte = int(rt_calib * 255)
 
         _, lx_axis = self._eval_mapping(mappings.get("LEFT_STICK_X", ""), joy_state, dev_id)
@@ -882,8 +961,16 @@ class EmulatorEngine:
         lx_raw = lx_axis if abs(lx_axis) > 0.0 else dig_lx
         ly_raw = ly_axis if abs(ly_axis) > 0.0 else dig_ly
 
-        lx_calib = apply_axis_calibration(lx_raw, c_ls.get("deadzone", 8), c_ls.get("anti_deadzone", 0), c_ls.get("sensitivity", 0), c_ls.get("invert_x", False))
-        ly_calib = apply_axis_calibration(ly_raw, c_ls.get("deadzone", 8), c_ls.get("anti_deadzone", 0), c_ls.get("sensitivity", 0), c_ls.get("invert_y", False))
+        lx_calib, ly_calib, ls_raw_mag, ls_out_mag = apply_stick_radial_calibration(
+            lx_raw, ly_raw,
+            deadzone_pct=c_ls.get("deadzone", 8),
+            anti_deadzone_pct=c_ls.get("anti_deadzone", 0),
+            sensitivity_pct=c_ls.get("sensitivity", 0),
+            curve_type=c_ls.get("curve_type", "exponential"),
+            custom_nodes=c_ls.get("custom_nodes", None),
+            invert_x=c_ls.get("invert_x", False),
+            invert_y=c_ls.get("invert_y", False)
+        )
 
         _, rx_axis = self._eval_mapping(mappings.get("RIGHT_STICK_X", ""), joy_state)
         _, ry_axis = self._eval_mapping(mappings.get("RIGHT_STICK_Y", ""), joy_state)
@@ -904,16 +991,24 @@ class EmulatorEngine:
         rx_raw = rx_axis if abs(rx_axis) > 0.0 else dig_rx
         ry_raw = ry_axis if abs(ry_axis) > 0.0 else dig_ry
 
-        rx_calib = apply_axis_calibration(rx_raw, c_rs.get("deadzone", 8), c_rs.get("anti_deadzone", 0), c_rs.get("sensitivity", 0), c_rs.get("invert_x", False))
-        ry_calib = apply_axis_calibration(ry_raw, c_rs.get("deadzone", 8), c_rs.get("anti_deadzone", 0), c_rs.get("sensitivity", 0), c_rs.get("invert_y", False))
+        rx_calib, ry_calib, rs_raw_mag, rs_out_mag = apply_stick_radial_calibration(
+            rx_raw, ry_raw,
+            deadzone_pct=c_rs.get("deadzone", 8),
+            anti_deadzone_pct=c_rs.get("anti_deadzone", 0),
+            sensitivity_pct=c_rs.get("sensitivity", 0),
+            curve_type=c_rs.get("curve_type", "exponential"),
+            custom_nodes=c_rs.get("custom_nodes", None),
+            invert_x=c_rs.get("invert_x", False),
+            invert_y=c_rs.get("invert_y", False)
+        )
 
         return {
             "buttons": pressed_buttons,
             "lt_raw": lt_norm, "lt": lt_byte,
             "rt_raw": rt_norm, "rt": rt_byte,
-            "lx_raw": lx_raw, "lx": lx_calib,
+            "lx_raw": lx_raw, "lx": lx_calib, "ls_raw_mag": ls_raw_mag, "ls_out_mag": ls_out_mag,
             "ly_raw": ly_raw, "ly": ly_calib,
-            "rx_raw": rx_raw, "rx": rx_calib,
+            "rx_raw": rx_raw, "rx": rx_calib, "rs_raw_mag": rs_raw_mag, "rs_out_mag": rs_out_mag,
             "ry_raw": ry_raw, "ry": ry_calib
         }
 

@@ -25,6 +25,7 @@ except ImportError:
     qrcode = None
 
 import web_gamepad_server
+import easings
 
 from driver_manager import DriverManager
 from input_devices import DeviceManager
@@ -35,7 +36,7 @@ from i18n import (
     canonicalize_mapping, localize_mapping
 )
 
-APP_VERSION = "1.5.3"
+APP_VERSION = "1.6.0"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:
@@ -365,10 +366,10 @@ DEFAULT_MAPPINGS = {
 }
 
 DEFAULT_CALIBRATION = {
-    "left_trigger": {"deadzone": 0, "anti_deadzone": 0, "sensitivity": 0, "invert": False},
-    "right_trigger": {"deadzone": 0, "anti_deadzone": 0, "sensitivity": 0, "invert": False},
-    "left_stick": {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "invert_x": False, "invert_y": False},
-    "right_stick": {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "invert_x": False, "invert_y": False}
+    "left_trigger": {"deadzone": 0, "anti_deadzone": 0, "sensitivity": 0, "curve_type": "exponential", "custom_nodes": [0.0, 0.125, 0.25, 0.375, 0.50, 0.625, 0.75, 0.875, 1.0], "invert": False},
+    "right_trigger": {"deadzone": 0, "anti_deadzone": 0, "sensitivity": 0, "curve_type": "exponential", "custom_nodes": [0.0, 0.125, 0.25, 0.375, 0.50, 0.625, 0.75, 0.875, 1.0], "invert": False},
+    "left_stick": {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "curve_type": "exponential", "custom_nodes": [0.0, 0.125, 0.25, 0.375, 0.50, 0.625, 0.75, 0.875, 1.0], "invert_x": False, "invert_y": False},
+    "right_stick": {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "curve_type": "exponential", "custom_nodes": [0.0, 0.125, 0.25, 0.375, 0.50, 0.625, 0.75, 0.875, 1.0], "invert_x": False, "invert_y": False}
 }
 
 DEFAULT_RUMBLE_CONFIG = {
@@ -939,6 +940,17 @@ class J360MoreApp:
     def t(self, key: str, **kwargs) -> str:
         lang = self.config.get("language", "es")
         return get_text(lang, key, **kwargs)
+
+    def _get_curve_display_maps(self):
+        """Devuelve tuplas (id, texto_localizado) y diccionarios bidireccionales según el idioma configurado."""
+        lang = self.config.get("language", "es").lower()
+        is_es = lang.startswith("es")
+        curve_choices_list = [(cid, es if is_es else en) for cid, es, en in easings.CURVE_CHOICES]
+        id_to_disp = {cid: disp for cid, disp in curve_choices_list}
+        disp_to_id = {disp: cid for cid, disp in curve_choices_list}
+        if "exponential" in id_to_disp:
+            id_to_disp["default"] = id_to_disp["exponential"]
+        return curve_choices_list, id_to_disp, disp_to_id
 
     def _get_current_pad_id(self) -> int:
         try:
@@ -1986,22 +1998,45 @@ class J360MoreApp:
             box = ttk.LabelFrame(parent_frame, text=title, padding=6)
             box.pack(fill=tk.BOTH, expand=True, pady=3)
 
-            data = calib_cfg.get(trig_key, {"deadzone": 0, "anti_deadzone": 0, "sensitivity": 0, "invert": False})
+            data = calib_cfg.get(trig_key, {"deadzone": 0, "anti_deadzone": 0, "sensitivity": 0, "curve_type": "exponential", "custom_nodes": [0.0, 0.25, 0.50, 0.75, 1.0], "invert": False})
 
             # Contenedor visual: Curva de Respuesta cuadrada
             curve_box = ttk.LabelFrame(box, text=self.t("curve_response"), padding=2)
             curve_box.pack(side=tk.LEFT, padx=6)
 
             s_w, s_h = 125, 125
-            cv = tk.Canvas(curve_box, width=s_w, height=s_h, bg="#ffffff", highlightthickness=1, highlightbackground="#cccccc")
+            cv = tk.Canvas(curve_box, width=s_w, height=s_h, bg="#ffffff", highlightthickness=1, highlightbackground="#cccccc", cursor="hand2")
             cv.pack()
 
             lbl_di_xi = ttk.Label(curve_box, text="DI: 0    XI: 0", font=("Consolas", 8, "bold"))
             lbl_di_xi.pack(pady=1)
 
-            right_box = ttk.Frame(box)
-            right_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
+            right_box = ttk.Frame(box, padding=2)
+            right_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
 
+            # [1] Tipo de Curva (ENCIMA DE LOS SLIDERS)
+            curve_type_row = ttk.Frame(right_box)
+            curve_type_row.pack(fill=tk.X, pady=(0, 4))
+
+            ttk.Label(curve_type_row, text=self.t("lbl_curve_type"), font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
+
+            curve_choices_list, curve_id_to_disp, curve_disp_to_id = self._get_curve_display_maps()
+
+            cur_curve_type = data.get("curve_type", "exponential")
+            curve_type_var = tk.StringVar(value=cur_curve_type)
+            initial_disp = curve_id_to_disp.get(cur_curve_type, curve_id_to_disp.get("exponential", curve_choices_list[0][1]))
+
+            cb_curve_type = ttk.Combobox(
+                curve_type_row,
+                values=[disp for _, disp in curve_choices_list],
+                state="readonly",
+                width=28
+            )
+            cb_curve_type.set(initial_disp)
+            cb_curve_type.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            widgets["mapping_controls"].append(cb_curve_type)
+
+            # [2] Sliders Actuales (EN EL MEDIO)
             calib_vars = {}
             adz_var = self._build_calib_row(right_box, self.t("lbl_anti_deadzone"), 0, 100, float(data.get("anti_deadzone", 0)), calib_vars, "adz_var", widgets)
             dz_var = self._build_calib_row(right_box, self.t("lbl_deadzone"), 0, 100, float(data.get("deadzone", 0)), calib_vars, "dz_var", widgets)
@@ -2012,14 +2047,52 @@ class J360MoreApp:
             chk_inv.pack(anchor="w", pady=1)
             widgets["mapping_controls"].append(chk_inv)
 
+            # [3] Curva Personalizada (DEBAJO DE LOS SLIDERS)
+            raw_nodes = data.get("custom_nodes", [0.0, 0.25, 0.50, 0.75, 1.0])
+            custom_nodes = list(raw_nodes) if isinstance(raw_nodes, list) and len(raw_nodes) >= 3 else [0.0, 0.25, 0.50, 0.75, 1.0]
+
+            custom_row = ttk.Frame(right_box)
+            custom_row.pack(fill=tk.X, pady=(4, 0))
+
+            btn_edit_curve = ttk.Button(
+                custom_row,
+                text=self.t("btn_edit_custom_curve"),
+                command=lambda: self._open_custom_curve_dialog(pad_id, trig_key, title)
+            )
+            btn_edit_curve.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            widgets["mapping_controls"].append(btn_edit_curve)
+
+            def on_curve_type_selected(event=None):
+                disp_val = cb_curve_type.get()
+                cid = curve_disp_to_id.get(disp_val, "exponential")
+                curve_type_var.set(cid)
+                self._update_sens_control_state(pad_id, trig_key)
+                cur_nodes = widgets["calib"].get(trig_key, {}).get("custom_nodes", custom_nodes)
+                self._draw_trigger_graph(cv, dz_var.get(), adz_var.get(), sens_var.get(), inv_var.get(), 0.0, 0, curve_type=cid, custom_nodes=cur_nodes)
+                self._sync_ui_to_config()
+                if cid == "custom":
+                    self._open_custom_curve_dialog(pad_id, trig_key, title)
+
+            cb_curve_type.bind("<<ComboboxSelected>>", on_curve_type_selected)
+            cv.bind("<Button-1>", lambda e: self._open_custom_curve_dialog(pad_id, trig_key, title))
+
             widgets["calib"][trig_key] = {
+                "type": "trigger",
                 "canvas": cv,
                 "lbl_di_xi": lbl_di_xi,
                 "adz_var": adz_var,
                 "dz_var": dz_var,
                 "sens_var": sens_var,
+                "sens_scale": calib_vars.get("sens_var_scale"),
+                "sens_entry": calib_vars.get("sens_var_entry_widget"),
+                "curve_type_var": curve_type_var,
+                "custom_nodes": custom_nodes,
+                "cb_curve_type": cb_curve_type,
+                "curve_id_to_disp": curve_id_to_disp,
+                "curve_disp_to_id": curve_disp_to_id,
                 "inv_var": inv_var
             }
+            self._update_sens_control_state(pad_id, trig_key)
 
         pad_type = self.get_pad_emulated_type(pad_id)
         if pad_type in ("ds4", "dualsense"):
@@ -2039,7 +2112,7 @@ class J360MoreApp:
         calib_cfg = cfg.get("calibration", json.loads(json.dumps(DEFAULT_CALIBRATION)))
 
         def make_stick_box(parent_frame, stick_key: str, stick_title: str):
-            data = calib_cfg.get(stick_key, {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "invert_x": False, "invert_y": False})
+            data = calib_cfg.get(stick_key, {"deadzone": 8, "anti_deadzone": 0, "sensitivity": 0, "curve_type": "exponential", "custom_nodes": [0.0, 0.25, 0.50, 0.75, 1.0], "invert_x": False, "invert_y": False})
 
             box = ttk.LabelFrame(parent_frame, text=stick_title, padding=6)
             box.pack(fill=tk.BOTH, expand=True, pady=3)
@@ -2063,7 +2136,7 @@ class J360MoreApp:
             curve_box = ttk.LabelFrame(visuals_row, text=self.t("curve_response"), padding=2)
             curve_box.pack(side=tk.LEFT, padx=3)
 
-            cv_curve = tk.Canvas(curve_box, width=s_w, height=s_h, bg="#ffffff", highlightthickness=1, highlightbackground="#cccccc")
+            cv_curve = tk.Canvas(curve_box, width=s_w, height=s_h, bg="#ffffff", highlightthickness=1, highlightbackground="#cccccc", cursor="hand2")
             cv_curve.pack()
 
             lbl_di_xi = ttk.Label(curve_box, text="DI: 0    XI: 0", font=("Consolas", 8, "bold"))
@@ -2073,6 +2146,29 @@ class J360MoreApp:
             right_box = ttk.Frame(box, padding=2)
             right_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
 
+            # [1] Tipo de Curva (ENCIMA DE LOS SLIDERS)
+            curve_type_row = ttk.Frame(right_box)
+            curve_type_row.pack(fill=tk.X, pady=(0, 4))
+
+            ttk.Label(curve_type_row, text=self.t("lbl_curve_type"), font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
+
+            curve_choices_list, curve_id_to_disp, curve_disp_to_id = self._get_curve_display_maps()
+
+            cur_curve_type = data.get("curve_type", "exponential")
+            curve_type_var = tk.StringVar(value=cur_curve_type)
+            initial_disp = curve_id_to_disp.get(cur_curve_type, curve_id_to_disp.get("exponential", curve_choices_list[0][1]))
+
+            cb_curve_type = ttk.Combobox(
+                curve_type_row,
+                values=[disp for _, disp in curve_choices_list],
+                state="readonly",
+                width=28
+            )
+            cb_curve_type.set(initial_disp)
+            cb_curve_type.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            widgets["mapping_controls"].append(cb_curve_type)
+
+            # [2] Sliders Actuales (EN EL MEDIO)
             calib_vars = {}
             adz_var = self._build_calib_row(right_box, self.t("lbl_anti_deadzone"), 0, 100, float(data.get("anti_deadzone", 0)), calib_vars, "adz_var", widgets)
             dz_var = self._build_calib_row(right_box, self.t("lbl_deadzone"), 0, 100, float(data.get("deadzone", 8)), calib_vars, "dz_var", widgets)
@@ -2091,7 +2187,39 @@ class J360MoreApp:
             chk_inv_y.pack(side=tk.LEFT)
             widgets["mapping_controls"].append(chk_inv_y)
 
+            # [3] Curva Personalizada (DEBAJO DE LOS SLIDERS)
+            raw_nodes = data.get("custom_nodes", [0.0, 0.25, 0.50, 0.75, 1.0])
+            custom_nodes = list(raw_nodes) if isinstance(raw_nodes, list) and len(raw_nodes) >= 3 else [0.0, 0.25, 0.50, 0.75, 1.0]
+
+            custom_row = ttk.Frame(right_box)
+            custom_row.pack(fill=tk.X, pady=(4, 0))
+
+            btn_edit_curve = ttk.Button(
+                custom_row,
+                text=self.t("btn_edit_custom_curve"),
+                command=lambda: self._open_custom_curve_dialog(pad_id, stick_key, stick_title)
+            )
+            btn_edit_curve.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            widgets["mapping_controls"].append(btn_edit_curve)
+
+            def on_curve_type_selected(event=None):
+                disp_val = cb_curve_type.get()
+                cid = curve_disp_to_id.get(disp_val, "exponential")
+                curve_type_var.set(cid)
+                self._update_sens_control_state(pad_id, stick_key)
+                cur_nodes = widgets["calib"].get(stick_key, {}).get("custom_nodes", custom_nodes)
+                self._draw_stick_curve(cv_curve, dz_var.get(), adz_var.get(), sens_var.get(), 0.0, 0.0, curve_type=cid, custom_nodes=cur_nodes)
+                self._sync_ui_to_config()
+                if cid == "custom":
+                    self._open_custom_curve_dialog(pad_id, stick_key, stick_title)
+
+            cb_curve_type.bind("<<ComboboxSelected>>", on_curve_type_selected)
+
+            # Clic en el canvas de curva para abrir también el editor modal
+            cv_curve.bind("<Button-1>", lambda e: self._open_custom_curve_dialog(pad_id, stick_key, stick_title))
+
             widgets["calib"][stick_key] = {
+                "type": "stick",
                 "canvas": cv_pos,
                 "curve_canvas": cv_curve,
                 "lbl_xy": lbl_xy,
@@ -2099,9 +2227,17 @@ class J360MoreApp:
                 "dz_var": dz_var,
                 "adz_var": adz_var,
                 "sens_var": sens_var,
+                "sens_scale": calib_vars.get("sens_var_scale"),
+                "sens_entry": calib_vars.get("sens_var_entry_widget"),
+                "curve_type_var": curve_type_var,
+                "custom_nodes": custom_nodes,
+                "cb_curve_type": cb_curve_type,
+                "curve_id_to_disp": curve_id_to_disp,
+                "curve_disp_to_id": curve_disp_to_id,
                 "inv_x_var": inv_x_var,
                 "inv_y_var": inv_y_var
             }
+            self._update_sens_control_state(pad_id, stick_key)
 
         pad_type = self.get_pad_emulated_type(pad_id)
         if pad_type in ("ds4", "dualsense"):
@@ -2115,6 +2251,37 @@ class J360MoreApp:
             t_rs = self.t("title_right_stick")
         make_stick_box(parent, "left_stick", t_ls)
         make_stick_box(parent, "right_stick", t_rs)
+
+    def _update_sens_control_state(self, pad_id: int, calib_key: str):
+        """Habilita el slider/campo de Sensitivity exclusivamente para 'exponential' ('Exponencial (Por Defecto)'), y lo desactiva para las demás."""
+        widgets = self.tab_widgets.get(pad_id)
+        if not widgets:
+            return
+        calib_w = widgets.get("calib", {}).get(calib_key)
+        if not calib_w:
+            return
+        has_dev = widgets.get("is_device_assigned", True)
+        cid = calib_w.get("curve_type_var").get() if "curve_type_var" in calib_w else "exponential"
+        is_sens_active = bool(has_dev and (cid in ("exponential", "default")))
+
+        scale = calib_w.get("sens_scale")
+        entry = calib_w.get("sens_entry")
+        if scale:
+            try:
+                scale.state(["!disabled"] if is_sens_active else ["disabled"])
+            except Exception:
+                try:
+                    scale.config(state=tk.NORMAL if is_sens_active else tk.DISABLED)
+                except Exception:
+                    pass
+        if entry:
+            try:
+                entry.state(["!disabled"] if is_sens_active else ["disabled"])
+            except Exception:
+                try:
+                    entry.config(state=tk.NORMAL if is_sens_active else tk.DISABLED)
+                except Exception:
+                    pass
 
     def _build_subtab_rumble(self, pad_id: int, parent: ttk.Frame, widgets: dict):
         cfg = self.config.get("controllers", {}).get(str(pad_id), {})
@@ -2479,6 +2646,9 @@ class J360MoreApp:
                     except Exception:
                         pass
 
+        for calib_key in widgets.get("calib", {}):
+            self._update_sens_control_state(pad_id, calib_key)
+
     def _apply_refreshed_devices(self, new_devices: List[Dict[str, Any]]):
         self.available_devices = new_devices
         dev_names = []
@@ -2631,20 +2801,30 @@ class J360MoreApp:
             c_widgets = widgets.get("calib", {})
             for key in ["left_trigger", "right_trigger"]:
                 if key in c_widgets:
+                    cur_w = c_widgets[key]
+                    c_type = cur_w["curve_type_var"].get() if "curve_type_var" in cur_w else "exponential"
+                    c_nodes = list(cur_w.get("custom_nodes", [0.0, 0.25, 0.50, 0.75, 1.0]))
                     calib[key] = {
-                        "deadzone": c_widgets[key]["dz_var"].get(),
-                        "anti_deadzone": c_widgets[key]["adz_var"].get(),
-                        "sensitivity": c_widgets[key]["sens_var"].get(),
-                        "invert": c_widgets[key]["inv_var"].get()
+                        "deadzone": cur_w["dz_var"].get(),
+                        "anti_deadzone": cur_w["adz_var"].get(),
+                        "sensitivity": cur_w["sens_var"].get(),
+                        "curve_type": c_type,
+                        "custom_nodes": c_nodes,
+                        "invert": cur_w["inv_var"].get()
                     }
             for key in ["left_stick", "right_stick"]:
                 if key in c_widgets:
+                    cur_w = c_widgets[key]
+                    c_type = cur_w["curve_type_var"].get() if "curve_type_var" in cur_w else "exponential"
+                    c_nodes = list(cur_w.get("custom_nodes", [0.0, 0.25, 0.50, 0.75, 1.0]))
                     calib[key] = {
-                        "deadzone": c_widgets[key]["dz_var"].get(),
-                        "anti_deadzone": c_widgets[key]["adz_var"].get(),
-                        "sensitivity": c_widgets[key]["sens_var"].get(),
-                        "invert_x": c_widgets[key]["inv_x_var"].get(),
-                        "invert_y": c_widgets[key]["inv_y_var"].get()
+                        "deadzone": cur_w["dz_var"].get(),
+                        "anti_deadzone": cur_w["adz_var"].get(),
+                        "sensitivity": cur_w["sens_var"].get(),
+                        "curve_type": c_type,
+                        "custom_nodes": c_nodes,
+                        "invert_x": cur_w["inv_x_var"].get(),
+                        "invert_y": cur_w["inv_y_var"].get()
                     }
             self.config["controllers"][str_id]["calibration"] = calib
 
@@ -3769,20 +3949,21 @@ class J360MoreApp:
 
         dlg = tk.Toplevel(self.root)
         dlg.title(self.t("dev_dlg_title"))
-        dlg.geometry("860x440")
-        dlg.resizable(True, True)
+        dlg_w, dlg_h = 920, 480
+        dlg.geometry(f"{dlg_w}x{dlg_h}")
+        dlg.resizable(False, False)
         self._setup_modal_dialog(dlg)
 
-        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 430)
-        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 220)
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - (dlg_w // 2))
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - (dlg_h // 2))
         dlg.geometry(f"+{x}+{y}")
 
         main_f = ttk.Frame(dlg, padding=8)
         main_f.pack(fill=tk.BOTH, expand=True)
 
-        # Encabezado superior
+        # 1. Encabezado superior
         top_header = ttk.Frame(main_f)
-        top_header.pack(fill=tk.X, pady=(0, 6))
+        top_header.pack(side=tk.TOP, fill=tk.X, pady=(0, 6))
 
         header_lbl = ttk.Label(
             top_header,
@@ -3804,9 +3985,16 @@ class J360MoreApp:
         btn_hide = ttk.Button(top_header, text=self.t("dev_btn_hide"), command=lambda: hide_selected_device(), state=tk.DISABLED)
         btn_hide.pack(side=tk.RIGHT, padx=2)
 
-        # Tabla Treeview con columna HidHide agregada
+        # 2. Barra inferior de acciones (anclada abajo antes del tree para asegurar posición inferior fija)
+        bottom_box = ttk.Frame(main_f)
+        bottom_box.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
+
+        # 3. Contenedor de la tabla Treeview (ocupa todo el espacio central)
+        tree_container = ttk.Frame(main_f)
+        tree_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
         cols = ("xinput", "type", "state", "instance_id", "hidhide", "vendor", "product")
-        tree = ttk.Treeview(main_f, columns=cols, show="headings", selectmode="browse")
+        tree = ttk.Treeview(tree_container, columns=cols, show="headings", selectmode="browse")
 
         tree.heading("xinput", text="XInput")
         tree.heading("type", text=self.t("dev_col_type"))
@@ -3816,15 +4004,15 @@ class J360MoreApp:
         tree.heading("vendor", text=self.t("dev_col_vendor"))
         tree.heading("product", text=self.t("dev_col_product"))
 
-        tree.column("xinput", width=90, anchor="center")
-        tree.column("type", width=65, anchor="center")
-        tree.column("state", width=75, anchor="center")
-        tree.column("instance_id", width=95, anchor="center")
-        tree.column("hidhide", width=125, anchor="center")
-        tree.column("vendor", width=190, anchor="w")
-        tree.column("product", width=190, anchor="w")
+        tree.column("xinput", width=95, anchor="center")
+        tree.column("type", width=70, anchor="center")
+        tree.column("state", width=80, anchor="center")
+        tree.column("instance_id", width=100, anchor="center")
+        tree.column("hidhide", width=135, anchor="center")
+        tree.column("vendor", width=200, anchor="w")
+        tree.column("product", width=200, anchor="w")
 
-        tree_scroll = ttk.Scrollbar(main_f, orient=tk.VERTICAL, command=tree.yview)
+        tree_scroll = ttk.Scrollbar(tree_container, orient=tk.VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=tree_scroll.set)
 
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -4048,9 +4236,7 @@ class J360MoreApp:
 
         populate_tree()
 
-        # Boton inferior para asignar al mando actual
-        bottom_box = ttk.Frame(main_f)
-        bottom_box.pack(fill=tk.X, pady=(6, 0))
+        # Acciones de la barra inferior (asignar al mando actual, estado HidHide y cerrar)
 
         def assign_to_current_tab():
             selected = tree.selection()
@@ -4685,7 +4871,18 @@ class J360MoreApp:
         except Exception as e:
             messagebox.showerror(self.t("msg_error"), self.t("hidhide_client_error", e=e))
 
-    def _draw_trigger_graph(self, cv: tk.Canvas, dz: int, adz: int, sens: int, inv: bool, raw_val: float, out_byte: int):
+    def _draw_trigger_graph(
+        self,
+        cv: tk.Canvas,
+        dz: int,
+        adz: int,
+        sens: int,
+        inv: bool,
+        raw_val: float,
+        out_byte: int,
+        curve_type: str = "exponential",
+        custom_nodes: list = None
+    ):
         cv.delete("all")
         w = cv.winfo_width()
         h = cv.winfo_height()
@@ -4701,10 +4898,10 @@ class J360MoreApp:
         cv.create_line(pad, pad, pad, pad + gh, fill="#aaaaaa")
 
         points = []
-        steps = 25
+        steps = 40
         for i in range(steps + 1):
             t = i / steps
-            out_v = apply_trigger_calibration(t, dz, adz, sens, inv)
+            out_v = apply_trigger_calibration(t, dz, adz, sens, inv, curve_type=curve_type, custom_nodes=custom_nodes)
             px = pad + t * gw
             py = (pad + gh) - (out_v * gh)
             points.extend([px, py])
@@ -4744,7 +4941,334 @@ class J360MoreApp:
         dot_y = cy - max(-1.0, min(1.0, y_val)) * r_max
         cv.create_oval(dot_x - 3, dot_y - 3, dot_x + 3, dot_y + 3, fill="#00bb00", outline="#ffffff", width=1)
 
-    def _draw_stick_curve(self, cv: tk.Canvas, dz: int, adz: int, sens: int, raw_mag: float, out_mag: float):
+    def _open_custom_curve_dialog(self, pad_id: int, calib_key: str, item_title: str = ""):
+        """Abre un editor modal flotante para moldear los nodos de la curva personalizada de stick o gatillo."""
+        if pad_id not in self.tab_widgets or "calib" not in self.tab_widgets[pad_id]:
+            return
+        calib_w = self.tab_widgets[pad_id]["calib"].get(calib_key)
+        if not calib_w:
+            return
+
+        cur_cid = calib_w["curve_type_var"].get() if "curve_type_var" in calib_w else "exponential"
+        sens = calib_w["sens_var"].get() if "sens_var" in calib_w else 0.0
+        cur_nodes = calib_w.get("custom_nodes", easings.DEFAULT_CUSTOM_NODES)
+
+        # Si el usuario seleccionó un curve_type diferente a "custom" y le da en editar,
+        # muestreamos esa curva como base inicial de nodos para que pueda editar sobre ella!
+        working_nodes = easings.sample_curve_to_nodes(cur_cid, sensitivity_pct=sens, num_nodes=9, custom_nodes=cur_nodes)
+
+        dlg = tk.Toplevel(self.root)
+        try:
+            dlg_title = self.t("custom_curve_dlg_title").format(title=item_title or calib_key)
+        except Exception:
+            dlg_title = f"Curva Personalizada - {item_title}"
+        dlg.title(dlg_title)
+        dlg.resizable(False, False)
+
+        dlg_w, dlg_h = 470, 550
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - (dlg_w // 2))
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - (dlg_h // 2))
+        dlg.geometry(f"{dlg_w}x{dlg_h}+{x}+{y}")
+        self._setup_modal_dialog(dlg)
+        dlg.lift()
+        dlg.focus_force()
+
+        # Encabezado
+        top_f = ttk.Frame(dlg, padding=(14, 8, 14, 2))
+        top_f.pack(fill=tk.X)
+
+        ttk.Label(top_f, text=item_title or calib_key, font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        ttk.Label(top_f, text=self.t("custom_curve_dlg_hint"), font=("Segoe UI", 8), foreground="#555555").pack(anchor="w", pady=(2, 0))
+
+        # Canvas Frame
+        cv_frame = ttk.Frame(dlg, padding=(14, 4, 14, 4))
+        cv_frame.pack(fill=tk.BOTH, expand=True)
+
+        cw, ch = 440, 290
+        pad_x, pad_y = 38, 16
+        gw = cw - pad_x - 20
+        gh = ch - pad_y - 28
+
+        cv = tk.Canvas(cv_frame, width=cw, height=ch, bg="#ffffff", highlightthickness=1, highlightbackground="#cccccc", cursor="hand2")
+        cv.pack(padx=2, pady=2)
+
+        # Fila de Presets rápidos
+        preset_f = ttk.Frame(dlg, padding=(14, 2, 14, 2))
+        preset_f.pack(fill=tk.X)
+
+        ttk.Label(preset_f, text=self.t("lbl_presets"), font=("Segoe UI", 8, "bold")).pack(side=tk.LEFT, padx=(0, 6))
+
+        def load_preset(nodes_list):
+            nonlocal working_nodes
+            working_nodes = [list(p) for p in nodes_list]
+            node_state["selected_idx"] = None
+            redraw_canvas()
+
+        ttk.Button(preset_f, text=self.t("preset_linear"), command=lambda: load_preset(easings.sample_curve_to_nodes("linear", num_nodes=9)), width=7).pack(side=tk.LEFT, padx=1)
+        ttk.Button(preset_f, text=self.t("preset_smooth"), command=lambda: load_preset(easings.sample_curve_to_nodes("easeInSine", num_nodes=9)), width=7).pack(side=tk.LEFT, padx=1)
+        ttk.Button(preset_f, text=self.t("preset_aggressive"), command=lambda: load_preset(easings.sample_curve_to_nodes("easeOutSine", num_nodes=9)), width=8).pack(side=tk.LEFT, padx=1)
+        ttk.Button(preset_f, text=self.t("preset_scurve"), command=lambda: load_preset(easings.sample_curve_to_nodes("easeInOutCubic", num_nodes=9)), width=7).pack(side=tk.LEFT, padx=1)
+        ttk.Button(preset_f, text=self.t("btn_reset_nodes"), command=lambda: load_preset(easings.sample_curve_to_nodes("linear", num_nodes=9)), width=9).pack(side=tk.RIGHT)
+
+        # Barra de Acciones de Nodos (Agregar / Quitar) y Telemetría
+        node_bar = ttk.Frame(dlg, padding=(14, 4, 14, 4))
+        node_bar.pack(fill=tk.X)
+
+        def do_add_node():
+            if len(working_nodes) >= 24:
+                return
+            max_gap = -1.0
+            insert_pos = 0
+            for i in range(len(working_nodes) - 1):
+                gap = working_nodes[i+1][0] - working_nodes[i][0]
+                if gap > max_gap:
+                    max_gap = gap
+                    insert_pos = i
+            mid_x = round((working_nodes[insert_pos][0] + working_nodes[insert_pos+1][0]) / 2.0, 3)
+            mid_y = round(easings.evaluate_custom_nodes(mid_x, working_nodes), 3)
+            working_nodes.append([mid_x, mid_y])
+            working_nodes.sort(key=lambda p: p[0])
+            for idx, p in enumerate(working_nodes):
+                if abs(p[0] - mid_x) < 0.001:
+                    node_state["selected_idx"] = idx
+                    break
+            redraw_canvas()
+
+        def do_remove_node():
+            idx = node_state.get("selected_idx")
+            if idx is not None and 0 < idx < len(working_nodes) - 1:
+                del working_nodes[idx]
+                node_state["selected_idx"] = None
+                redraw_canvas()
+            elif len(working_nodes) > 2:
+                del working_nodes[-2]
+                node_state["selected_idx"] = None
+                redraw_canvas()
+
+        ttk.Button(node_bar, text=self.t("btn_add_node"), command=do_add_node).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Button(node_bar, text=self.t("btn_remove_node"), command=do_remove_node).pack(side=tk.LEFT, padx=4)
+
+        lbl_in = self.t("telemetry_input")
+        lbl_out = self.t("telemetry_output")
+        lbl_telemetry = ttk.Label(node_bar, text=f"DI:     0  XI:     0 | {lbl_in}:   0%  {lbl_out}:   0%", font=("Consolas", 8, "bold"))
+        lbl_telemetry.pack(side=tk.RIGHT)
+
+        # Barra inferior de acciones (Guardar / Cancelar)
+        btn_box = ttk.Frame(dlg, padding=(14, 6, 14, 10))
+        btn_box.pack(fill=tk.X, side=tk.BOTTOM)
+
+        live_tracker = {"raw_mag": 0.0, "out_mag": 0.0}
+        node_state = {"selected_idx": None, "dragging_idx": None}
+
+        def redraw_canvas():
+            cv.delete("all")
+            # Cuadrícula y fondo
+            cv.create_rectangle(pad_x, pad_y, pad_x + gw, pad_y + gh, fill="#fafafa", outline="#cccccc")
+
+            # Divisiones 25%, 50%, 75%
+            for pct in (0.25, 0.50, 0.75):
+                gx = pad_x + pct * gw
+                gy = (pad_y + gh) - (pct * gh)
+                cv.create_line(gx, pad_y, gx, pad_y + gh, fill="#ececec", dash=(2, 2))
+                cv.create_line(pad_x, gy, pad_x + gw, gy, fill="#ececec", dash=(2, 2))
+
+            # Etiquetas Eje Y (Salida / Output)
+            for pct in (0.0, 0.25, 0.50, 0.75, 1.0):
+                gy = (pad_y + gh) - (pct * gh)
+                cv.create_text(pad_x - 5, gy, text=f"{int(pct * 100)}%", anchor="e", font=("Segoe UI", 7), fill="#888888")
+
+            # Etiquetas Eje X (Entrada / Input)
+            for pct in (0.0, 0.25, 0.50, 0.75, 1.0):
+                gx = pad_x + pct * gw
+                cv.create_text(gx, pad_y + gh + 12, text=f"{int(pct * 100)}%", anchor="c", font=("Segoe UI", 7), fill="#888888")
+
+            # Ejes principales
+            cv.create_line(pad_x, pad_y + gh, pad_x + gw, pad_y + gh, fill="#999999", width=1.5)
+            cv.create_line(pad_x, pad_y, pad_x, pad_y + gh, fill="#999999", width=1.5)
+
+            # Dibujar Curva Hermite PCHIP interpolada
+            curve_points = []
+            steps = 70
+            for i in range(steps + 1):
+                t = i / steps
+                out_v = easings.evaluate_custom_nodes(t, working_nodes)
+                out_v = max(0.0, min(1.0, out_v))
+                px = pad_x + t * gw
+                py = (pad_y + gh) - (out_v * gh)
+                curve_points.extend([px, py])
+
+            if len(curve_points) >= 4:
+                cv.create_line(curve_points, fill="#e62e2e", width=2.5)
+
+            # Dibujar Nodos interactivos
+            sel_i = node_state.get("selected_idx")
+            for idx, p in enumerate(working_nodes):
+                nx, ny = p[0], p[1]
+                c_px = pad_x + nx * gw
+                c_py = (pad_y + gh) - (ny * gh)
+
+                if idx == 0 or idx == len(working_nodes) - 1:
+                    # Puntos fijos de anclaje (0,0) y (1,1)
+                    cv.create_oval(c_px - 4, c_py - 4, c_px + 4, c_py + 4, fill="#666666", outline="#ffffff", width=1.5)
+                else:
+                    # Nodos interiores interactivos
+                    is_sel = (idx == sel_i)
+                    r = 8 if is_sel else 7
+                    fill_col = "#ff8c00" if is_sel else "#0078d4"
+                    cv.create_oval(c_px - r, c_py - r, c_px + r, c_py + r, fill=fill_col, outline="#ffffff", width=2)
+
+                    badge_y = c_py - 14 if ny <= 0.82 else c_py + 14
+                    text_col = "#c46200" if is_sel else "#005a9e"
+                    cv.create_text(c_px, badge_y, text=f"({int(round(nx*100))}%, {int(round(ny*100))}%)", font=("Segoe UI", 7, "bold"), fill=text_col)
+
+            # Indicador de entrada física en tiempo real
+            rm = max(0.0, min(1.0, live_tracker["raw_mag"]))
+            om = max(0.0, min(1.0, live_tracker["out_mag"]))
+            dot_x = pad_x + rm * gw
+            dot_y = (pad_y + gh) - (om * gh)
+            cv.create_line(dot_x, pad_y, dot_x, pad_y + gh, fill="#39ff14", dash=(2, 2))
+            cv.create_oval(dot_x - 4, dot_y - 4, dot_x + 4, dot_y + 4, fill="#00aa00", outline="#ffffff", width=1.5)
+
+        def _get_node_under_mouse(e):
+            for idx, p in enumerate(working_nodes):
+                nx, ny = p[0], p[1]
+                c_px = pad_x + nx * gw
+                c_py = (pad_y + gh) - (ny * gh)
+                if (e.x - c_px) ** 2 + (e.y - c_py) ** 2 <= 225:  # radio 15px
+                    return idx
+            return None
+
+        def on_press(e):
+            idx = _get_node_under_mouse(e)
+            if idx is not None:
+                node_state["selected_idx"] = idx
+                node_state["dragging_idx"] = idx
+            else:
+                node_state["selected_idx"] = None
+            redraw_canvas()
+
+        def on_drag(e):
+            idx = node_state.get("dragging_idx")
+            if idx is None:
+                return
+            if 0 < idx < len(working_nodes) - 1:
+                new_y = 1.0 - ((e.y - pad_y) / gh)
+                new_y = max(0.0, min(1.0, new_y))
+
+                min_x = working_nodes[idx - 1][0] + 0.02
+                max_x = working_nodes[idx + 1][0] - 0.02
+                new_x = (e.x - pad_x) / gw
+                new_x = max(min_x, min(max_x, new_x))
+
+                working_nodes[idx] = [round(new_x, 3), round(new_y, 3)]
+                redraw_canvas()
+
+        def on_release(e):
+            node_state["dragging_idx"] = None
+
+        def on_double_click(e):
+            if len(working_nodes) >= 24:
+                return
+            nx = (e.x - pad_x) / gw
+            ny = 1.0 - ((e.y - pad_y) / gh)
+            if 0.03 <= nx <= 0.97 and 0.0 <= ny <= 1.0:
+                working_nodes.append([round(nx, 3), round(ny, 3)])
+                working_nodes.sort(key=lambda p: p[0])
+                for i, p in enumerate(working_nodes):
+                    if abs(p[0] - nx) < 0.001:
+                        node_state["selected_idx"] = i
+                        break
+                redraw_canvas()
+
+        def on_right_click(e):
+            idx = _get_node_under_mouse(e)
+            if idx is not None and 0 < idx < len(working_nodes) - 1:
+                del working_nodes[idx]
+                node_state["selected_idx"] = None
+                redraw_canvas()
+
+        cv.bind("<Button-1>", on_press)
+        cv.bind("<B1-Motion>", on_drag)
+        cv.bind("<ButtonRelease-1>", on_release)
+        cv.bind("<Double-Button-1>", on_double_click)
+        cv.bind("<Button-3>", on_right_click)
+
+        def update_live_tracker(rm, om):
+            live_tracker["raw_mag"] = rm
+            live_tracker["out_mag"] = om
+            if dlg.winfo_exists():
+                lbl_in = self.t("telemetry_input")
+                lbl_out = self.t("telemetry_output")
+                lbl_telemetry.config(text=f"DI: {int(rm * 32767):5d}  XI: {int(om * 32767):5d} | {lbl_in}: {int(rm * 100):3d}%  {lbl_out}: {int(om * 100):3d}%")
+                redraw_canvas()
+
+        self._active_curve_dialog = {
+            "pad_id": pad_id,
+            "calib_key": calib_key,
+            "update_tracker": update_live_tracker
+        }
+
+        def on_dlg_close():
+            if getattr(self, "_active_curve_dialog", None) and self._active_curve_dialog.get("pad_id") == pad_id and self._active_curve_dialog.get("calib_key") == calib_key:
+                self._active_curve_dialog = None
+            try:
+                dlg.destroy()
+            except Exception:
+                pass
+
+        def on_apply():
+            calib_w["custom_nodes"] = [list(p) for p in working_nodes]
+            calib_w["curve_type_var"].set("custom")
+            curve_id_to_disp = calib_w.get("curve_id_to_disp", {})
+            calib_w["cb_curve_type"].set(curve_id_to_disp.get("custom", self.t("lbl_custom_curve")))
+            self._update_sens_control_state(pad_id, calib_key)
+            if calib_w.get("type") == "trigger":
+                self._draw_trigger_graph(
+                    calib_w["canvas"],
+                    calib_w["dz_var"].get(),
+                    calib_w["adz_var"].get(),
+                    calib_w["sens_var"].get(),
+                    calib_w["inv_var"].get(),
+                    live_tracker["raw_mag"],
+                    int(live_tracker["out_mag"] * 255),
+                    curve_type="custom",
+                    custom_nodes=working_nodes
+                )
+            else:
+                self._draw_stick_curve(
+                    calib_w["curve_canvas"],
+                    calib_w["dz_var"].get(),
+                    calib_w["adz_var"].get(),
+                    calib_w["sens_var"].get(),
+                    live_tracker["raw_mag"],
+                    live_tracker["out_mag"],
+                    curve_type="custom",
+                    custom_nodes=working_nodes
+                )
+            self._sync_ui_to_config()
+            on_dlg_close()
+
+        dlg.protocol("WM_DELETE_WINDOW", on_dlg_close)
+
+        btn_save = ttk.Button(btn_box, text="✔ " + self.t("btn_save"), command=on_apply)
+        btn_save.pack(side=tk.RIGHT, padx=4)
+
+        btn_cancel = ttk.Button(btn_box, text=self.t("set_btn_cancel"), command=on_dlg_close)
+        btn_cancel.pack(side=tk.RIGHT, padx=4)
+
+        redraw_canvas()
+
+    def _draw_stick_curve(
+        self,
+        cv: tk.Canvas,
+        dz: int,
+        adz: int,
+        sens: int,
+        raw_mag: float,
+        out_mag: float,
+        curve_type: str = "exponential",
+        custom_nodes: list = None
+    ):
         cv.delete("all")
         w = cv.winfo_width()
         h = cv.winfo_height()
@@ -4759,11 +5283,21 @@ class J360MoreApp:
         cv.create_line(pad, pad + gh, pad + gw, pad + gh, fill="#aaaaaa")
         cv.create_line(pad, pad, pad, pad + gh, fill="#aaaaaa")
 
+        d = max(0.0, min(0.99, dz / 100.0))
+        a = max(0.0, min(0.99, adz / 100.0))
+
         points = []
-        steps = 25
+        steps = 40
         for i in range(steps + 1):
             t = i / steps
-            out_v = apply_axis_calibration(t, dz, adz, sens, invert=False)
+            if t <= d:
+                out_v = 0.0
+            else:
+                norm_t = (t - d) / (1.0 - d)
+                curved_t = easings.evaluate_curve(curve_type, norm_t, sens, custom_nodes)
+                out_v = a + (1.0 - a) * curved_t if a > 0.0 else curved_t
+            out_v = max(0.0, min(1.0, out_v))
+
             px = pad + t * gw
             py = (pad + gh) - (out_v * gh)
             points.extend([px, py])
@@ -4931,11 +5465,21 @@ class J360MoreApp:
                         raw_val = state.get(raw_k, 0.0)
                         out_byte = state.get(out_k, 0)
 
-                        trig_sig = (dz, adz, sens, inv, round(raw_val, 3), out_byte)
+                        c_type = tw["curve_type_var"].get() if "curve_type_var" in tw else "exponential"
+                        c_nodes = tw.get("custom_nodes", [0.0, 0.25, 0.50, 0.75, 1.0])
+
+                        trig_sig = (dz, adz, sens, inv, c_type, tuple(c_nodes), round(raw_val, 3), out_byte)
                         if tw.get("_last_sig") != trig_sig:
                             tw["_last_sig"] = trig_sig
-                            self._draw_trigger_graph(tw["canvas"], dz, adz, sens, inv, raw_val, out_byte)
+                            self._draw_trigger_graph(tw["canvas"], dz, adz, sens, inv, raw_val, out_byte, curve_type=c_type, custom_nodes=c_nodes)
                             tw["lbl_di_xi"].config(text=f"DI: {int(raw_val * 32767):5d}    XI: {out_byte:3d}")
+
+                        if getattr(self, "_active_curve_dialog", None):
+                            acd = self._active_curve_dialog
+                            if acd.get("pad_id") == cur_pad_id and acd.get("calib_key") == trig_key:
+                                acd_fn = acd.get("update_tracker")
+                                if callable(acd_fn):
+                                    acd_fn(raw_val, out_byte / 255.0)
 
                 # 4. Sticks
                 for stick_key, rx_k, ry_k, cx_k, cy_k in [
@@ -4963,13 +5507,26 @@ class J360MoreApp:
                             self._draw_stick_canvas(sw["canvas"], dz, adz, cal_x, disp_y)
                             sw["lbl_xy"].config(text=f"X: {cal_x:+0.2f}  Y: {disp_y:+0.2f}")
 
-                        raw_mag = min(1.0, math.sqrt(raw_x**2 + raw_y**2))
-                        out_mag = min(1.0, math.sqrt(cal_x**2 + cal_y**2))
-                        curve_sig = (dz, adz, sens, round(raw_mag, 3), round(out_mag, 3))
+                        mag_raw_key = "ls_raw_mag" if stick_key == "left_stick" else "rs_raw_mag"
+                        mag_out_key = "ls_out_mag" if stick_key == "left_stick" else "rs_out_mag"
+                        raw_mag = state.get(mag_raw_key, min(1.0, math.sqrt(raw_x**2 + raw_y**2)))
+                        out_mag = state.get(mag_out_key, min(1.0, math.sqrt(cal_x**2 + cal_y**2)))
+
+                        c_type = sw["curve_type_var"].get() if "curve_type_var" in sw else "exponential"
+                        c_nodes = sw.get("custom_nodes", [0.0, 0.25, 0.50, 0.75, 1.0])
+
+                        curve_sig = (dz, adz, sens, c_type, tuple(c_nodes), round(raw_mag, 3), round(out_mag, 3))
                         if sw.get("_last_curve_sig") != curve_sig:
                             sw["_last_curve_sig"] = curve_sig
-                            self._draw_stick_curve(sw["curve_canvas"], dz, adz, sens, raw_mag, out_mag)
+                            self._draw_stick_curve(sw["curve_canvas"], dz, adz, sens, raw_mag, out_mag, curve_type=c_type, custom_nodes=c_nodes)
                             sw["lbl_di_xi"].config(text=f"DI: {int(raw_mag * 32767):5d}    XI: {int(out_mag * 32767):5d}")
+
+                        if getattr(self, "_active_curve_dialog", None):
+                            acd = self._active_curve_dialog
+                            if acd.get("pad_id") == cur_pad_id and acd.get("calib_key") == stick_key:
+                                acd_fn = acd.get("update_tracker")
+                                if callable(acd_fn):
+                                    acd_fn(raw_mag, out_mag)
 
         except Exception:
             pass
