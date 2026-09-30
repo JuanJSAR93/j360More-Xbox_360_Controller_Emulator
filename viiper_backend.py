@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import time
@@ -8,7 +9,7 @@ import subprocess
 import hashlib
 import hmac
 import threading
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Callable
 
 # Xbox 360 Buttons
 XBOX_BUTTONS = {
