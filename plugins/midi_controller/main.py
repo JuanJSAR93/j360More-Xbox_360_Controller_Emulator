@@ -61,12 +61,31 @@ def discover():
 @device.on_action("scan_midi_ports")
 def scan_midi_ports(pad_id: int):
     found = ["AUTO"]
+    # 1. Intentar con pygame.midi (precompilado, universal)
     try:
-        import mido
-        inputs = mido.get_input_names()
-        found.extend(inputs)
+        import pygame.midi
+        if not pygame.midi.get_init():
+            pygame.midi.init()
+        for i in range(pygame.midi.get_count()):
+            info = pygame.midi.get_device_info(i)
+            if info and info[2]:  # is_input
+                dname = info[1].decode("utf-8", errors="ignore")
+                found.append(f"{i}: {dname}")
     except Exception:
-        found.extend(["nanoKEY2", "Launchpad Mini", "MPK mini"])
+        pass
+
+    # 2. Intentar con mido
+    if len(found) == 1:
+        try:
+            import mido
+            inputs = mido.get_input_names()
+            found.extend(inputs)
+        except Exception:
+            pass
+
+    if len(found) == 1:
+        found.extend(["Simulador Virtual MIDI", "nanoKEY2", "Launchpad Mini", "MPK mini"])
+
     device.update_field_options("midi_port", found)
     device.log(f"Puertos MIDI escaneados: {found}")
 
@@ -101,24 +120,52 @@ def set_midi_channel(val, pad_id):
 
 def run_loop():
     global use_simulator, midi_in_port
+    pg_midi_in = None
 
     if "--simulate" in sys.argv:
         use_simulator = True
         device.log("Modo de simulación MIDI activado (--simulate).")
     else:
+        # Intentar conectar con pygame.midi
         try:
-            import mido
-            inputs = mido.get_input_names()
-            if inputs:
-                target_port = inputs[0] if active_midi_port == "AUTO" else active_midi_port
-                midi_in_port = mido.open_input(target_port)
-                device.log(f"Conectado a puerto MIDI físico: {target_port}")
-            else:
-                use_simulator = True
-                device.log("No se encontraron dispositivos MIDI físicos. Activando simulador virtual.")
-        except Exception as e:
+            import pygame.midi
+            if not pygame.midi.get_init():
+                pygame.midi.init()
+            chosen_dev_id = None
+            if active_midi_port != "AUTO" and ":" in active_midi_port:
+                try:
+                    chosen_dev_id = int(active_midi_port.split(":")[0])
+                except ValueError:
+                    chosen_dev_id = None
+
+            if chosen_dev_id is None:
+                for i in range(pygame.midi.get_count()):
+                    info = pygame.midi.get_device_info(i)
+                    if info and info[2]:  # is_input
+                        chosen_dev_id = i
+                        break
+
+            if chosen_dev_id is not None:
+                pg_midi_in = pygame.midi.Input(chosen_dev_id)
+                device.log(f"Conectado a puerto MIDI físico vía pygame.midi: ID #{chosen_dev_id}")
+        except Exception as ex:
+            device.log(f"pygame.midi no pudo abrir puerto: {ex}")
+
+        # Si no se conectó con pygame.midi, intentar mido
+        if not pg_midi_in:
+            try:
+                import mido
+                inputs = mido.get_input_names()
+                if inputs:
+                    target_port = inputs[0] if active_midi_port == "AUTO" else active_midi_port
+                    midi_in_port = mido.open_input(target_port)
+                    device.log(f"Conectado a puerto MIDI físico vía mido: {target_port}")
+            except Exception as e:
+                pass
+
+        if not pg_midi_in and not midi_in_port:
             use_simulator = True
-            device.log(f"mido no disponible o sin hardware ({e}). Activando simulador MIDI.")
+            device.log("No se detectó hardware MIDI físico. Activando simulador virtual integrado.")
 
     device.log("Bucle de recepción MIDI iniciado.")
 
@@ -132,6 +179,25 @@ def run_loop():
         events = []
         if use_simulator:
             events = simulator.poll_events()
+        elif pg_midi_in:
+            try:
+                while pg_midi_in.poll():
+                    midi_data = pg_midi_in.read(16)
+                    for me in midi_data:
+                        raw_bytes, timestamp = me
+                        st, d1, d2, _ = raw_bytes
+                        cmd = st & 0xF0
+                        if cmd == 0x90 and d2 > 0:
+                            events.append({"type": "note_on", "note": d1, "velocity": d2})
+                        elif cmd == 0x80 or (cmd == 0x90 and d2 == 0):
+                            events.append({"type": "note_off", "note": d1, "velocity": 0})
+                        elif cmd == 0xE0:
+                            val14 = (d2 << 7) | d1
+                            events.append({"type": "pitchwheel", "pitch": val14 - 8192})
+                        elif cmd == 0xB0 and d1 == 1:
+                            events.append({"type": "control_change", "control": 1, "value": d2})
+            except Exception as e:
+                device.log(f"Error leyendo pygame.midi: {e}")
         elif midi_in_port:
             for msg in midi_in_port.iter_pending():
                 events.append(msg.dict())
@@ -194,6 +260,11 @@ def run_loop():
         if rem > 0:
             time.sleep(rem)
 
+    if pg_midi_in:
+        try:
+            pg_midi_in.close()
+        except Exception:
+            pass
     if midi_in_port:
         try:
             midi_in_port.close()

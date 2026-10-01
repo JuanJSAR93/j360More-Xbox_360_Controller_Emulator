@@ -99,12 +99,46 @@ class PluginManager:
         self._on_log_callbacks: List[Callable[[str, str], None]] = []
         self._on_options_updated: List[Callable[[str, str, List[Any]], None]] = []
 
+    def is_plugins_folder_present(self) -> bool:
+        """Returns True if the plugins directory exists on disk."""
+        return os.path.isdir(self.plugins_dir)
+
+    def has_runtime(self) -> bool:
+        """Returns True if a Python runtime or virtual environment is available."""
+        return bool(self.venv_manager.get_venv_python())
+
+    def is_enabled(self) -> bool:
+        """Returns True if plugins folder exists and runtime is ready."""
+        return self.is_plugins_folder_present()
+
+    def initialize_plugin_system(self, progress_callback: Optional[Callable[[str], None]] = None) -> Tuple[bool, str]:
+        """
+        Creates the plugins/ directory, initializes the Python runtime and virtual environment,
+        and scans discovered plugins.
+        """
+        try:
+            if not os.path.isdir(self.plugins_dir):
+                os.makedirs(self.plugins_dir, exist_ok=True)
+                if progress_callback:
+                    progress_callback("Carpeta 'plugins/' creada exitosamente.")
+
+            ok, py_exe_or_err = self.venv_manager.ensure_runtime(progress_callback=progress_callback)
+            if not ok:
+                return False, f"Fallo al inicializar el entorno de Python: {py_exe_or_err}"
+
+            self.scan_plugins()
+            self.start_all_auto()
+            self._notify_device_list_changed()
+            return True, "Soporte de plugins y entorno virtual inicializados con éxito."
+        except Exception as e:
+            return False, f"Error durante la inicialización: {e}"
+
     def scan_plugins(self) -> List[PluginInstance]:
         """Scans the plugins/ directory for drop-in plugins."""
         with self._lock:
             discovered = []
-            if not os.path.isdir(self.plugins_dir):
-                os.makedirs(self.plugins_dir, exist_ok=True)
+            if not self.is_plugins_folder_present():
+                self.plugins.clear()
                 return discovered
 
             for entry in os.scandir(self.plugins_dir):
@@ -354,6 +388,9 @@ class PluginManager:
         Returns all devices registered by running plugins.
         Prefixed with 'plugin:<plugin_id>:<device_id>'.
         """
+        if not self.is_plugins_folder_present():
+            return []
+
         result = []
         with self._lock:
             for p_id, inst in self.plugins.items():
@@ -377,7 +414,7 @@ class PluginManager:
         Reads the latest buttons, axes, triggers, and sticks from a plugin device.
         Called by DeviceManager / EmulatorEngine at 120Hz.
         """
-        if not full_device_id.startswith("plugin:"):
+        if not self.is_plugins_folder_present() or not full_device_id.startswith("plugin:"):
             return None
 
         parts = full_device_id.split(":", 2)

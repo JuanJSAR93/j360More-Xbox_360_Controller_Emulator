@@ -1,2 +1,2 @@
+pygame-ce>=2.5.0
 mido>=1.2.10
-python-rtmidi>=1.5.0

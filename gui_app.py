@@ -3892,180 +3892,246 @@ class J360MoreApp:
         if initial_tab == 2:
             notebook_settings.select(tab_plugins)
 
-        # Encabezado
-        top_plg_box = ttk.Frame(tab_plugins)
-        top_plg_box.pack(fill=tk.X, pady=(0, 6))
+        plg_container = ttk.Frame(tab_plugins)
+        plg_container.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(top_plg_box, text=self.t("plugins_title"), font=("Segoe UI", 10, "bold")).pack(anchor="w")
-        ttk.Label(top_plg_box, text=self.t("plugins_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=710).pack(anchor="w", pady=(2, 4))
+        def render_tab_plugins_content():
+            for w in plg_container.winfo_children():
+                w.destroy()
 
-        # Tabla de plugins
-        tree_plg_frame = ttk.LabelFrame(tab_plugins, text=f"📦 {self.t('set_tab_plugins')}", padding=6)
-        tree_plg_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
+            # Verificación: ¿Existe la carpeta plugins y el entorno de ejecución?
+            has_folder = self.plugin_manager.is_plugins_folder_present()
+            has_rt = self.plugin_manager.has_runtime()
 
-        plg_scroll = ttk.Scrollbar(tree_plg_frame, orient=tk.VERTICAL)
-        plg_cols = ("status", "name", "version", "author", "id")
-        tree_plugins = ttk.Treeview(tree_plg_frame, columns=plg_cols, show="headings", height=5, yscrollcommand=plg_scroll.set, selectmode="browse")
-        plg_scroll.config(command=tree_plugins.yview)
-        plg_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        tree_plugins.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            if not has_folder or not has_rt:
+                # ==================== VISTA DE ADVERTENCIA / DESCARGA ====================
+                setup_box = ttk.LabelFrame(plg_container, text=f"⚠️ {self.t('plugins_not_installed_title')}", padding=16)
+                setup_box.pack(fill=tk.BOTH, expand=True, padx=4, pady=6)
 
-        tree_plugins.heading("status", text=self.t("plugins_col_status"))
-        tree_plugins.heading("name", text=self.t("plugins_col_name"))
-        tree_plugins.heading("version", text=self.t("plugins_col_version"))
-        tree_plugins.heading("author", text=self.t("plugins_col_author"))
-        tree_plugins.heading("id", text="ID")
+                ttk.Label(setup_box, text="🔌", font=("Segoe UI", 36)).pack(anchor="center", pady=(12, 4))
+                ttk.Label(setup_box, text=self.t("plugins_not_installed_title"), font=("Segoe UI", 12, "bold")).pack(anchor="center", pady=(0, 6))
+                ttk.Label(
+                    setup_box,
+                    text=self.t("plugins_not_installed_desc"),
+                    font=("Segoe UI", 9),
+                    foreground="#444444",
+                    justify="center",
+                    wraplength=640
+                ).pack(anchor="center", pady=(0, 16))
 
-        tree_plugins.column("status", width=105, anchor="center")
-        tree_plugins.column("name", width=220, anchor="w")
-        tree_plugins.column("version", width=75, anchor="center")
-        tree_plugins.column("author", width=120, anchor="w")
-        tree_plugins.column("id", width=130, anchor="w")
+                btn_init_plugins = ttk.Button(setup_box, text="📥 " + self.t("plugins_btn_download_deps"))
+                btn_init_plugins.pack(anchor="center", pady=(0, 14))
 
-        # Barra de acciones para el plugin seleccionado
-        btn_bar_plg = ttk.Frame(tab_plugins)
-        btn_bar_plg.pack(fill=tk.X, pady=(0, 6))
+                init_console_box = ttk.LabelFrame(setup_box, text="📋 Progreso de Inicialización", padding=6)
+                init_console_box.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
 
-        def get_selected_plugin_id() -> Optional[str]:
-            sel = tree_plugins.selection()
-            return sel[0] if sel else None
+                txt_init = tk.Text(init_console_box, height=6, bg="#1e1e1e", fg="#e0e0e0", insertbackground="white", font=("Consolas", 8), relief="flat")
+                init_scroll = ttk.Scrollbar(init_console_box, orient=tk.VERTICAL, command=txt_init.yview)
+                txt_init.config(yscrollcommand=init_scroll.set)
+                init_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+                txt_init.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        def on_toggle_selected_plugin():
-            p_id = get_selected_plugin_id()
-            if not p_id:
+                def log_init(msg: str):
+                    try:
+                        txt_init.insert(tk.END, msg + "\n")
+                        txt_init.see(tk.END)
+                    except Exception:
+                        pass
+
+                def on_start_init():
+                    btn_init_plugins.config(state="disabled", text=self.t("plugins_initializing"))
+                    def _worker():
+                        ok, res_msg = self.plugin_manager.initialize_plugin_system(progress_callback=lambda m: self.root.after(0, log_init, m))
+                        def _finish():
+                            if ok:
+                                messagebox.showinfo(self.t("plugins_title"), self.t("plugins_init_success"))
+                                self._refresh_all_devices(async_scan=False)
+                                render_tab_plugins_content()
+                            else:
+                                messagebox.showerror("Error", res_msg)
+                                btn_init_plugins.config(state="normal", text="📥 " + self.t("plugins_btn_download_deps"))
+                        self.root.after(0, _finish)
+                    threading.Thread(target=_worker, daemon=True, name="init-plugins-worker").start()
+
+                btn_init_plugins.config(command=on_start_init)
                 return
-            p = self.plugin_manager.plugins.get(p_id)
-            if not p:
-                return
-            if p.status == "running":
-                self.plugin_manager.stop_plugin(p_id)
-            else:
-                ok, err = self.plugin_manager.start_plugin(p_id)
-                if not ok:
-                    messagebox.showerror("Error Plugin", f"No se pudo iniciar el plugin: {err}")
-            refresh_plugins_tree()
 
-        def on_config_selected_plugin():
-            p_id = get_selected_plugin_id()
-            if p_id:
-                self._open_plugin_config_dialog(p_id)
+            # ==================== VISTA COMPLETA DE PLUGINS ACTIVOS ====================
+            top_plg_box = ttk.Frame(plg_container)
+            top_plg_box.pack(fill=tk.X, pady=(0, 6))
 
-        def on_info_selected_plugin():
-            p_id = get_selected_plugin_id()
-            if p_id:
-                self._open_plugin_info_dialog(p_id)
+            ttk.Label(top_plg_box, text=self.t("plugins_title"), font=("Segoe UI", 10, "bold")).pack(anchor="w")
+            ttk.Label(top_plg_box, text=self.t("plugins_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=710).pack(anchor="w", pady=(2, 4))
 
-        def on_install_selected_reqs():
-            p_id = get_selected_plugin_id()
-            if not p_id:
-                return
-            btn_install.config(state="disabled")
-            def _install_worker():
-                def _log(line):
-                    self.root.after(0, append_console_log, f"[{p_id}] {line}")
-                ok, msg = self.plugin_manager.install_plugin_requirements(p_id, callback=_log)
-                def _done():
-                    btn_install.config(state="normal")
-                    refresh_plugins_tree()
-                    if ok:
-                        messagebox.showinfo("Instalación", f"Librerías de '{p_id}' instaladas correctamente.")
-                    else:
-                        messagebox.showerror("Fallo de Instalación", f"Error instalando librerías: {msg}")
-                self.root.after(0, _done)
-            threading.Thread(target=_install_worker, daemon=True).start()
+            # Tabla de plugins
+            tree_plg_frame = ttk.LabelFrame(plg_container, text=f"📦 {self.t('set_tab_plugins')}", padding=6)
+            tree_plg_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
 
-        def on_reload_plugins():
-            self.plugin_manager.scan_plugins()
-            self.plugin_manager.start_all_auto()
-            refresh_plugins_tree()
-            self._refresh_all_devices(async_scan=False)
+            plg_scroll = ttk.Scrollbar(tree_plg_frame, orient=tk.VERTICAL)
+            plg_cols = ("status", "name", "version", "author", "id")
+            tree_plugins = ttk.Treeview(tree_plg_frame, columns=plg_cols, show="headings", height=5, yscrollcommand=plg_scroll.set, selectmode="browse")
+            plg_scroll.config(command=tree_plugins.yview)
+            plg_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            tree_plugins.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        btn_toggle = ttk.Button(btn_bar_plg, text="▶ / ⏹", width=12, command=on_toggle_selected_plugin)
-        btn_toggle.pack(side=tk.LEFT, padx=(0, 4))
+            tree_plugins.heading("status", text=self.t("plugins_col_status"))
+            tree_plugins.heading("name", text=self.t("plugins_col_name"))
+            tree_plugins.heading("version", text=self.t("plugins_col_version"))
+            tree_plugins.heading("author", text=self.t("plugins_col_author"))
+            tree_plugins.heading("id", text="ID")
 
-        btn_cfg_p = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_config"), command=on_config_selected_plugin)
-        btn_cfg_p.pack(side=tk.LEFT, padx=4)
+            tree_plugins.column("status", width=105, anchor="center")
+            tree_plugins.column("name", width=220, anchor="w")
+            tree_plugins.column("version", width=75, anchor="center")
+            tree_plugins.column("author", width=120, anchor="w")
+            tree_plugins.column("id", width=130, anchor="w")
 
-        btn_info = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_info"), command=on_info_selected_plugin)
-        btn_info.pack(side=tk.LEFT, padx=4)
+            # Barra de acciones para el plugin seleccionado
+            btn_bar_plg = ttk.Frame(plg_container)
+            btn_bar_plg.pack(fill=tk.X, pady=(0, 6))
 
-        btn_install = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_install_reqs"), command=on_install_selected_reqs)
-        btn_install.pack(side=tk.LEFT, padx=4)
+            def get_selected_plugin_id() -> Optional[str]:
+                sel = tree_plugins.selection()
+                return sel[0] if sel else None
 
-        btn_reload = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_reload"), command=on_reload_plugins)
-        btn_reload.pack(side=tk.LEFT, padx=4)
+            def on_toggle_selected_plugin():
+                p_id = get_selected_plugin_id()
+                if not p_id:
+                    return
+                p = self.plugin_manager.plugins.get(p_id)
+                if not p:
+                    return
+                if p.status == "running":
+                    self.plugin_manager.stop_plugin(p_id)
+                else:
+                    ok, err = self.plugin_manager.start_plugin(p_id)
+                    if not ok:
+                        messagebox.showerror("Error Plugin", f"No se pudo iniciar el plugin: {err}")
+                refresh_plugins_tree()
 
-        btn_folder = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_open_folder"), command=lambda: self._open_folder(self.plugin_manager.plugins_dir))
-        btn_folder.pack(side=tk.RIGHT, padx=(4, 0))
+            def on_config_selected_plugin():
+                p_id = get_selected_plugin_id()
+                if p_id:
+                    self._open_plugin_config_dialog(p_id)
 
-        # Consola de depuración de logs de plugins
-        console_box = ttk.LabelFrame(tab_plugins, text="📋 " + self.t("plugins_console_title"), padding=6)
-        console_box.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+            def on_info_selected_plugin():
+                p_id = get_selected_plugin_id()
+                if p_id:
+                    self._open_plugin_info_dialog(p_id)
 
-        txt_console = tk.Text(console_box, height=6, bg="#1e1e1e", fg="#e0e0e0", insertbackground="white", font=("Consolas", 8), relief="flat")
-        console_scroll = ttk.Scrollbar(console_box, orient=tk.VERTICAL, command=txt_console.yview)
-        txt_console.config(yscrollcommand=console_scroll.set)
-        console_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        txt_console.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        def append_console_log(line: str):
-            try:
-                txt_console.insert(tk.END, line + "\n")
-                txt_console.see(tk.END)
-            except Exception:
-                pass
-
-        # Registrar listener de logs
-        self.plugin_manager.add_on_log(lambda p_id, line: self.root.after(0, append_console_log, f"[{p_id}] {line}"))
-
-        def refresh_plugins_tree():
-            cur_sel = get_selected_plugin_id()
-            tree_plugins.delete(*tree_plugins.get_children())
-            infos = self.plugin_manager.get_plugins_info()
-            for p in infos:
-                p_id = p["id"]
-                st = p["status"]
-                st_label = self.t("plugins_status_running") if st == "running" else (self.t("plugins_status_stopped") if st == "stopped" else self.t("plugins_status_error"))
-                tree_plugins.insert("", tk.END, iid=p_id, values=(
-                    st_label,
-                    p["name"],
-                    f"v{p['version']}",
-                    p["author"],
-                    p_id
-                ))
-            if cur_sel and tree_plugins.exists(cur_sel):
-                tree_plugins.selection_set(cur_sel)
-            elif tree_plugins.get_children():
-                first = tree_plugins.get_children()[0]
-                tree_plugins.selection_set(first)
-            update_selected_plugin_buttons()
-
-        def update_selected_plugin_buttons(ev=None):
-            p_id = get_selected_plugin_id()
-            if not p_id:
-                btn_toggle.config(state="disabled")
-                btn_cfg_p.config(state="disabled")
-                btn_info.config(state="disabled")
+            def on_install_selected_reqs():
+                p_id = get_selected_plugin_id()
+                if not p_id:
+                    return
                 btn_install.config(state="disabled")
-                return
-            p = self.plugin_manager.plugins.get(p_id)
-            if not p:
-                return
-            btn_toggle.config(state="normal")
-            btn_info.config(state="normal")
-            btn_install.config(state="normal")
-            if p.status == "running":
-                btn_toggle.config(text=self.t("plugins_btn_stop"))
-            else:
-                btn_toggle.config(text=self.t("plugins_btn_start"))
+                def _install_worker():
+                    def _log(line):
+                        self.root.after(0, append_console_log, f"[{p_id}] {line}")
+                    ok, msg = self.plugin_manager.install_plugin_requirements(p_id, callback=_log)
+                    def _done():
+                        btn_install.config(state="normal")
+                        refresh_plugins_tree()
+                        if ok:
+                            messagebox.showinfo("Instalación", f"Librerías de '{p_id}' instaladas correctamente.")
+                        else:
+                            messagebox.showerror("Fallo de Instalación", f"Error instalando librerías: {msg}")
+                    self.root.after(0, _done)
+                threading.Thread(target=_install_worker, daemon=True).start()
 
-            if p.global_ui and p.global_ui.get("fields"):
-                btn_cfg_p.config(state="normal")
-            else:
-                btn_cfg_p.config(state="disabled")
+            def on_reload_plugins():
+                self.plugin_manager.scan_plugins()
+                self.plugin_manager.start_all_auto()
+                refresh_plugins_tree()
+                self._refresh_all_devices(async_scan=False)
 
-        tree_plugins.bind("<<TreeviewSelect>>", update_selected_plugin_buttons)
-        refresh_plugins_tree()
+            btn_toggle = ttk.Button(btn_bar_plg, text="▶ / ⏹", width=12, command=on_toggle_selected_plugin)
+            btn_toggle.pack(side=tk.LEFT, padx=(0, 4))
+
+            btn_cfg_p = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_config"), command=on_config_selected_plugin)
+            btn_cfg_p.pack(side=tk.LEFT, padx=4)
+
+            btn_info = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_info"), command=on_info_selected_plugin)
+            btn_info.pack(side=tk.LEFT, padx=4)
+
+            btn_install = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_install_reqs"), command=on_install_selected_reqs)
+            btn_install.pack(side=tk.LEFT, padx=4)
+
+            btn_reload = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_reload"), command=on_reload_plugins)
+            btn_reload.pack(side=tk.LEFT, padx=4)
+
+            btn_folder = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_open_folder"), command=lambda: self._open_folder(self.plugin_manager.plugins_dir))
+            btn_folder.pack(side=tk.RIGHT, padx=(4, 0))
+
+            # Consola de depuración de logs de plugins
+            console_box = ttk.LabelFrame(plg_container, text="📋 " + self.t("plugins_console_title"), padding=6)
+            console_box.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+
+            txt_console = tk.Text(console_box, height=6, bg="#1e1e1e", fg="#e0e0e0", insertbackground="white", font=("Consolas", 8), relief="flat")
+            console_scroll = ttk.Scrollbar(console_box, orient=tk.VERTICAL, command=txt_console.yview)
+            txt_console.config(yscrollcommand=console_scroll.set)
+            console_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            txt_console.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            def append_console_log(line: str):
+                try:
+                    txt_console.insert(tk.END, line + "\n")
+                    txt_console.see(tk.END)
+                except Exception:
+                    pass
+
+            # Registrar listener de logs
+            self.plugin_manager.add_on_log(lambda p_id, line: self.root.after(0, append_console_log, f"[{p_id}] {line}"))
+
+            def refresh_plugins_tree():
+                cur_sel = get_selected_plugin_id()
+                tree_plugins.delete(*tree_plugins.get_children())
+                infos = self.plugin_manager.get_plugins_info()
+                for p in infos:
+                    p_id = p["id"]
+                    st = p["status"]
+                    st_label = self.t("plugins_status_running") if st == "running" else (self.t("plugins_status_stopped") if st == "stopped" else self.t("plugins_status_error"))
+                    tree_plugins.insert("", tk.END, iid=p_id, values=(
+                        st_label,
+                        p["name"],
+                        f"v{p['version']}",
+                        p["author"],
+                        p_id
+                    ))
+                if cur_sel and tree_plugins.exists(cur_sel):
+                    tree_plugins.selection_set(cur_sel)
+                elif tree_plugins.get_children():
+                    first = tree_plugins.get_children()[0]
+                    tree_plugins.selection_set(first)
+                update_selected_plugin_buttons()
+
+            def update_selected_plugin_buttons(ev=None):
+                p_id = get_selected_plugin_id()
+                if not p_id:
+                    btn_toggle.config(state="disabled")
+                    btn_cfg_p.config(state="disabled")
+                    btn_info.config(state="disabled")
+                    btn_install.config(state="disabled")
+                    return
+                p = self.plugin_manager.plugins.get(p_id)
+                if not p:
+                    return
+                btn_toggle.config(state="normal")
+                btn_info.config(state="normal")
+                btn_install.config(state="normal")
+                if p.status == "running":
+                    btn_toggle.config(text=self.t("plugins_btn_stop"))
+                else:
+                    btn_toggle.config(text=self.t("plugins_btn_start"))
+
+                if p.global_ui and p.global_ui.get("fields"):
+                    btn_cfg_p.config(state="normal")
+                else:
+                    btn_cfg_p.config(state="disabled")
+
+            tree_plugins.bind("<<TreeviewSelect>>", update_selected_plugin_buttons)
+            refresh_plugins_tree()
+
+        render_tab_plugins_content()
 
         def on_dlg_close():
             timer_active[0] = False
