@@ -24,3 +24,4 @@ AGENTS.md
 RULES.md
 assets/*auto.pem
 plugins/*/config.json
+config_mapping.json

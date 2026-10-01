@@ -845,6 +845,10 @@ You can verify your plugin's multi-language support in real time:
 
 ## 5. Real Physical Hardware 1: Arduino / ESP32 (Pedals, Wheels, Handbrake)
 
+![Live Demo: Arduino Pedals in j360More](assets/videoArduino.gif)
+
+*Real-time animation: Live throttle, brake, and clutch response with dynamic GUI telemetry (~33 FPS) and 120 Hz XInput mapping.*
+
 Here is how to build and flash a physical USB controller using linear potentiometers and an Arduino micro-board.
 
 ### 5.1. Circuit and Pin Wiring
@@ -1029,6 +1033,10 @@ finally:
 ---
 
 ## 6. Real Physical Hardware 2: Synthesizers, Pianos, and MIDI Pads
+
+![Live Demo: MIDI Controller in j360More](assets/videoMidi.gif)
+
+*Real-time animation: Note keys mapped to Xbox buttons, Pitch Bend wheel driving left thumbstick, and Modulation wheel controlling right trigger RT with reactive VU-meter.*
 
 Any standard USB musical keyboard, MIDI pad controller (such as Novation Launchpad or Akai MPK), or DIN-5 adapter works directly.
 

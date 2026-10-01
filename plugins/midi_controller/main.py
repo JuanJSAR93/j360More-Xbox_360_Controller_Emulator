@@ -8,6 +8,7 @@ Supports real physical MIDI hardware and built-in simulation mode.
 import sys
 import os
 import time
+import json
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
@@ -15,6 +16,20 @@ from plugins.plugin_sdk import PluginDevice
 from plugins.midi_controller.sim_midi import MIDISimulator
 
 device = PluginDevice(id="midi", name="Controlador de Teclado/Pads MIDI", num_buttons=8, num_axes=4)
+
+def get_initial_simulate_setting() -> bool:
+    if "--simulate" in sys.argv:
+        return True
+    cfg_file = os.path.join(os.path.dirname(__file__), "config.json")
+    if os.path.isfile(cfg_file):
+        try:
+            with open(cfg_file, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                if "emulate_hardware" in cfg.get("global", {}):
+                    return bool(cfg["global"]["emulate_hardware"])
+        except Exception:
+            pass
+    return True
 
 # MIDI Note to Xbox Button Mapping
 NOTE_MAP = {
@@ -40,7 +55,7 @@ active_midi_port = "AUTO"
 active_midi_channel = "TODOS"
 
 simulator = MIDISimulator()
-use_simulator = False
+use_simulator = get_initial_simulate_setting()
 midi_in_port = None
 
 
@@ -166,6 +181,31 @@ def try_connect_midi() -> bool:
     return False
 
 
+@device.on_field_change("emulate_hardware")
+def set_emulate_hardware(val, pad_id):
+    global use_simulator, midi_in_port, pg_midi_in
+    use_simulator = bool(val)
+    if use_simulator:
+        if pg_midi_in:
+            try:
+                pg_midi_in.close()
+            except Exception:
+                pass
+            pg_midi_in = None
+        if midi_in_port:
+            try:
+                midi_in_port.close()
+            except Exception:
+                pass
+            midi_in_port = None
+        device.set_connected(True)
+        device.log("Modo de simulación MIDI activado (sim_midi.py).", "INFO")
+    else:
+        device.log("Modo de simulación desactivado. Buscando dispositivo MIDI físico...", "INFO")
+        if not try_connect_midi():
+            device.set_connected(False)
+
+
 # -------------------------------------------------------------
 # MIDI Loop with Hot-Plug & Auto-Reconnection
 # -------------------------------------------------------------
@@ -174,10 +214,10 @@ def run_loop():
     global use_simulator, midi_in_port, pg_midi_in
     last_reconnect_time = 0.0
 
-    if "--simulate" in sys.argv:
-        use_simulator = True
+    use_simulator = get_initial_simulate_setting()
+    if use_simulator:
         device.set_connected(True)
-        device.log("Modo de simulación MIDI activado (--simulate).")
+        device.log("Iniciando en modo de simulación MIDI (sim_midi.py).", "INFO")
     else:
         connected = try_connect_midi()
         if not connected:

@@ -218,6 +218,12 @@ const translations = {
     s5_title_gamepad: "AirPad Móvil - Mando Táctil Virtual",
     s5_title_custom: "AirPad Móvil - Personalización Libre de Posiciones",
     s5_desc: "Mando táctil completo de baja latencia con respuesta háptica (vibración), sticks analógicos duales y un potente modo de edición para mover, arrastrar y redimensionar libremente cada botón en pantalla para adaptarse al agarre de tu mano.",
+    s6_badge: "Hardware Real · Arduino",
+    s6_title: "Pedales USB Arduino & Telemetría en Vivo",
+    s6_desc: "Lectura analógica a 115200 baudios con filtro pasa-bajos contra jitter. Visualiza la presión de acelerador, freno y embrague en tiempo real mediante barras de telemetría dinámicas a ~33 FPS.",
+    s7_badge: "Hardware Real · MIDI USB",
+    s7_title: "Controlador de Teclado & Pads MIDI",
+    s7_desc: "Convierte cualquier teclado musical o Launchpad USB en mando de juegos. Asigna notas a botones Xbox y Pitch Bend / Modulación a sticks analógicos con VU-meter reactivo.",
     screenshot_zoom: "Haz clic para ampliar en alta resolución",
     footer_desc: "Emulador de mandos virtuales para Windows y Linux (Beta). Diseñado y desarrollado por JuanJSAR para ofrecer la máxima velocidad, estabilidad y flexibilidad en entornos multijugador de 1 a 12 participantes.",
     footer_drivers_title: "Controladores",
@@ -440,6 +446,12 @@ const translations = {
     s5_title_gamepad: "AirPad Mobile - Virtual Touch Gamepad",
     s5_title_custom: "AirPad Mobile - Free Layout Customization",
     s5_desc: "Low-latency virtual touch controller with haptic feedback, dual analog sticks, and an interactive editor allowing you to freely drag, reposition, and resize every on-screen button and joystick for optimal hand grip ergonomics.",
+    s6_badge: "Physical Hardware · Arduino",
+    s6_title: "USB Arduino Pedals & Live Telemetry",
+    s6_desc: "High-speed 115200 baud analog reading with low-pass jitter filter. Live visualization of throttle, brake, and clutch pedal pressure via dynamic telemetry meters at ~33 FPS.",
+    s7_badge: "Physical Hardware · USB MIDI",
+    s7_title: "USB MIDI Keyboard & Pads Controller",
+    s7_desc: "Turn any musical MIDI keyboard or pad controller into a full gaming pad. Maps note velocities to Xbox buttons, and Pitch Bend / Modulation wheel to analog sticks with reactive VU-meter.",
     screenshot_zoom: "Click to view full resolution",
     footer_desc: "Virtual controller emulator for Windows & Linux (Beta). Designed and developed by JuanJSAR to provide unmatched speed, stability, and versatility for 1 to 12 local players.",
     footer_drivers_title: "Drivers",
@@ -768,6 +780,16 @@ document.addEventListener('DOMContentLoaded', () => {
         src: 'assets/screenshot_android2.png',
         captionKey: 's5_title_custom',
         defaultCaption: 'AirPad Web - Personalización Libre de Posiciones'
+      },
+      {
+        src: 'assets/videoArduino.gif',
+        captionKey: 's6_title',
+        defaultCaption: 'j360More - Pedales Arduino USB y Telemetría en Vivo'
+      },
+      {
+        src: 'assets/videoMidi.gif',
+        captionKey: 's7_title',
+        defaultCaption: 'j360More - Teclado MIDI USB y VU-Meter en Vivo'
       }
     ];
 

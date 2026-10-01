@@ -848,6 +848,10 @@ Puedes verificar el funcionamiento multi-idioma de tu plugin en tiempo real:
 
 ## 5. Hardware Físico Real 1: Arduino / ESP32 (Pedales, Volantes y Freno de Mano)
 
+![Demostración en Vivo: Pedales Arduino en j360More](assets/videoArduino.gif)
+
+*Animación en tiempo real: Respuesta de acelerador, freno y embrague con telemetría visual (~33 FPS) y mapeo XInput a 120 Hz en j360More.*
+
 A continuación se detalla cómo crear un periférico físico real conectando potenciómetros a un microcontrolador y programando el firmware en Arduino IDE.
 
 ### 5.1. Circuito y Conexión de Pines
@@ -1033,6 +1037,10 @@ finally:
 ---
 
 ## 6. Hardware Físico Real 2: Sintetizadores, Pianos y Pads MIDI
+
+![Demostración en Vivo: Controlador MIDI en j360More](assets/videoMidi.gif)
+
+*Animación en tiempo real: Pulsación de notas para botones, barrido de Pitch Bend al stick izquierdo y rueda de modulación a gatillo RT con VU-meter reactivo.*
 
 Cualquier teclado musical USB, interfaz MIDI DIN-5 o controlador de pads tipo Launchpad puede utilizarse como mando para jugar.
 

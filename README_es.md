@@ -85,6 +85,11 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 - Arquitectura IPC TCP de latencia cero ejecutada en subprocesos de Python aislados, monitores de telemetría dinámica en la GUI (~33 FPS) e interfaces declarativas (`global_ui` y `pad_ui_customization`).
 - Consulta la guía completa de desarrollo y hardware real: **[README_PLUGINS_es.md](README_PLUGINS_es.md)** | **[Documentación Web Online](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/plugins.html)**.
 
+| 🏎️ Pedales USB Arduino/ESP32 en Vivo | 🎹 Controlador MIDI USB en Vivo |
+| :---: | :---: |
+| ![Pedales Arduino en Acción](assets/videoArduino.gif) | ![Controlador MIDI en Acción](assets/videoMidi.gif) |
+| *Lectura analógica con filtro jitter, calibración y telemetría en vivo* | *Mapeo de notas a botones, pitch bend a sticks y VU-meter a 33 FPS* |
+
 ---
 
 ## 📋 Requisitos del Sistema

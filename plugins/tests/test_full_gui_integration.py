@@ -79,7 +79,7 @@ def test_plugin_gui_integration():
     tab_texts = [sub_nb.tab(i, "text").strip() for i in range(len(sub_nb.tabs()))]
     print(f"    Controller 1 tabs with Pedals: {tab_texts}")
     assert "Sticks" not in tab_texts, "'Sticks' tab should be hidden for pedals!"
-    assert any("Pedales" in t for t in tab_texts), "Custom pedals tab should be present!"
+    assert any("Pedales" in t or "Pedals" in t for t in tab_texts), "Custom pedals tab should be present!"
     assert len(widgets_1["custom_plugin_tabs"]) == 1, "custom_plugin_tabs list should have 1 entry"
 
     # Verify that 'btn_plugin_cfg' is mapped/visible

@@ -346,6 +346,34 @@ class PluginDevice:
                 except Exception as e:
                     self.log(f"Error in on_action({action}): {e}", "ERROR")
 
+        elif event == "initial_config":
+            config = msg.get("config", {})
+            # Dispatch global settings
+            global_cfg = config.get("global", {})
+            for field_id, val in global_cfg.items():
+                for cb in self._field_change_callbacks.get(field_id, []):
+                    try:
+                        cb(val, 0)
+                    except Exception as e:
+                        self.log(f"Error in on_field_change({field_id}): {e}", "ERROR")
+            # Dispatch pad-specific settings
+            pads_cfg = config.get("pads", {})
+            for pad_key, pad_fields in pads_cfg.items():
+                pad_num = 1
+                if isinstance(pad_key, str) and pad_key.startswith("pad_"):
+                    try:
+                        pad_num = int(pad_key.split("_")[1])
+                    except Exception:
+                        pass
+                elif isinstance(pad_key, int):
+                    pad_num = pad_key
+                for field_id, val in pad_fields.items():
+                    for cb in self._field_change_callbacks.get(field_id, []):
+                        try:
+                            cb(val, pad_num)
+                        except Exception as e:
+                            self.log(f"Error in on_field_change({field_id}): {e}", "ERROR")
+
         elif event == "request_discovery":
             if self._discovery_callback:
                 try:

@@ -85,6 +85,11 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 - Zero-latency IPC TCP architecture running in isolated Python sub-processes, real-time GUI telemetry monitors (~33 FPS), and declarative UI schemas (`global_ui` & `pad_ui_customization`).
 - Read the full developer and real hardware guide: **[README_PLUGINS.md](README_PLUGINS.md)** | **[Online Web Documentation](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/plugins.html)**.
 
+| 🏎️ Live Arduino/ESP32 USB Pedals | 🎹 Live USB MIDI Keyboard/Pads Controller |
+| :---: | :---: |
+| ![Arduino Pedals in Action](assets/videoArduino.gif) | ![MIDI Controller in Action](assets/videoMidi.gif) |
+| *Analog sensor reading with jitter filtering, calibration, and live telemetry* | *Note-to-button mapping, pitch bend stick sweeps, and 33 FPS VU-meter* |
+
 ---
 
 ## 📋 System Requirements

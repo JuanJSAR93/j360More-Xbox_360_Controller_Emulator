@@ -7,6 +7,7 @@ Supports physical COM port reading (pyserial) and built-in simulation mode.
 import sys
 import os
 import time
+import json
 
 # Ensure plugins can import the SDK
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -16,6 +17,20 @@ from plugins.arduino_pedals.sim_arduino import ArduinoSimulator
 
 # Create the virtual device
 device = PluginDevice(id="pedals", name="Pedales Arduino USB", num_buttons=4, num_axes=3)
+
+def get_initial_simulate_setting() -> bool:
+    if "--simulate" in sys.argv:
+        return True
+    cfg_file = os.path.join(os.path.dirname(__file__), "config.json")
+    if os.path.isfile(cfg_file):
+        try:
+            with open(cfg_file, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                if "emulate_hardware" in cfg.get("global", {}):
+                    return bool(cfg["global"]["emulate_hardware"])
+        except Exception:
+            pass
+    return True
 
 # Calibration parameters per pad
 calibration = {
@@ -34,7 +49,7 @@ active_baudrate = 115200
 
 # Hardware simulator instance
 simulator = ArduinoSimulator()
-use_simulator = False
+use_simulator = get_initial_simulate_setting()
 serial_conn = None
 
 
@@ -137,6 +152,25 @@ def set_baudrate(val, pad_id):
     device.log(f"Baudrate cambiado a: {active_baudrate}")
 
 
+@device.on_field_change("emulate_hardware")
+def set_emulate_hardware(val, pad_id):
+    global use_simulator, serial_conn
+    use_simulator = bool(val)
+    if use_simulator:
+        if serial_conn:
+            try:
+                serial_conn.close()
+            except Exception:
+                pass
+            serial_conn = None
+        device.set_connected(True)
+        device.log("Modo de simulación de hardware activado (sim_arduino.py).", "INFO")
+    else:
+        device.log("Modo de simulación desactivado. Buscando hardware físico por puerto COM...", "INFO")
+        if not try_connect_serial():
+            device.set_connected(False)
+
+
 # -------------------------------------------------------------
 # Hardware Reader Loop with Hot-Plug & Auto-Reconnection
 # -------------------------------------------------------------
@@ -168,15 +202,13 @@ def run_loop():
     global use_simulator, serial_conn
     last_reconnect_attempt = 0.0
 
-    # Check if forced simulation via CLI
-    if "--simulate" in sys.argv:
-        use_simulator = True
+    use_simulator = get_initial_simulate_setting()
+    if use_simulator:
         device.set_connected(True)
-        device.log("Modo de simulación de hardware activado (--simulate).")
+        device.log("Iniciando en modo de simulación de hardware (sim_arduino.py).", "INFO")
     else:
         connected = try_connect_serial()
         if not connected:
-            # Check if simulation fallback or wait for hotplug
             device.log("No se detectó Arduino en puertos COM al arrancar. Escuchando conexión física...", "INFO")
             device.set_connected(False)
 

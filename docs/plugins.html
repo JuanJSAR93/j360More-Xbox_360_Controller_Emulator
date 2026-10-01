@@ -1241,6 +1241,19 @@ now = time.perf_counter()
           A continuación se detalla cómo construir una pedalera física real usando potenciómetros de 10 kΩ y una placa Arduino Nano, Uno o ESP32 con comunicación serial a <strong>115200 baudios</strong>.
         </p>
 
+        <!-- Live Demo Card Arduino -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-blue); margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+            <span>🏎️</span> <span>Demostración en Vivo: Plugin Arduino en Acción</span>
+          </h3>
+          <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+            Observa en tiempo real la respuesta de la interfaz de j360More, la animación de las barras de presión analógica (acelerador, freno y embrague) y la asignación instantánea sobre el mando virtual:
+          </p>
+          <div style="text-align: center; background: #0b0f19; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+            <img src="assets/videoArduino.gif" alt="Demostración en Vivo de Pedales Arduino en j360More" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+          </div>
+        </div>
+
         <h3 id="arduino-circuito" data-i18n="sec5_h3_1">5.1. Circuito y Conexión de Pines</h3>
 
         <!-- ASCII Circuit Diagram -->
@@ -1465,6 +1478,19 @@ last_telemetry = <span class="tok-num">0.0</span>
         <p data-i18n="sec6_p1">
           Cualquier teclado musical USB, interfaz MIDI o Launchpad físico puede utilizarse para controlar juegos.
         </p>
+
+        <!-- Live Demo Card MIDI -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-blue); margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+            <span>🎹</span> <span>Demostración en Vivo: Controlador MIDI en Acción</span>
+          </h3>
+          <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+            Comprueba cómo las teclas de notas musicales activan los botones del mando, mientras que la rueda de Pitch Bend y la Modulación barren los sticks analógicos y disparan los medidores VU de telemetría a ~33 FPS:
+          </p>
+          <div style="text-align: center; background: #0b0f19; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+            <img src="assets/videoMidi.gif" alt="Demostración en Vivo de Controlador MIDI en j360More" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+          </div>
+        </div>
 
         <h3 id="midi-filtrado" data-i18n="sec6_h3_1">6.1. Filtrado de Puertos de Entrada en Windows</h3>
         <p data-i18n="sec6_p2">

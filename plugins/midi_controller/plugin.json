@@ -69,6 +69,20 @@
           "1", "2", "3", "4", "10"
         ],
         "default": "TODOS"
+      },
+      {
+        "id": "emulate_hardware",
+        "label": {
+          "es": "Emular comportamiento (Simulador sin hardware)",
+          "en": "Emulate behavior (Hardware simulator)",
+          "fr": "Émuler le comportement (Simulateur)",
+          "pt_BR": "Emular comportamento (Simulador)",
+          "de": "Verhalten emulieren (Simulator)",
+          "it": "Emula comportamento (Simulatore)",
+          "ru": "Эмулировать поведение (Симулятор)"
+        },
+        "type": "checkbox",
+        "default": true
       }
     ]
   },
