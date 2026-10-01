@@ -1,0 +1,74 @@
+{
+  "id": "midi_controller",
+  "name": "Controlador de Teclado/Pads MIDI",
+  "version": "1.0.0",
+  "author": "Comunidad j360More",
+  "description": "Convierte cualquier teclado musical MIDI, sintetizador USB o Launchpad en un mando de juegos. Asigna notas a botones y Pitch Bend / Modulación a palancas analógicas.",
+  "entrypoint": "main.py",
+  "requirements": [
+    "mido>=1.2.10",
+    "python-rtmidi>=1.5.0"
+  ],
+  "global_ui": {
+    "title": "Ajustes de Conexión MIDI",
+    "fields": [
+      {
+        "id": "midi_port",
+        "label": "Puerto / Dispositivo MIDI:",
+        "type": "dynamic_dropdown",
+        "discovery_action": "scan_midi_ports",
+        "options": ["AUTO", "Virtual MIDI In", "nanoKEY2", "Launchpad"],
+        "default": "AUTO"
+      },
+      {
+        "id": "midi_channel",
+        "label": "Canal MIDI (1-16 o Todos):",
+        "type": "dropdown",
+        "options": ["TODOS", "1", "2", "3", "4", "10"],
+        "default": "TODOS"
+      }
+    ]
+  },
+  "pad_ui_customization": {
+    "disable_default_tabs": [],
+    "custom_tabs": [
+      {
+        "id": "midi_mapping",
+        "title": "🎹 Calibración MIDI",
+        "sections": [
+          {
+            "name": "Sensibilidad y Respuesta",
+            "fields": [
+              {
+                "id": "velocity_threshold",
+                "label": "Umbral Mínimo de Velocidad (0-127):",
+                "type": "slider",
+                "min": 1,
+                "max": 127,
+                "default": 15
+              },
+              {
+                "id": "pitch_bend_sens",
+                "label": "Sensibilidad Pitch Bend (%):",
+                "type": "slider",
+                "min": 10,
+                "max": 200,
+                "default": 100
+              }
+            ]
+          },
+          {
+            "name": "Monitor de Actividad MIDI",
+            "fields": [
+              {
+                "id": "midi_telemetry",
+                "label": "Actividad de Notas y Rueda (Pitch / Modulación):",
+                "type": "progress_bar_multi"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

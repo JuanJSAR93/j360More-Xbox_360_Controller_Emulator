@@ -30,6 +30,8 @@ import easings
 from driver_manager import DriverManager
 from input_devices import DeviceManager
 from emulator_engine import EmulatorEngine, apply_axis_calibration, apply_trigger_calibration, get_pad_emulated_type
+from plugins.plugin_manager import get_plugin_manager, PluginManager
+from plugins.plugin_ui_renderer import PluginUIRenderer
 from i18n import (
     get_text, get_target_name, SUPPORTED_LANGUAGES,
     ALL_NONE_LABELS, get_none_label, get_input_options, is_none_mapping,
@@ -842,6 +844,17 @@ class J360MoreApp:
         self.engine = EmulatorEngine(self.device_manager)
         self.engine.set_config(self.config)
 
+        # Gestor de Plugins para hardware externo (Arduino, MIDI, etc.)
+        self.plugin_manager = get_plugin_manager()
+        self.device_manager.plugin_manager = self.plugin_manager
+        self._plugin_telemetry_refs = {}
+        self.plugin_manager.add_on_telemetry(self._on_plugin_telemetry_received)
+        self.plugin_manager.add_on_device_list_changed(
+            lambda: self.root.after(0, lambda: self._refresh_all_devices(async_scan=False))
+        )
+        self.plugin_manager.scan_plugins()
+        self.plugin_manager.start_all_auto()
+
         self.recording_target = None
         self.available_devices = []
         self.tab_frames = {}
@@ -1598,6 +1611,15 @@ class J360MoreApp:
 
         btn_refresh = ttk.Button(top_bar, text=self.t("btn_refresh"), command=self._refresh_all_devices)
         btn_refresh.pack(side=tk.LEFT, padx=4)
+        widgets["btn_refresh"] = btn_refresh
+
+        # Botón de acceso directo a Ajustes de Plugin (visible cuando el mando asignado es un plugin)
+        btn_plugin_cfg = ttk.Button(
+            top_bar,
+            text=self.t("btn_plugin_settings"),
+            command=lambda p=pad_id: self._open_selected_plugin_config(p)
+        )
+        widgets["btn_plugin_cfg"] = btn_plugin_cfg
 
         btn_copy = ttk.Button(top_bar, text=self.t("btn_copy_to"), command=lambda p=pad_id: self._open_copy_dialog(p))
         btn_copy.pack(side=tk.LEFT, padx=4)
@@ -1638,7 +1660,18 @@ class J360MoreApp:
         sub_nb.add(sub_rumble, text=f" {self.t('subtab_rumble')} ")
         self._build_subtab_rumble(pad_id, sub_rumble, widgets)
 
+        # Registro de pestañas nativas para habilitar/ocultar dinámicamente según manifest de plugin
+        widgets["default_tabs"] = [
+            ("general", sub_gen, f" {self.t('subtab_general')} "),
+            ("triggers", sub_trig, f" {self.t('subtab_triggers')} "),
+            ("sticks", sub_sticks, f" {self.t('subtab_sticks')} "),
+            ("rumble", sub_rumble, f" {self.t('subtab_rumble')} ")
+        ]
+        widgets["custom_plugin_tabs"] = []
+
         self.tab_widgets[pad_id] = widgets
+        self._update_plugin_ui_for_pad(pad_id)
+        self._sync_plugin_subtabs(pad_id)
 
     def _build_subtab_general(self, pad_id: int, parent: ttk.Frame, widgets: dict):
         main_grid = ttk.Frame(parent)
@@ -2681,6 +2714,8 @@ class J360MoreApp:
 
             has_dev = (saved_dev_id != "none" and any(d["id"] == saved_dev_id for d in self.available_devices if d["id"] != "none"))
             self._update_tab_state(pad_id, has_dev)
+            self._update_plugin_ui_for_pad(pad_id)
+            self._sync_plugin_subtabs(pad_id)
 
     def _refresh_all_devices(self, async_scan: bool = False):
         if async_scan:
@@ -2776,6 +2811,8 @@ class J360MoreApp:
                 if widgets.get("enabled_var"):
                     widgets["enabled_var"].set(True)
             self._update_tab_state(pad_id, has_dev)
+            self._update_plugin_ui_for_pad(pad_id)
+            self._sync_plugin_subtabs(pad_id)
             self._sync_ui_to_config()
             self.engine.set_config(self.config)
 
@@ -3849,6 +3886,187 @@ class J360MoreApp:
 
         refresh_airpad_tree()
 
+        # ==================== PESTAÑA 3: PLUGINS ====================
+        tab_plugins = ttk.Frame(notebook_settings, padding=10)
+        notebook_settings.add(tab_plugins, text=self.t("set_tab_plugins"))
+        if initial_tab == 2:
+            notebook_settings.select(tab_plugins)
+
+        # Encabezado
+        top_plg_box = ttk.Frame(tab_plugins)
+        top_plg_box.pack(fill=tk.X, pady=(0, 6))
+
+        ttk.Label(top_plg_box, text=self.t("plugins_title"), font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ttk.Label(top_plg_box, text=self.t("plugins_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=710).pack(anchor="w", pady=(2, 4))
+
+        # Tabla de plugins
+        tree_plg_frame = ttk.LabelFrame(tab_plugins, text=f"📦 {self.t('set_tab_plugins')}", padding=6)
+        tree_plg_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
+
+        plg_scroll = ttk.Scrollbar(tree_plg_frame, orient=tk.VERTICAL)
+        plg_cols = ("status", "name", "version", "author", "id")
+        tree_plugins = ttk.Treeview(tree_plg_frame, columns=plg_cols, show="headings", height=5, yscrollcommand=plg_scroll.set, selectmode="browse")
+        plg_scroll.config(command=tree_plugins.yview)
+        plg_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        tree_plugins.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        tree_plugins.heading("status", text=self.t("plugins_col_status"))
+        tree_plugins.heading("name", text=self.t("plugins_col_name"))
+        tree_plugins.heading("version", text=self.t("plugins_col_version"))
+        tree_plugins.heading("author", text=self.t("plugins_col_author"))
+        tree_plugins.heading("id", text="ID")
+
+        tree_plugins.column("status", width=105, anchor="center")
+        tree_plugins.column("name", width=220, anchor="w")
+        tree_plugins.column("version", width=75, anchor="center")
+        tree_plugins.column("author", width=120, anchor="w")
+        tree_plugins.column("id", width=130, anchor="w")
+
+        # Barra de acciones para el plugin seleccionado
+        btn_bar_plg = ttk.Frame(tab_plugins)
+        btn_bar_plg.pack(fill=tk.X, pady=(0, 6))
+
+        def get_selected_plugin_id() -> Optional[str]:
+            sel = tree_plugins.selection()
+            return sel[0] if sel else None
+
+        def on_toggle_selected_plugin():
+            p_id = get_selected_plugin_id()
+            if not p_id:
+                return
+            p = self.plugin_manager.plugins.get(p_id)
+            if not p:
+                return
+            if p.status == "running":
+                self.plugin_manager.stop_plugin(p_id)
+            else:
+                ok, err = self.plugin_manager.start_plugin(p_id)
+                if not ok:
+                    messagebox.showerror("Error Plugin", f"No se pudo iniciar el plugin: {err}")
+            refresh_plugins_tree()
+
+        def on_config_selected_plugin():
+            p_id = get_selected_plugin_id()
+            if p_id:
+                self._open_plugin_config_dialog(p_id)
+
+        def on_info_selected_plugin():
+            p_id = get_selected_plugin_id()
+            if p_id:
+                self._open_plugin_info_dialog(p_id)
+
+        def on_install_selected_reqs():
+            p_id = get_selected_plugin_id()
+            if not p_id:
+                return
+            btn_install.config(state="disabled")
+            def _install_worker():
+                def _log(line):
+                    self.root.after(0, append_console_log, f"[{p_id}] {line}")
+                ok, msg = self.plugin_manager.install_plugin_requirements(p_id, callback=_log)
+                def _done():
+                    btn_install.config(state="normal")
+                    refresh_plugins_tree()
+                    if ok:
+                        messagebox.showinfo("Instalación", f"Librerías de '{p_id}' instaladas correctamente.")
+                    else:
+                        messagebox.showerror("Fallo de Instalación", f"Error instalando librerías: {msg}")
+                self.root.after(0, _done)
+            threading.Thread(target=_install_worker, daemon=True).start()
+
+        def on_reload_plugins():
+            self.plugin_manager.scan_plugins()
+            self.plugin_manager.start_all_auto()
+            refresh_plugins_tree()
+            self._refresh_all_devices(async_scan=False)
+
+        btn_toggle = ttk.Button(btn_bar_plg, text="▶ / ⏹", width=12, command=on_toggle_selected_plugin)
+        btn_toggle.pack(side=tk.LEFT, padx=(0, 4))
+
+        btn_cfg_p = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_config"), command=on_config_selected_plugin)
+        btn_cfg_p.pack(side=tk.LEFT, padx=4)
+
+        btn_info = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_info"), command=on_info_selected_plugin)
+        btn_info.pack(side=tk.LEFT, padx=4)
+
+        btn_install = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_install_reqs"), command=on_install_selected_reqs)
+        btn_install.pack(side=tk.LEFT, padx=4)
+
+        btn_reload = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_reload"), command=on_reload_plugins)
+        btn_reload.pack(side=tk.LEFT, padx=4)
+
+        btn_folder = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_open_folder"), command=lambda: self._open_folder(self.plugin_manager.plugins_dir))
+        btn_folder.pack(side=tk.RIGHT, padx=(4, 0))
+
+        # Consola de depuración de logs de plugins
+        console_box = ttk.LabelFrame(tab_plugins, text="📋 " + self.t("plugins_console_title"), padding=6)
+        console_box.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+
+        txt_console = tk.Text(console_box, height=6, bg="#1e1e1e", fg="#e0e0e0", insertbackground="white", font=("Consolas", 8), relief="flat")
+        console_scroll = ttk.Scrollbar(console_box, orient=tk.VERTICAL, command=txt_console.yview)
+        txt_console.config(yscrollcommand=console_scroll.set)
+        console_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        txt_console.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def append_console_log(line: str):
+            try:
+                txt_console.insert(tk.END, line + "\n")
+                txt_console.see(tk.END)
+            except Exception:
+                pass
+
+        # Registrar listener de logs
+        self.plugin_manager.add_on_log(lambda p_id, line: self.root.after(0, append_console_log, f"[{p_id}] {line}"))
+
+        def refresh_plugins_tree():
+            cur_sel = get_selected_plugin_id()
+            tree_plugins.delete(*tree_plugins.get_children())
+            infos = self.plugin_manager.get_plugins_info()
+            for p in infos:
+                p_id = p["id"]
+                st = p["status"]
+                st_label = self.t("plugins_status_running") if st == "running" else (self.t("plugins_status_stopped") if st == "stopped" else self.t("plugins_status_error"))
+                tree_plugins.insert("", tk.END, iid=p_id, values=(
+                    st_label,
+                    p["name"],
+                    f"v{p['version']}",
+                    p["author"],
+                    p_id
+                ))
+            if cur_sel and tree_plugins.exists(cur_sel):
+                tree_plugins.selection_set(cur_sel)
+            elif tree_plugins.get_children():
+                first = tree_plugins.get_children()[0]
+                tree_plugins.selection_set(first)
+            update_selected_plugin_buttons()
+
+        def update_selected_plugin_buttons(ev=None):
+            p_id = get_selected_plugin_id()
+            if not p_id:
+                btn_toggle.config(state="disabled")
+                btn_cfg_p.config(state="disabled")
+                btn_info.config(state="disabled")
+                btn_install.config(state="disabled")
+                return
+            p = self.plugin_manager.plugins.get(p_id)
+            if not p:
+                return
+            btn_toggle.config(state="normal")
+            btn_info.config(state="normal")
+            btn_install.config(state="normal")
+            if p.status == "running":
+                btn_toggle.config(text=self.t("plugins_btn_stop"))
+            else:
+                btn_toggle.config(text=self.t("plugins_btn_start"))
+
+            if p.global_ui and p.global_ui.get("fields"):
+                btn_cfg_p.config(state="normal")
+            else:
+                btn_cfg_p.config(state="disabled")
+
+        tree_plugins.bind("<<TreeviewSelect>>", update_selected_plugin_buttons)
+        refresh_plugins_tree()
+
         def on_dlg_close():
             timer_active[0] = False
             dlg.destroy()
@@ -3942,6 +4160,292 @@ class J360MoreApp:
 
         ttk.Button(btn_box, text="✔ " + self.t("set_btn_save"), command=apply_settings).pack(side=tk.RIGHT, padx=4)
         ttk.Button(btn_box, text=self.t("set_btn_cancel"), command=on_dlg_close).pack(side=tk.RIGHT, padx=4)
+
+    def _on_plugin_telemetry_received(self, plugin_id: str, pad_id: int, data: Dict[str, Any]):
+        try:
+            self.root.after(0, self._dispatch_plugin_telemetry, plugin_id, pad_id, data)
+        except Exception:
+            pass
+
+    def _dispatch_plugin_telemetry(self, plugin_id: str, pad_id: int, data: Dict[str, Any]):
+        refs = self._plugin_telemetry_refs.get((plugin_id, pad_id))
+        if not refs:
+            refs = self._plugin_telemetry_refs.get((plugin_id, 0))
+        if refs:
+            for field_id, rdata in refs.items():
+                if isinstance(rdata, dict) and rdata.get("type") in ("progress_bar_multi", "progress_bar_pair"):
+                    vals = data.get(field_id) or data.get("values")
+                    if vals is not None:
+                        PluginUIRenderer.update_telemetry_widget(rdata, vals)
+
+    def _update_plugin_ui_for_pad(self, pad_id: int):
+        widgets = self.tab_widgets.get(pad_id)
+        if not widgets:
+            return
+        btn_cfg = widgets.get("btn_plugin_cfg")
+        btn_refresh = widgets.get("btn_refresh")
+
+        cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+        dev_id = cfg.get("physical_device_id", "none")
+        is_plugin = dev_id.startswith("plugin:")
+
+        if is_plugin:
+            if btn_cfg and btn_refresh and not btn_cfg.winfo_ismapped():
+                btn_cfg.pack(side=tk.LEFT, padx=3, before=btn_refresh)
+        else:
+            if btn_cfg and btn_cfg.winfo_ismapped():
+                btn_cfg.pack_forget()
+
+    def _sync_plugin_subtabs(self, pad_id: int):
+        widgets = self.tab_widgets.get(pad_id)
+        if not widgets:
+            return
+        sub_nb = widgets.get("sub_nb")
+        if not sub_nb:
+            return
+
+        # Limpiar pestañas personalizadas anteriores
+        for c_frame in widgets.get("custom_plugin_tabs", []):
+            try:
+                sub_nb.forget(c_frame)
+                c_frame.destroy()
+            except Exception:
+                pass
+        widgets["custom_plugin_tabs"] = []
+
+        cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+        dev_id = cfg.get("physical_device_id", "none")
+
+        if dev_id.startswith("plugin:"):
+            parts = dev_id.split(":")
+            plugin_id = parts[1] if len(parts) > 1 else ""
+            plugin = self.plugin_manager.plugins.get(plugin_id)
+            if plugin:
+                disabled_tabs = plugin.pad_ui.get("disable_default_tabs", [])
+                for name, frame, label in widgets.get("default_tabs", []):
+                    should_hide = (name in disabled_tabs)
+                    is_visible = (frame in sub_nb.tabs() or str(frame) in sub_nb.tabs())
+                    if should_hide and is_visible:
+                        sub_nb.forget(frame)
+                    elif not should_hide and not is_visible:
+                        sub_nb.add(frame, text=label)
+
+                custom_tabs_def = plugin.pad_ui.get("custom_tabs", [])
+                pad_cfg = plugin.config_data.get("pads", {}).get(str(pad_id), {})
+
+                for c_def in custom_tabs_def:
+                    c_label = c_def.get("title") or c_def.get("label") or "Plugin"
+                    c_frame = ttk.Frame(sub_nb, padding=4)
+                    sub_nb.add(c_frame, text=f" {c_label} ")
+                    widgets["custom_plugin_tabs"].append(c_frame)
+
+                    merged_refs = {}
+
+                    def make_on_field_change(p_id=plugin_id, pid=pad_id):
+                        def _fc(fid, val):
+                            if "pads" not in plugin.config_data:
+                                plugin.config_data["pads"] = {}
+                            if str(pid) not in plugin.config_data["pads"]:
+                                plugin.config_data["pads"][str(pid)] = {}
+                            plugin.config_data["pads"][str(pid)][fid] = val
+                            plugin.save_config()
+                            self.plugin_manager.send_field_change(p_id, fid, val, pad_id=pid)
+                        return _fc
+
+                    def make_on_action(p_id=plugin_id, pid=pad_id):
+                        def _act(act_name):
+                            self.plugin_manager.send_action(p_id, act_name, pad_id=pid)
+                        return _act
+
+                    fc_cb = make_on_field_change()
+                    act_cb = make_on_action()
+
+                    sections = c_def.get("sections")
+                    if sections:
+                        for sec in sections:
+                            sec_name = sec.get("name", "")
+                            sec_box = ttk.LabelFrame(c_frame, text=sec_name, padding=6)
+                            sec_box.pack(fill=tk.X, padx=4, pady=3)
+                            s_refs = PluginUIRenderer.render_fields(
+                                sec_box,
+                                sec.get("fields", []),
+                                pad_cfg,
+                                on_field_change=fc_cb,
+                                on_action=act_cb
+                            )
+                            merged_refs.update(s_refs)
+                    else:
+                        fields = c_def.get("fields", [])
+                        s_refs = PluginUIRenderer.render_fields(
+                            c_frame,
+                            fields,
+                            pad_cfg,
+                            on_field_change=fc_cb,
+                            on_action=act_cb
+                        )
+                        merged_refs.update(s_refs)
+
+                    self._plugin_telemetry_refs[(plugin_id, pad_id)] = merged_refs
+        else:
+            for name, frame, label in widgets.get("default_tabs", []):
+                is_visible = (frame in sub_nb.tabs() or str(frame) in sub_nb.tabs())
+                if not is_visible:
+                    sub_nb.add(frame, text=label)
+
+    def _open_selected_plugin_config(self, pad_id: int):
+        cfg = self.config.get("controllers", {}).get(str(pad_id), {})
+        dev_id = cfg.get("physical_device_id", "none")
+        if dev_id.startswith("plugin:"):
+            parts = dev_id.split(":")
+            plugin_id = parts[1] if len(parts) > 1 else ""
+            self._open_plugin_config_dialog(plugin_id)
+        else:
+            self._open_settings_dialog(initial_tab=2)
+
+    def _open_plugin_config_dialog(self, plugin_id: str):
+        plugin = self.plugin_manager.plugins.get(plugin_id)
+        if not plugin:
+            messagebox.showwarning("Plugin", f"Plugin '{plugin_id}' no encontrado.")
+            return
+
+        global_ui = plugin.global_ui
+        if not global_ui or not global_ui.get("fields"):
+            messagebox.showinfo(
+                plugin.name,
+                f"El plugin '{plugin.name}' no requiere configuración global adicional."
+            )
+            return
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title(f"⚙ {self.t('plugins_btn_config')} - {plugin.name}")
+        dlg_w, dlg_h = 580, 480
+        dlg.geometry(f"{dlg_w}x{dlg_h}")
+        dlg.resizable(False, False)
+        self._setup_modal_dialog(dlg)
+
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - (dlg_w // 2))
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - (dlg_h // 2))
+        dlg.geometry(f"+{x}+{y}")
+
+        content_box = ttk.Frame(dlg, padding=12)
+        content_box.pack(fill=tk.BOTH, expand=True)
+
+        header_lbl = ttk.Label(
+            content_box,
+            text=f"⚙ {global_ui.get('title', plugin.name)}",
+            font=("Segoe UI", 11, "bold")
+        )
+        header_lbl.pack(anchor="w", pady=(0, 4))
+
+        if plugin.description:
+            desc_lbl = ttk.Label(
+                content_box,
+                text=plugin.description,
+                font=("Segoe UI", 8),
+                foreground="#555555",
+                wraplength=540
+            )
+            desc_lbl.pack(anchor="w", pady=(0, 10))
+
+        fields_frame = ttk.LabelFrame(content_box, text="Parámetros de Configuración", padding=8)
+        fields_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        global_cfg = plugin.config_data.get("global", {})
+
+        def on_field_change(fid, val):
+            if "global" not in plugin.config_data:
+                plugin.config_data["global"] = {}
+            plugin.config_data["global"][fid] = val
+            plugin.save_config()
+            self.plugin_manager.send_field_change(plugin_id, fid, val, pad_id=0)
+
+        def on_action(action_name):
+            self.plugin_manager.send_action(plugin_id, action_name, pad_id=0)
+
+        rendered_refs = PluginUIRenderer.render_fields(
+            fields_frame,
+            global_ui.get("fields", []),
+            global_cfg,
+            on_field_change=on_field_change,
+            on_action=on_action
+        )
+
+        def on_options_update(p_id, f_id, new_options):
+            if p_id == plugin_id and f_id in rendered_refs:
+                cb_ref = rendered_refs[f_id].get("widget")
+                if isinstance(cb_ref, ttk.Combobox):
+                    self.root.after(0, lambda: cb_ref.config(values=new_options))
+
+        self.plugin_manager.add_on_options_updated(on_options_update)
+
+        btn_row = ttk.Frame(content_box)
+        btn_row.pack(fill=tk.X, side=tk.BOTTOM)
+
+        ttk.Button(btn_row, text="✔ " + self.t("hidhide_warn_btn"), command=dlg.destroy).pack(side=tk.RIGHT, padx=4)
+
+    def _open_plugin_info_dialog(self, plugin_id: str):
+        plugin = self.plugin_manager.plugins.get(plugin_id)
+        if not plugin:
+            return
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title(f"ℹ {self.t('plugins_btn_info')} - {plugin.name}")
+        dlg_w, dlg_h = 560, 420
+        dlg.geometry(f"{dlg_w}x{dlg_h}")
+        dlg.resizable(False, False)
+        self._setup_modal_dialog(dlg)
+
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - (dlg_w // 2))
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - (dlg_h // 2))
+        dlg.geometry(f"+{x}+{y}")
+
+        content_box = ttk.Frame(dlg, padding=12)
+        content_box.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(content_box, text=f"🔌 {plugin.name} v{plugin.version}", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 2))
+        ttk.Label(content_box, text=f"Por: {plugin.author}", font=("Segoe UI", 9, "italic"), foreground="#444444").pack(anchor="w", pady=(0, 8))
+
+        if plugin.description:
+            desc_frame = ttk.LabelFrame(content_box, text="Descripción", padding=8)
+            desc_frame.pack(fill=tk.X, pady=(0, 8))
+            ttk.Label(desc_frame, text=plugin.description, wraplength=520, font=("Segoe UI", 9)).pack(anchor="w")
+
+        tech_frame = ttk.LabelFrame(content_box, text="Detalles Técnicos y Estado", padding=8)
+        tech_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
+
+        grid = ttk.Frame(tech_frame)
+        grid.pack(fill=tk.BOTH, expand=True)
+
+        def add_info_row(label, val, row):
+            ttk.Label(grid, text=label, font=("Segoe UI", 9, "bold")).grid(row=row, column=0, sticky="w", pady=2, padx=4)
+            ttk.Label(grid, text=val, font=("Segoe UI", 9)).grid(row=row, column=1, sticky="w", pady=2, padx=4)
+
+        status_text = "🟢 En ejecución" if plugin.status == "running" else "⚪ Detenido"
+        if plugin.is_simulated:
+            status_text += " (Modo Simulación)"
+        add_info_row("Estado actual:", status_text, 0)
+        add_info_row("Puerto IPC:", str(plugin.ipc_port) if plugin.ipc_port else "--", 1)
+        add_info_row("Dispositivos detectados:", str(len(plugin.discovered_devices)), 2)
+        reqs_str = ", ".join(plugin.requirements) if plugin.requirements else "Ninguna"
+        add_info_row("Librerías (requirements):", reqs_str, 3)
+        add_info_row("Directorio:", plugin.plugin_dir, 4)
+
+        btn_row = ttk.Frame(content_box)
+        btn_row.pack(fill=tk.X, side=tk.BOTTOM)
+
+        ttk.Button(btn_row, text=self.t("plugins_btn_open_folder"), command=lambda: self._open_folder(plugin.plugin_dir)).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_row, text="Cerrar", command=dlg.destroy).pack(side=tk.RIGHT, padx=4)
+
+    def _open_folder(self, path: str):
+        try:
+            if sys.platform == "win32":
+                os.startfile(path)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", path])
+            else:
+                subprocess.Popen(["xdg-open", path])
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo abrir la carpeta: {e}")
 
     def _open_devices_dialog(self):
         """Ventana modal estilo x360ce para listar y administrar DirectInput Devices."""
@@ -5897,6 +6401,12 @@ class J360MoreApp:
                     self.device_manager.stop()
         except Exception as e:
             print(f"[!] Error deteniendo gestor de dispositivos al cerrar: {e}")
+
+        try:
+            if hasattr(self, "plugin_manager") and self.plugin_manager:
+                self.plugin_manager.stop_all()
+        except Exception as e:
+            print(f"[!] Error deteniendo plugins al cerrar: {e}")
 
         try:
             self.root.destroy()

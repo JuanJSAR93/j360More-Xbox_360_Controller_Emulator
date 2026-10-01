@@ -630,6 +630,8 @@ class EmulatorEngine:
                     is_pressed, _ = eval_compiled(comp, joy_state, dev_id, self.pressed_keys)
                     if is_pressed:
                         pressed_buttons.add(btn_name)
+                    elif dev_id.startswith("plugin:") and joy_state.get("named_buttons", {}).get(btn_name):
+                        pressed_buttons.add(btn_name)
 
                 is_d_up, _ = eval_compiled(p_comp.get("DPAD_UP", ("none",)), joy_state, dev_id, self.pressed_keys)
                 is_d_down, _ = eval_compiled(p_comp.get("DPAD_DOWN", ("none",)), joy_state, dev_id, self.pressed_keys)
@@ -640,10 +642,19 @@ class EmulatorEngine:
                 if is_d_left: pressed_buttons.add("DPAD_LEFT")
                 if is_d_right: pressed_buttons.add("DPAD_RIGHT")
 
+                if dev_id.startswith("plugin:"):
+                    nb = joy_state.get("named_buttons", {})
+                    if nb.get("DPAD_UP"): pressed_buttons.add("DPAD_UP")
+                    if nb.get("DPAD_DOWN"): pressed_buttons.add("DPAD_DOWN")
+                    if nb.get("DPAD_LEFT"): pressed_buttons.add("DPAD_LEFT")
+                    if nb.get("DPAD_RIGHT"): pressed_buttons.add("DPAD_RIGHT")
+
                 # 2. Gatillo Izquierdo (LT)
                 lt_comp = p_comp.get("LEFT_TRIGGER", ("none",))
                 is_lt_pressed, lt_raw = eval_compiled(lt_comp, joy_state, dev_id, self.pressed_keys)
-                if is_lt_pressed and lt_raw == 1.0 and lt_comp[0] != "axis":
+                if dev_id.startswith("plugin:") and lt_comp[0] == "none" and "LT" in joy_state.get("triggers", {}):
+                    lt_norm = joy_state["triggers"]["LT"]
+                elif is_lt_pressed and lt_raw == 1.0 and lt_comp[0] != "axis":
                     lt_norm = 1.0
                 else:
                     is_bipolar = (lt_comp[0] == "axis" and len(lt_comp) > 5 and lt_comp[5])
@@ -663,7 +674,9 @@ class EmulatorEngine:
                 # Gatillo Derecho (RT)
                 rt_comp = p_comp.get("RIGHT_TRIGGER", ("none",))
                 is_rt_pressed, rt_raw = eval_compiled(rt_comp, joy_state, dev_id, self.pressed_keys)
-                if is_rt_pressed and rt_raw == 1.0 and rt_comp[0] != "axis":
+                if dev_id.startswith("plugin:") and rt_comp[0] == "none" and "RT" in joy_state.get("triggers", {}):
+                    rt_norm = joy_state["triggers"]["RT"]
+                elif is_rt_pressed and rt_raw == 1.0 and rt_comp[0] != "axis":
                     rt_norm = 1.0
                 else:
                     is_bipolar = (rt_comp[0] == "axis" and len(rt_comp) > 5 and rt_comp[5])
@@ -697,11 +710,13 @@ class EmulatorEngine:
                 dig_lx = (1.0 if is_l_right else 0.0) - (1.0 if is_l_left else 0.0)
                 dig_ly = (1.0 if is_l_down else 0.0) - (1.0 if is_l_up else 0.0)
 
-                # Si el eje analógico tiene entrada activa (lx_axis / ly_axis != 0.0),
-                # la entrada analógica prevalece para conservar la respuesta gradual continua de 0% a 100%.
-                # Solo si el eje analógico está inactivo (0.0) se adopta la entrada digital secundaria (teclado/dpad).
                 lx_raw = lx_axis if abs(lx_axis) > 0.0 else dig_lx
                 ly_raw = ly_axis if abs(ly_axis) > 0.0 else dig_ly
+
+                if dev_id.startswith("plugin:"):
+                    p_sticks = joy_state.get("sticks", {})
+                    if lx_raw == 0.0 and "LX" in p_sticks: lx_raw = p_sticks["LX"]
+                    if ly_raw == 0.0 and "LY" in p_sticks: ly_raw = p_sticks["LY"]
 
                 lx_calib, ly_calib, ls_raw_mag, ls_out_mag = apply_stick_radial_calibration(
                     lx_raw, ly_raw,
@@ -733,6 +748,11 @@ class EmulatorEngine:
 
                 rx_raw = rx_axis if abs(rx_axis) > 0.0 else dig_rx
                 ry_raw = ry_axis if abs(ry_axis) > 0.0 else dig_ry
+
+                if dev_id.startswith("plugin:"):
+                    p_sticks = joy_state.get("sticks", {})
+                    if rx_raw == 0.0 and "RX" in p_sticks: rx_raw = p_sticks["RX"]
+                    if ry_raw == 0.0 and "RY" in p_sticks: ry_raw = p_sticks["RY"]
 
                 rx_calib, ry_calib, rs_raw_mag, rs_out_mag = apply_stick_radial_calibration(
                     rx_raw, ry_raw,

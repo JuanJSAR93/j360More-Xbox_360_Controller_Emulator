@@ -1,0 +1,103 @@
+{
+  "id": "arduino_pedals",
+  "name": "Pedales Arduino USB",
+  "version": "1.0.0",
+  "author": "Comunidad j360More",
+  "description": "Lectura analógica de acelerador (RT), freno (LT) y embrague (LB) vía comunicación Serial (Arduino / ESP32) con telemetría en vivo y soporte háptico.",
+  "entrypoint": "main.py",
+  "requirements": [
+    "pyserial>=3.5"
+  ],
+  "global_ui": {
+    "title": "Ajustes de Conexión Serial",
+    "fields": [
+      {
+        "id": "com_port",
+        "label": "Puerto COM:",
+        "type": "dynamic_dropdown",
+        "discovery_action": "scan_ports",
+        "options": ["AUTO", "COM1", "COM3", "COM4", "COM5"],
+        "default": "AUTO"
+      },
+      {
+        "id": "baudrate",
+        "label": "Velocidad (Baudios):",
+        "type": "dropdown",
+        "options": [9600, 38400, 57600, 115200],
+        "default": 115200
+      }
+    ]
+  },
+  "pad_ui_customization": {
+    "disable_default_tabs": [
+      "sticks"
+    ],
+    "custom_tabs": [
+      {
+        "id": "pedals_calibration",
+        "title": "🔌 Calibración de Pedales",
+        "sections": [
+          {
+            "name": "Rangos Analógicos y Zonas Muertas",
+            "fields": [
+              {
+                "id": "gas_min",
+                "label": "Mínimo Acelerador (ADC):",
+                "type": "slider",
+                "min": 0,
+                "max": 1023,
+                "default": 35
+              },
+              {
+                "id": "gas_max",
+                "label": "Máximo Acelerador (ADC):",
+                "type": "slider",
+                "min": 0,
+                "max": 1023,
+                "default": 980
+              },
+              {
+                "id": "brake_min",
+                "label": "Mínimo Freno (ADC):",
+                "type": "slider",
+                "min": 0,
+                "max": 1023,
+                "default": 20
+              },
+              {
+                "id": "brake_max",
+                "label": "Máximo Freno (ADC):",
+                "type": "slider",
+                "min": 0,
+                "max": 1023,
+                "default": 950
+              },
+              {
+                "id": "invert_brake",
+                "label": "Invertir Polaridad del Freno",
+                "type": "checkbox",
+                "default": false
+              }
+            ]
+          },
+          {
+            "name": "Telemetría en Vivo",
+            "fields": [
+              {
+                "id": "pedals_telemetry",
+                "label": "Presión de Pedales (Acelerador / Freno / Embrague):",
+                "type": "progress_bar_multi"
+              },
+              {
+                "id": "calibrate_zero",
+                "label": "Poner a Cero Posición de Reposo",
+                "type": "button",
+                "action": "calibrate_zero"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

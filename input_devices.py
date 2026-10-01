@@ -108,6 +108,7 @@ class DeviceManager:
         self._pending_hotplug_check = False
         self._last_hotplug_event_time = 0.0
         self._init_time = time.time()
+        self.plugin_manager = None
 
         try:
             if not pygame.get_init():
@@ -453,6 +454,22 @@ class DeviceManager:
         self._physical_map = new_physical_map
         self._joy_xinput_map = new_xinput_map
 
+        # Agregar dispositivos registrados por plugins activos
+        if hasattr(self, "plugin_manager") and self.plugin_manager:
+            try:
+                for p_dev in self.plugin_manager.get_available_devices():
+                    device_list.append({
+                        "id": p_dev["id"],
+                        "name": p_dev["name"],
+                        "type": "plugin",
+                        "vendor_name": "Plugin",
+                        "product_name": p_dev["name"],
+                        "instance_id": p_dev["device_id"],
+                        "conn_type": "IPC"
+                    })
+            except Exception as e:
+                print(f"[!] Error obteniendo dispositivos de plugins: {e}")
+
         self._device_cache = list(device_list)
         return device_list
 
@@ -521,7 +538,21 @@ class DeviceManager:
                 pass
             return
 
-        # 2. Mando físico (USB / Bluetooth)
+        # 2. Periférico de Plugin
+        if dev_id.startswith("plugin:"):
+            if hasattr(self, "plugin_manager") and self.plugin_manager:
+                try:
+                    self.plugin_manager.send_rumble(
+                        dev_id,
+                        pad_id=1,
+                        small_motor=small_motor / 255.0,
+                        large_motor=large_motor / 255.0
+                    )
+                except Exception:
+                    pass
+            return
+
+        # 3. Mando físico (USB / Bluetooth)
         if dev_id.startswith("joy_"):
             # A) Mandos compatibles XInput en Windows (Xbox 360, Xbox One, Xbox Series, etc.)
             if sys.platform == "win32" and self._xinput_dll:
@@ -642,8 +673,22 @@ class DeviceManager:
             "buttons": {},
             "axes": {},
             "hats": {},
-            "keys": set()
+            "keys": set(),
+            "named_buttons": {},
+            "triggers": {},
+            "sticks": {}
         }
+
+        if dev_id.startswith("plugin:"):
+            if hasattr(self, "plugin_manager") and self.plugin_manager:
+                p_state = self.plugin_manager.read_physical_state(dev_id)
+                if p_state:
+                    state["buttons"] = p_state.get("buttons", {})
+                    state["axes"] = p_state.get("axes", {})
+                    state["named_buttons"] = p_state.get("named_buttons", {})
+                    state["triggers"] = p_state.get("triggers", {})
+                    state["sticks"] = p_state.get("sticks", {})
+            return state
 
         if dev_id.startswith("joy_"):
             joy = self.get_joystick(dev_id)
