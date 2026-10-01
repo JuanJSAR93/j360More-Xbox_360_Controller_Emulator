@@ -31,12 +31,25 @@
 
       <ul class="nav-links">
         <li><a href="index.html" data-i18n="nav_home">🏠 Inicio</a></li>
-        <li><a href="#arquitectura-ipc" data-i18n="doc_nav_arch">Arquitectura</a></li>
-        <li><a href="#crear-plugin" data-i18n="doc_nav_create">Crear Plugin</a></li>
-        <li><a href="#interfaz-declarativa" data-i18n="doc_nav_ui">Interfaz UI</a></li>
-        <li><a href="#arduino-hardware" data-i18n="doc_nav_arduino">Arduino / ESP32</a></li>
-        <li><a href="#midi-hardware" data-i18n="doc_nav_midi">MIDI USB</a></li>
-        <li><a href="#sdk-python" data-i18n="doc_nav_sdk">SDK Python</a></li>
+        <li><a href="#arquitectura-ipc" class="nav-plugin-link" data-i18n="doc_badge_plugins">🔌 Plugins</a></li>
+
+        <!-- Dropdown for Chapters -->
+        <li class="nav-dropdown">
+          <button class="nav-dropdown-toggle" aria-expanded="false" type="button">
+            <span data-i18n="nav_chapters">Capítulos</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="#arquitectura-ipc" data-i18n="doc_nav_arch">📌 Arquitectura</a></li>
+            <li><a href="#crear-plugin" data-i18n="doc_nav_create">🚀 Crear Plugin</a></li>
+            <li><a href="#interfaz-declarativa" data-i18n="doc_nav_ui">🎛️ Interfaz UI</a></li>
+            <li><a href="#i18n-plugins" data-i18n="doc_grp_i18n">🌍 Multi-Idioma</a></li>
+            <li><a href="#arduino-hardware" data-i18n="doc_nav_arduino">🏎️ Arduino / ESP32</a></li>
+            <li><a href="#midi-hardware" data-i18n="doc_nav_midi">🎹 MIDI USB</a></li>
+            <li><a href="#sdk-python" data-i18n="doc_nav_sdk">🐍 SDK Python</a></li>
+            <li><a href="#diagnostico" data-i18n="doc_grp_debug">🔧 Diagnóstico</a></li>
+          </ul>
+        </li>
         
         <!-- Language Switcher -->
         <li class="lang-switch-wrapper">

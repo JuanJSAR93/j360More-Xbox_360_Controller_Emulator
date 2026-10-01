@@ -51,7 +51,7 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
 }
 
@@ -132,6 +132,96 @@ body::before {
 }
 
 .nav-links a:hover {
+  color: var(--xbox-neon);
+}
+
+/* Nav Dropdown */
+.nav-dropdown {
+  position: relative;
+  list-style: none;
+}
+
+.nav-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.nav-dropdown-toggle:hover,
+.nav-dropdown:hover .nav-dropdown-toggle,
+.nav-dropdown.active .nav-dropdown-toggle {
+  color: var(--xbox-neon);
+  background: rgba(16, 207, 101, 0.08);
+}
+
+.nav-dropdown-toggle svg {
+  transition: transform 0.25s ease;
+}
+
+.nav-dropdown:hover .nav-dropdown-toggle svg,
+.nav-dropdown.active .nav-dropdown-toggle svg {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: #161b22;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  min-width: 190px;
+  list-style: none;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown.active .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-menu li {
+  width: 100%;
+}
+
+.nav-dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.nav-dropdown-menu a:hover {
+  background: rgba(16, 207, 101, 0.12);
   color: var(--xbox-neon);
 }
 
@@ -1308,7 +1398,7 @@ body::before {
 html, body {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* 2. Navigation Breakpoint (Tablets & Mobile < 980px) */
@@ -1376,6 +1466,40 @@ html, body {
   .nav-links li a:hover {
     background: rgba(16, 207, 101, 0.15);
     color: var(--xbox-neon);
+  }
+
+  .nav-dropdown {
+    width: 100%;
+  }
+
+  .nav-dropdown-toggle {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-dropdown-menu {
+    position: static;
+    transform: none;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    min-width: 100%;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    margin: 0.35rem 0 0.5rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-dropdown-menu a {
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    text-align: center;
   }
 
   .nav-links .lang-switch-wrapper {
@@ -2017,14 +2141,17 @@ html, body {
   display: grid;
   grid-template-columns: 290px 1fr;
   gap: 2.5rem;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 /* Sidebar Container */
 .docs-sidebar {
+  position: -webkit-sticky;
   position: sticky;
-  top: 90px;
-  max-height: calc(100vh - 110px);
+  top: 85px;
+  align-self: start;
+  height: fit-content;
+  max-height: calc(100vh - 105px);
   overflow-y: auto;
   background: var(--bg-card);
   border: 1px solid var(--border-color);

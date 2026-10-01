@@ -11,6 +11,8 @@ const translations = {
     nav_quickstart: "Guía Rápida",
     nav_faq: "Preguntas",
     nav_plugins: "🔌 Plugins",
+    nav_more: "Más",
+    nav_chapters: "Capítulos",
     nav_home: "🏠 Inicio",
     nav_download: "Descargar",
     doc_badge_plugins: "PLUGINS & HARDWARE",
@@ -231,6 +233,8 @@ const translations = {
     nav_quickstart: "Quickstart",
     nav_faq: "FAQ",
     nav_plugins: "🔌 Plugins",
+    nav_more: "More",
+    nav_chapters: "Chapters",
     nav_home: "🏠 Home",
     nav_download: "Download",
     doc_badge_plugins: "PLUGINS & HARDWARE",
@@ -517,6 +521,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Nav Dropdowns Toggle (Click & Touch Support)
+  document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+    const toggleBtn = dropdown.querySelector('.nav-dropdown-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isActive = dropdown.classList.contains('active');
+        document.querySelectorAll('.nav-dropdown').forEach(d => {
+          if (d !== dropdown) d.classList.remove('active');
+        });
+        dropdown.classList.toggle('active', !isActive);
+        toggleBtn.setAttribute('aria-expanded', (!isActive).toString());
+      });
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+        const toggleBtn = dropdown.querySelector('.nav-dropdown-toggle');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
 
   // FAQ Accordion Toggle
   const faqItems = document.querySelectorAll('.faq-item');
