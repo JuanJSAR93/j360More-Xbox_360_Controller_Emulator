@@ -215,8 +215,13 @@ def run_loop():
         # Flush frame to emulator
         device.flush()
 
-        # Send live telemetry to GUI (progress bars)
-        device.send_telemetry({"pedals_telemetry": [gas_norm, brake_norm, clutch_norm]}, pad_id=1)
+        # Send live telemetry to GUI (broadcast to active pad)
+        now = time.perf_counter()
+        if not hasattr(run_loop, "_last_telemetry_time"):
+            run_loop._last_telemetry_time = 0.0
+        if now - run_loop._last_telemetry_time >= 0.03:
+            run_loop._last_telemetry_time = now
+            device.send_telemetry({"pedals_telemetry": [gas_norm, brake_norm, clutch_norm]}, pad_id=0)
 
         # Maintain ~120 Hz loop (8.3 ms per tick)
         elapsed = time.perf_counter() - t0

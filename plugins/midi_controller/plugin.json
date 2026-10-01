@@ -63,7 +63,8 @@
               {
                 "id": "midi_telemetry",
                 "label": "Actividad de Notas y Rueda (Pitch / Modulación):",
-                "type": "progress_bar_multi"
+                "type": "progress_bar_multi",
+                "labels": ["VELOCIDAD", "PITCH BEND", "MODULACIÓN"]
               }
             ]
           }

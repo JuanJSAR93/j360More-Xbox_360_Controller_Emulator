@@ -86,7 +86,8 @@
               {
                 "id": "pedals_telemetry",
                 "label": "Presión de Pedales (Acelerador / Freno / Embrague):",
-                "type": "progress_bar_multi"
+                "type": "progress_bar_multi",
+                "labels": ["GAS", "FRENO", "CLUTCH"]
               },
               {
                 "id": "calibrate_zero",

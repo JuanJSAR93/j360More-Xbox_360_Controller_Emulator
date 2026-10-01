@@ -4234,14 +4234,26 @@ class J360MoreApp:
             pass
 
     def _dispatch_plugin_telemetry(self, plugin_id: str, pad_id: int, data: Dict[str, Any]):
-        refs = self._plugin_telemetry_refs.get((plugin_id, pad_id))
-        if not refs:
-            refs = self._plugin_telemetry_refs.get((plugin_id, 0))
-        if refs:
+        target_refs_list = []
+        if pad_id > 0 and (plugin_id, pad_id) in self._plugin_telemetry_refs:
+            target_refs_list.append(self._plugin_telemetry_refs[(plugin_id, pad_id)])
+
+        # Si pad_id es 0 (broadcast) o no se encontró específicamente,
+        # distribuir a todas las pestañas activas configuradas con este plugin
+        if not target_refs_list or pad_id == 0:
+            for (p_id, p_pad), refs in list(self._plugin_telemetry_refs.items()):
+                if p_id == plugin_id and refs not in target_refs_list:
+                    target_refs_list.append(refs)
+
+        for refs in target_refs_list:
             for field_id, rdata in refs.items():
                 if isinstance(rdata, dict) and rdata.get("type") in ("progress_bar_multi", "progress_bar_pair"):
-                    vals = data.get(field_id) or data.get("values")
+                    vals = data.get(field_id)
+                    if vals is None:
+                        vals = data.get("values")
                     if vals is not None:
+                        if not isinstance(vals, (list, tuple)):
+                            vals = [vals]
                         PluginUIRenderer.update_telemetry_widget(rdata, vals)
 
     def _update_plugin_ui_for_pad(self, pad_id: int):
@@ -4269,6 +4281,11 @@ class J360MoreApp:
         sub_nb = widgets.get("sub_nb")
         if not sub_nb:
             return
+
+        # Limpiar referencias de telemetría previas de este pad
+        for k in list(self._plugin_telemetry_refs.keys()):
+            if k[1] == pad_id:
+                del self._plugin_telemetry_refs[k]
 
         # Limpiar pestañas personalizadas anteriores
         for c_frame in widgets.get("custom_plugin_tabs", []):

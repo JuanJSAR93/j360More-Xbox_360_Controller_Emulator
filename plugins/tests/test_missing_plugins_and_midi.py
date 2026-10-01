@@ -70,11 +70,18 @@ def test_midi_controller_no_compiler_error():
     print("    [✓] midi_controller dependencies installed without C++ compiler requirement.")
 
     print("[4] Testing midi_controller execution in simulated mode...")
+    pm.add_on_log(lambda pid, msg: print(f"    [{pid}] {msg}"))
     ok, msg = pm.start_plugin("midi_controller", simulate=True)
     assert ok, f"midi_controller should start: {msg}"
-    time.sleep(1.0)
+    
+    deadline = time.time() + 3.0
+    state = None
+    while time.time() < deadline:
+        state = pm.read_physical_state("plugin:midi_controller:midi")
+        if state is not None:
+            break
+        time.sleep(0.1)
 
-    state = pm.read_physical_state("plugin:midi_controller:midi")
     assert state is not None, "Should read physical state from midi_controller"
     assert "buttons" in state and "sticks" in state, "State must contain buttons and sticks"
     print(f"    State sample: axes={state.get('axes')}")

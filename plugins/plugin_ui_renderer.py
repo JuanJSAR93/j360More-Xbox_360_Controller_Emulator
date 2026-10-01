@@ -18,8 +18,8 @@ class PluginUIRenderer:
         parent: tk.Widget,
         fields: List[Dict[str, Any]],
         current_values: Dict[str, Any],
-        on_field_change: Callable[[str, Any], None],
-        on_action: Callable[[str], None]
+        on_field_change: Optional[Callable[[str, Any], None]] = None,
+        on_action: Optional[Callable[[str], None]] = None
     ) -> Dict[str, Any]:
         """
         Renders a list of fields into parent container.
@@ -52,7 +52,8 @@ class PluginUIRenderer:
                     def _cb(val):
                         ival = int(float(val))
                         vlbl.config(text=f"{ival}")
-                        on_field_change(fid, ival)
+                        if on_field_change:
+                            on_field_change(fid, ival)
                     return _cb
 
                 scale = ttk.Scale(
@@ -72,7 +73,7 @@ class PluginUIRenderer:
                 chk_var = tk.BooleanVar(value=init_val)
 
                 def make_chk_cb(fid=f_id, cvar=chk_var):
-                    return lambda: on_field_change(fid, cvar.get())
+                    return lambda: on_field_change(fid, cvar.get()) if on_field_change else None
 
                 chk = ttk.Checkbutton(
                     row_frame,
@@ -100,7 +101,8 @@ class PluginUIRenderer:
 
                 def make_combo_cb(fid=f_id, cvar=combo_var):
                     def _cb(ev):
-                        on_field_change(fid, cvar.get())
+                        if on_field_change:
+                            on_field_change(fid, cvar.get())
                     return _cb
 
                 combo.bind("<<ComboboxSelected>>", make_combo_cb())
@@ -112,7 +114,7 @@ class PluginUIRenderer:
                         row_frame,
                         text="🔄",
                         width=3,
-                        command=lambda act=disc_action: on_action(act)
+                        command=lambda act=disc_action: on_action(act) if on_action else None
                     )
                     btn_refresh.pack(side=tk.RIGHT, padx=2)
 
@@ -123,7 +125,7 @@ class PluginUIRenderer:
                 btn = ttk.Button(
                     row_frame,
                     text=label_text,
-                    command=lambda act=act_name: on_action(act)
+                    command=lambda act=act_name: on_action(act) if on_action else None
                 )
                 btn.pack(side=tk.LEFT, padx=4, pady=2)
                 rendered_refs[f_id] = {"widget": btn}
@@ -136,7 +138,11 @@ class PluginUIRenderer:
                 canvas = tk.Canvas(row_frame, height=canvas_h, bg="#1e1e1e", highlightthickness=1, highlightbackground="#333333")
                 canvas.pack(fill=tk.X, expand=True, pady=2)
 
-                rendered_refs[f_id] = {"widget": canvas, "type": f_type}
+                rendered_refs[f_id] = {
+                    "widget": canvas,
+                    "type": f_type,
+                    "labels": field.get("labels", [])
+                }
 
         return rendered_refs
 
@@ -147,10 +153,28 @@ class PluginUIRenderer:
         if not isinstance(widget, tk.Canvas):
             return
 
-        w = widget.winfo_width()
-        h = widget.winfo_height()
-        if w <= 1 or h <= 1:
+        try:
+            if not widget.winfo_exists():
+                return
+        except Exception:
             return
+
+        w = widget.winfo_width()
+        if w <= 1:
+            w = widget.winfo_reqwidth()
+        if w <= 1:
+            try:
+                w = widget.master.winfo_width()
+            except Exception:
+                w = 1
+        if w <= 1:
+            w = 380
+
+        h = widget.winfo_height()
+        if h <= 1:
+            h = widget.winfo_reqheight()
+        if h <= 1:
+            h = 32
 
         widget.delete("all")
         if not values:
@@ -158,9 +182,9 @@ class PluginUIRenderer:
 
         num_bars = len(values)
         bar_w = (w - (num_bars + 1) * 8) / max(1, num_bars)
-        colors = ["#107C41", "#E81123", "#0078D7", "#FFB900", "#B4009E"]
+        colors = ["#107C41", "#0078D7", "#FFB900", "#E81123", "#B4009E"]
 
-        labels = ["GAS", "BRK", "CLT", "AUX1", "AUX2"]
+        custom_labels = ref_data.get("labels") or []
 
         for i, val in enumerate(values):
             clamped = max(0.0, min(1.0, float(val)))
@@ -178,5 +202,9 @@ class PluginUIRenderer:
                 widget.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
 
             # Label text
-            lbl_txt = labels[i] if i < len(labels) else f"CH{i+1}"
+            if i < len(custom_labels):
+                lbl_txt = custom_labels[i]
+            else:
+                default_labels = ["GAS", "BRK", "CLT", "AUX1", "AUX2"]
+                lbl_txt = default_labels[i] if i < len(default_labels) else f"CH{i+1}"
             widget.create_text((x0 + x1) / 2, h / 2, text=f"{lbl_txt} {int(clamped * 100)}%", fill="#ffffff", font=("Segoe UI", 8, "bold"))

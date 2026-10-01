@@ -170,8 +170,10 @@ def run_loop():
     device.log("Bucle de recepción MIDI iniciado.")
 
     last_velocity_norm = 0.0
-    last_pitch_norm = 0.0
+    last_pitch_norm = 0.5  # Neutral center
     last_mod_norm = 0.0
+    active_notes = set()
+    last_telemetry_time = 0.0
 
     while device.is_running():
         t0 = time.perf_counter()
@@ -220,11 +222,13 @@ def run_loop():
                     # Also map to indexed buttons
                     device.set_button_index(note % 8, True)
                     last_velocity_norm = vel / 127.0
+                    active_notes.add(note)
                 else:
                     btn_name = NOTE_MAP.get(note)
                     if btn_name:
                         device.set_button(btn_name, False)
                     device.set_button_index(note % 8, False)
+                    active_notes.discard(note)
 
             elif ev_type == "note_off":
                 note = ev.get("note", 60)
@@ -232,6 +236,7 @@ def run_loop():
                 if btn_name:
                     device.set_button(btn_name, False)
                 device.set_button_index(note % 8, False)
+                active_notes.discard(note)
 
             # 2. Pitch Bend -> Left Stick X
             elif ev_type == "pitchwheel":
@@ -249,11 +254,17 @@ def run_loop():
                 device.set_axis(1, norm_mod)
                 last_mod_norm = cc_val / 127.0
 
+        if not active_notes and last_velocity_norm > 0:
+            last_velocity_norm = max(0.0, last_velocity_norm - 0.05)
+
         # Flush controller state
         device.flush()
 
-        # Telemetry
-        device.send_telemetry({"midi_telemetry": [last_velocity_norm, last_pitch_norm, last_mod_norm]}, pad_id=1)
+        # Telemetry: broadcast to any assigned pad (pad_id=0) throttled to ~33 FPS
+        now = time.perf_counter()
+        if now - last_telemetry_time >= 0.03:
+            last_telemetry_time = now
+            device.send_telemetry({"midi_telemetry": [last_velocity_norm, last_pitch_norm, last_mod_norm]}, pad_id=0)
 
         elapsed = time.perf_counter() - t0
         rem = 0.01 - elapsed
