@@ -1,6 +1,6 @@
 # j360More - Emulador Multimando (Xbox 360, Xbox One, PS4, PS5 y Switch 2 Pro)
 
-[📖 Read in English](README.md) | [Descargas Oficiales (Releases)](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Documentación Web](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
+[📖 Read in English](README.md) | [🔌 Guía de Plugins](README_PLUGINS_es.md) | [Descargas Oficiales (Releases)](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Documentación Web](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
 > **Desarrollado por JuanJSAR**  
 > Repositorio Oficial: [GitHub - JuanJSAR93/j360More](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator)  
@@ -79,6 +79,11 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 
 ### 10. Soporte Multi-Teclado Independiente (Zero Cross-Talk)
 - Conecta múltiples teclados físicos USB, Bluetooth o integrados de laptop y asígnalos a mandos virtuales de jugadores separados sin interferencia entre teclas, gracias a Windows Raw Input.
+
+### 11. Arquitectura de Plugins Extensibles y Hardware Personalizado
+- Conecta hardware personalizado (pedales, volantes y frenos de mano con Arduino/ESP32, o pianos, teclados musicales y pads USB-MIDI) sin alterar el código central.
+- Arquitectura IPC TCP de latencia cero ejecutada en subprocesos de Python aislados, monitores de telemetría dinámica en la GUI (~33 FPS) e interfaces declarativas (`global_ui` y `pad_ui_customization`).
+- Consulta la guía completa de desarrollo y hardware real: **[README_PLUGINS_es.md](README_PLUGINS_es.md)** | **[Documentación Web Online](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/plugins.html)**.
 
 ---
 

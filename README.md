@@ -1,6 +1,6 @@
 # j360More - Multi-Gamepad Emulator (Xbox 360, Xbox One, PS4, PS5 & Switch 2 Pro)
 
-[📖 Leer en Español](README_es.md) | [Official Releases](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Web Documentation](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
+[📖 Leer en Español](README_es.md) | [🔌 Plugin Guide](README_PLUGINS.md) | [Official Releases](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Web Documentation](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
 > **Developed by JuanJSAR**  
 > Official Repository: [GitHub - JuanJSAR93/j360More](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator)  
@@ -79,6 +79,11 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 
 ### 10. Independent Multi-Keyboard Support (Zero Cross-Talk)
 - Connect multiple physical USB/Bluetooth keyboards and map them to separate player slots without keystroke bleeding, powered by Windows Raw Input.
+
+### 11. Extensible Plugin & Custom Hardware Architecture
+- Connect custom hardware (Arduino/ESP32 pedals, wheels, handbrakes, and USB-MIDI musical instruments/pads) natively without hacking the core app.
+- Zero-latency IPC TCP architecture running in isolated Python sub-processes, real-time GUI telemetry monitors (~33 FPS), and declarative UI schemas (`global_ui` & `pad_ui_customization`).
+- Read the full developer and real hardware guide: **[README_PLUGINS.md](README_PLUGINS.md)** | **[Online Web Documentation](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/plugins.html)**.
 
 ---
 

@@ -2006,3 +2006,442 @@ html, body {
   color: var(--text-primary);
 }
 
+/* ==========================================================================
+   Documentation Portal Layout & Sidebar (docs/plugins.html)
+   ========================================================================== */
+
+.docs-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 5rem;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 2.5rem;
+  align-items: flex-start;
+}
+
+/* Sidebar Container */
+.docs-sidebar {
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.docs-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.docs-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* Search Box in Sidebar */
+.sidebar-search-box {
+  position: relative;
+  width: 100%;
+}
+
+.sidebar-search-box input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem 0.65rem 2.25rem;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.sidebar-search-box input:focus {
+  border-color: var(--xbox-neon);
+  box-shadow: 0 0 10px var(--xbox-glow);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.sidebar-search-box .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Nav Groups in Sidebar */
+.doc-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.doc-group-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.doc-nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+}
+
+.doc-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 2px solid transparent;
+}
+
+.doc-nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.doc-nav-link.active {
+  color: var(--xbox-neon);
+  background: rgba(16, 207, 101, 0.1);
+  border-left-color: var(--xbox-neon);
+  font-weight: 600;
+}
+
+.doc-nav-link .nav-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+}
+
+.doc-nav-link.active .nav-tag {
+  background: rgba(16, 207, 101, 0.2);
+  color: var(--xbox-neon);
+}
+
+.search-no-results {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1rem 0.5rem;
+  display: none;
+}
+
+/* ==========================================================================
+   Documentation Main Content Area
+   ========================================================================== */
+
+.docs-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  min-width: 0;
+}
+
+.doc-section {
+  scroll-margin-top: 100px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.doc-section h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+  margin-top: 0;
+}
+
+.doc-section h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.doc-section p, .doc-section li {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.doc-section ul, .doc-section ol {
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.doc-section code:not(.code-content code) {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #38bdf8;
+  font-family: 'Consolas', monospace;
+}
+
+/* Callout Box */
+.doc-callout {
+  background: rgba(16, 207, 101, 0.08);
+  border-left: 4px solid var(--xbox-neon);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.doc-callout.warning {
+  background: rgba(245, 158, 11, 0.08);
+  border-left-color: #f59e0b;
+}
+
+.doc-callout-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Spec Table */
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.doc-table th, .doc-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.doc-table th {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.doc-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ==========================================================================
+   IDE Code Block Card with Header, Syntax Highlighting & Copy Button
+   ========================================================================== */
+
+.code-editor-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin: 1.25rem 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.code-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 0.6rem 1rem;
+}
+
+.code-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.code-window-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.code-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.code-dot.red { background: #ff5f56; }
+.code-dot.yellow { background: #ffbd2e; }
+.code-dot.green { background: #27c93f; }
+
+.code-file-title {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c9d1d9;
+}
+
+.code-lang-tag {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.code-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  color: #c9d1d9;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.code-copy-btn:hover {
+  background: #30363d;
+  border-color: #8b949e;
+  color: #ffffff;
+}
+
+.code-copy-btn.copied {
+  color: var(--xbox-neon);
+  border-color: var(--xbox-neon);
+  background: rgba(16, 207, 101, 0.15);
+}
+
+.code-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.code-content {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  background: #0d1117;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: #e6edf3;
+  tab-size: 4;
+}
+
+.code-content code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Syntax Highlighting Tokens */
+.tok-kw   { color: #ff7b72; font-weight: 600; } /* Keywords: void, int, def, class, import */
+.tok-str  { color: #a5d6ff; }                   /* Strings: "Auto", 'GAS:' */
+.tok-num  { color: #79c0ff; }                   /* Numbers: 115200, 16, 0.03 */
+.tok-com  { color: #8b949e; font-style: italic; } /* Comments: //, #, /* */
+.tok-fn   { color: #d2a8ff; }                   /* Functions: setup(), read(), flush() */
+.tok-type { color: #ffa657; font-weight: 600; } /* Types / Classes: PluginDevice, Serial */
+.tok-prop { color: #7ee787; }                   /* JSON Properties / Attributes */
+.tok-op   { color: #ff7b72; }                   /* Operators: =, +, ==, | */
+
+/* Mobile Floating Sidebar Toggle Button */
+.sidebar-mobile-toggle {
+  display: none;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 99;
+  background: var(--xbox-neon);
+  color: #000;
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 20px var(--xbox-glow);
+  cursor: pointer;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive Doc Layout */
+@media (max-width: 960px) {
+  .docs-wrapper {
+    grid-template-columns: 1fr;
+    padding-top: 1.5rem;
+  }
+
+  .docs-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 290px;
+    height: 100vh;
+    max-height: 100vh;
+    z-index: 1000;
+    border-radius: 0;
+    transition: left 0.3s ease;
+    background: #0d1117;
+  }
+
+  .docs-sidebar.open {
+    left: 0;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.85);
+  }
+
+  .sidebar-mobile-toggle {
+    display: inline-flex;
+  }
+
+  .doc-section {
+    padding: 1.5rem 1.25rem;
+  }
+}
+

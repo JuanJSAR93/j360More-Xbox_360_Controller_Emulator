@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>j360More Plugins | Documentación de Plugins y Conexión de Hardware Real</title>
+  
+  <meta name="description" content="Guía completa para desarrollar plugins, crear interfaces personalizadas y conectar hardware real (Arduino/ESP32 y controladores MIDI) al emulador j360More.">
+  <meta name="author" content="JuanJSAR">
+  <meta name="robots" content="index, follow">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="alternate icon" type="image/png" href="assets/icon.png">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ==================== Header / Navbar ==================== -->
+  <header class="header">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="assets/icon.svg" alt="j360More Logo">
+        <span>j360More</span>
+        <span class="badge badge-secondary" style="font-size: 0.7rem; margin-left: 0.5rem;" data-i18n="doc_badge_plugins">PLUGINS & HARDWARE</span>
+      </a>
+
+      <button class="menu-toggle" aria-label="Abrir menú">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="index.html" data-i18n="nav_home">🏠 Inicio</a></li>
+        <li><a href="#arquitectura-ipc" data-i18n="doc_nav_arch">Arquitectura</a></li>
+        <li><a href="#crear-plugin" data-i18n="doc_nav_create">Crear Plugin</a></li>
+        <li><a href="#interfaz-declarativa" data-i18n="doc_nav_ui">Interfaz UI</a></li>
+        <li><a href="#arduino-hardware" data-i18n="doc_nav_arduino">Arduino / ESP32</a></li>
+        <li><a href="#midi-hardware" data-i18n="doc_nav_midi">MIDI USB</a></li>
+        <li><a href="#sdk-python" data-i18n="doc_nav_sdk">SDK Python</a></li>
+        
+        <!-- Language Switcher -->
+        <li class="lang-switch-wrapper">
+          <button id="lang-btn-es" class="lang-btn active" title="Cambiar a Español">ES</button>
+          <span class="lang-divider">|</span>
+          <button id="lang-btn-en" class="lang-btn" title="Switch to English">EN</button>
+        </li>
+
+        <!-- GitHub Release Download -->
+        <li>
+          <a href="https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases" target="_blank" rel="noopener noreferrer" class="btn-nav" data-i18n="nav_download">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Descargar</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ==================== Hero Banner ==================== -->
+  <section class="section" style="padding-bottom: 1.5rem; padding-top: 4rem;">
+    <div class="section-header" style="max-width: 1000px; margin: 0 auto; text-align: center;">
+      <span class="section-tag" data-i18n="doc_hero_tag">Desarrollo Extensible & Hardware Físico</span>
+      <h1 class="section-title" style="font-size: 2.5rem; margin-top: 0.5rem;" data-i18n="doc_hero_title">Sistema de Plugins y Conexión de Hardware Real</h1>
+      <p class="section-desc" style="font-size: 1.1rem; max-width: 800px; margin: 0.75rem auto 1.5rem;" data-i18n="doc_hero_desc">
+        Aprende a construir controladores a medida, diseñar interfaces declarativas sin escribir código GUI, y conectar hardware físico real como pedales Arduino/ESP32 y sintetizadores MIDI USB con cero latencia.
+      </p>
+      <div class="badge-wrapper" style="justify-content: center;">
+        <span class="badge badge-primary">⚡ IPC TCP 120Hz</span>
+        <span class="badge badge-secondary">🔌 Hot-Plug USB</span>
+        <span class="badge badge-primary">🎛️ UI Declarativa</span>
+        <span class="badge badge-secondary">🐍 Python SDK Autónomo</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== Documentation 2-Column Layout ==================== -->
+  <div class="docs-wrapper">
+
+    <!-- Sticky Sidebar Index -->
+    <aside class="docs-sidebar" id="doc-sidebar">
+      <!-- Search Input -->
+      <div class="sidebar-search-box">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="doc-search-input" placeholder="Buscar tema, hardware o función..." data-i18n-ph="doc_search_ph">
+      </div>
+
+      <div id="search-no-results" class="search-no-results" data-i18n="doc_search_no_results">
+        No se encontraron coincidencias.
+      </div>
+
+      <!-- Navigation Category 1 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_arch">📌 Arquitectura & Filosofía</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#arquitectura-ipc" class="doc-nav-link" data-keywords="ipc socket tcp aislamiento procesos latencia 120hz zero delay">
+              <span data-i18n="doc_lnk_ipc">Aislamiento por Procesos IPC</span>
+              <span class="nav-tag">120 Hz</span>
+            </a>
+          </li>
+          <li>
+            <a href="#entorno-virtual" class="doc-nav-link" data-keywords="venv virtualenv dependencias pip paquetes pygame-ce pyserial">
+              <span data-i18n="doc_lnk_venv">Entorno Virtual (.venv)</span>
+              <span class="nav-tag">Pip</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 2 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_creation">🚀 Creación de Plugins</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#crear-plugin" class="doc-nav-link" data-keywords="anatomia estructura carpetas plugin.json main.py requirements">
+              <span data-i18n="doc_lnk_struct">Estructura de Archivos</span>
+            </a>
+          </li>
+          <li>
+            <a href="#manifiesto-json" class="doc-nav-link" data-keywords="manifiesto plugin.json metadata devices type gamepad">
+              <span data-i18n="doc_lnk_manifest">Manifiesto plugin.json</span>
+              <span class="nav-tag">JSON</span>
+            </a>
+          </li>
+          <li>
+            <a href="#ciclo-vida" class="doc-nav-link" data-keywords="ciclo vida ejecucion handshake flush is_running cierre">
+              <span data-i18n="doc_lnk_lifecycle">Ciclo de Vida</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 3 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_ui">🎛️ Interfaz Declarativa</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#global-ui" class="doc-nav-link" data-keywords="global_ui slider checkbox dropdown dynamic_dropdown scan">
+              <span data-i18n="doc_lnk_globalui">Ajustes Globales (global_ui)</span>
+            </a>
+          </li>
+          <li>
+            <a href="#pad-ui" class="doc-nav-link" data-keywords="pad_ui_customization pestañas tabs secciones sections calibration">
+              <span data-i18n="doc_lnk_padui">Pestañas por Mando</span>
+            </a>
+          </li>
+          <li>
+            <a href="#telemetria-ui" class="doc-nav-link" data-keywords="telemetria progress_bar_multi canvas barras monitores 33fps">
+              <span data-i18n="doc_lnk_telemetry">Monitores de Telemetría</span>
+              <span class="nav-tag">33 FPS</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 4 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_i18n">🌍 Multi-Idioma (i18n)</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#i18n-plugins" class="doc-nav-link" data-keywords="i18n idioma locales traduccion ingles espanol en.json es.json">
+              <span data-i18n="doc_lnk_i18n">Inline & Locales Externos</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 5 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_arduino">🏎️ Hardware Real: Arduino / ESP32</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#arduino-circuito" class="doc-nav-link" data-keywords="arduino circuito pines potenciometros a0 a1 a2 esquema cableado">
+              <span data-i18n="doc_lnk_circuit">Circuito y Conexión de Pines</span>
+            </a>
+          </li>
+          <li>
+            <a href="#arduino-firmware" class="doc-nav-link" data-keywords="firmware arduino ino c++ 115200 baudios filtro pasabajos">
+              <span data-i18n="doc_lnk_firmware">Firmware C++ (.ino)</span>
+              <span class="nav-tag">115200</span>
+            </a>
+          </li>
+          <li>
+            <a href="#arduino-python" class="doc-nav-link" data-keywords="python pyserial main.py reconexion usb com autodetect">
+              <span data-i18n="doc_lnk_pyarduino">Script Python (pyserial)</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 6 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_midi">🎹 Hardware Real: MIDI USB</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#midi-filtrado" class="doc-nav-link" data-keywords="midi windows puertos entrada is_input filtrado dispositivos usb">
+              <span data-i18n="doc_lnk_midifilter">Filtrado de Puertos de Entrada</span>
+            </a>
+          </li>
+          <li>
+            <a href="#midi-lectura" class="doc-nav-link" data-keywords="pygame.midi lectura polling note on off pitch bend mod wheel">
+              <span data-i18n="doc_lnk_midiread">Lectura y Mapeo en Vivo</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 7 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_sdk">🐍 SDK de Python</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#sdk-python" class="doc-nav-link" data-keywords="plugindevice set_button set_trigger set_stick flush rumble sdk">
+              <span data-i18n="doc_lnk_sdkref">Referencia de PluginDevice</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 8 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title" data-i18n="doc_grp_debug">🔧 Diagnóstico</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#diagnostico" class="doc-nav-link" data-keywords="consola depuracion problemas com ocupado errores soluciones">
+              <span data-i18n="doc_lnk_trouble">Consola & Solución de Problemas</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="docs-content">
+
+      <!-- ==================== Section 1 ==================== -->
+      <section class="doc-section" id="arquitectura-ipc">
+        <h2 data-i18n="sec1_title">1. Arquitectura y Filosofía del Sistema</h2>
+        <p data-i18n="sec1_p1">
+          El subsistema de plugins de <strong>j360More</strong> fue diseñado bajo una premisa inquebrantable: <strong>máxima estabilidad y cero impacto en la latencia de juego</strong>.
+        </p>
+
+        <h3 data-i18n="sec1_h3_1">1.1. Aislamiento por Procesos Secundarios e IPC TCP</h3>
+        <p data-i18n="sec1_p2">
+          Tradicionalmente, cargar scripts de terceros en el mismo hilo de ejecución de un emulador o interfaz de usuario conlleva el riesgo de que una lectura bloqueante (por ejemplo, esperar datos en un puerto serie COM o un timeout de socket) congele los controles de todos los jugadores o provoque micro-tirones (<em>stuttering</em>).
+        </p>
+        <p data-i18n="sec1_p3">
+          En j360More:
+        </p>
+        <ul>
+          <li data-i18n="sec1_li1">Cada plugin activo se ejecuta en su propio proceso hijo (<code>subprocess.Popen</code>) utilizando el intérprete de Python del entorno virtual dedicado.</li>
+          <li data-i18n="sec1_li2">La comunicación con el núcleo de j360More se realiza a través de un canal IPC ultraligero mediante sockets TCP en la interfaz local (<code>127.0.0.1</code>) con tramas atómicas JSON.</li>
+          <li data-i18n="sec1_li3">El bucle de despacho de mandos virtuales a <strong>120 Hz</strong> lee el estado de memoria compartido en microsegundos, asegurando que un retardo físico en el hardware jamás degrade el rendimiento de los demás mandos.</li>
+        </ul>
+
+        <div class="doc-callout">
+          <div class="doc-callout-title" data-i18n="sec1_callout_title">⚡ Garantía de Latencia Cero</div>
+          <div data-i18n="sec1_callout_desc">
+            Incluso si un microcontrolador Arduino se desconecta físicamente a mitad de una partida y el puerto COM genera un timeout, el proceso principal de j360More seguirá respondiendo a 120 Hz para los demás mandos sin caídas de frames ni congelamientos en Windows.
+          </div>
+        </div>
+
+        <h3 id="entorno-virtual" data-i18n="sec1_h3_2">1.2. Entorno Virtual Automático (.venv)</h3>
+        <p data-i18n="sec1_p4">
+          Para que el usuario final no necesite instalar Python globalmente ni lidiar con la consola:
+        </p>
+        <ul>
+          <li data-i18n="sec1_venv_li1">Al abrir la pestaña <code>🔌 Plugins</code>, j360More verifica la existencia de la carpeta <code>plugins/.venv</code>.</li>
+          <li data-i18n="sec1_venv_li2">Si no existe o faltan dependencias, la interfaz muestra un aviso descriptivo y un botón de un clic: <strong>"Instalar Dependencias de Plugins"</strong>.</li>
+          <li data-i18n="sec1_venv_li3">Para periféricos MIDI se utiliza <code>pygame-ce</code> en lugar de librerías con dependencias C++ nativas no compiladas, garantizando una instalación transparente en cualquier versión de Windows 10 u 11 sin necesidad de Visual Studio Build Tools.</li>
+        </ul>
+      </section>
+
+      <!-- ==================== Section 2 ==================== -->
+      <section class="doc-section" id="crear-plugin">
+        <h2 data-i18n="sec2_title">2. Anatomía y Creación de un Plugin desde Cero</h2>
+        <p data-i18n="sec2_p1">
+          Cada plugin reside en su propia carpeta dentro del directorio <code>plugins/</code>. La estructura canónica es la siguiente:
+        </p>
+
+        <!-- Code Block 1: Directory Tree -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">plugins/mi_dispositivo/</span>
+            </div>
+            <span class="code-lang-tag">Directorio</span>
+          </div>
+          <pre class="code-content"><code>plugins/mi_dispositivo/
+├── <span class="tok-fn">plugin.json</span>         <span class="tok-com"># Manifiesto, esquema UI declarativo y metadatos</span>
+├── <span class="tok-fn">main.py</span>             <span class="tok-com"># Script principal de lectura y control del hardware</span>
+├── <span class="tok-fn">requirements.txt</span>    <span class="tok-com"># Librerías pip requeridas (ej: pyserial, pygame-ce)</span>
+└── <span class="tok-fn">locales/</span>            <span class="tok-com"># (Opcional) Archivos de traducción en.json y es.json</span></code></pre>
+        </div>
+
+        <h3 id="manifiesto-json" data-i18n="sec2_h3_1">2.1. El Manifiesto (plugin.json)</h3>
+        <p data-i18n="sec2_p2">
+          El archivo <code>plugin.json</code> declara ante el emulador el nombre del plugin, los dispositivos que suministra y sus propiedades:
+        </p>
+
+        <!-- Code Block 2: plugin.json -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">plugins/mi_dispositivo/plugin.json</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code>{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"mi_dispositivo"</span>,
+  <span class="tok-prop">"name"</span>: <span class="tok-str">"Mi Dispositivo Físico"</span>,
+  <span class="tok-prop">"version"</span>: <span class="tok-str">"1.0.0"</span>,
+  <span class="tok-prop">"author"</span>: <span class="tok-str">"Tu Nombre"</span>,
+  <span class="tok-prop">"description"</span>: <span class="tok-str">"Controlador físico personalizado para j360More"</span>,
+  <span class="tok-prop">"entry_point"</span>: <span class="tok-str">"main.py"</span>,
+  <span class="tok-prop">"devices"</span>: [
+    {
+      <span class="tok-prop">"id"</span>: <span class="tok-str">"mando_custom"</span>,
+      <span class="tok-prop">"name"</span>: <span class="tok-str">"Mando Personalizado"</span>,
+      <span class="tok-prop">"type"</span>: <span class="tok-str">"gamepad"</span>,
+      <span class="tok-prop">"num_buttons"</span>: <span class="tok-num">16</span>,
+      <span class="tok-prop">"num_axes"</span>: <span class="tok-num">6</span>
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <p data-i18n="sec2_p3">
+          El emulador lo registrará automáticamente como un periférico seleccionable con el identificador: <code>plugin:mi_dispositivo:mando_custom</code>.
+        </p>
+
+        <h3 id="ciclo-vida" data-i18n="sec2_h3_2">2.2. Ciclo de Vida de Ejecución</h3>
+        <ol>
+          <li data-i18n="sec2_step1"><strong>Descubrimiento</strong>: Al arrancar, <code>PluginManager</code> lee todos los <code>plugin.json</code>.</li>
+          <li data-i18n="sec2_step2"><strong>Arranque</strong>: Al iniciar la emulación (o al pulsar "Iniciar" en el panel), j360More ejecuta <code>main.py --port &lt;PORT&gt; --id &lt;PLUGIN_ID&gt;</code>.</li>
+          <li data-i18n="sec2_step3"><strong>Handshake</strong>: El script se conecta al socket TCP local mediante <code>PluginDevice</code>.</li>
+          <li data-i18n="sec2_step4"><strong>Bucle de Mapeo</strong>: El script muestrea el hardware y llama a <code>device.flush()</code> a alta velocidad.</li>
+          <li data-i18n="sec2_step5"><strong>Cierre Seguro</strong>: Al detenerse, <code>device.is_running()</code> se vuelve <code>False</code> y el script libera recursos.</li>
+        </ol>
+      </section>
+
+      <!-- ==================== Section 3 ==================== -->
+      <section class="doc-section" id="interfaz-declarativa">
+        <h2 data-i18n="sec3_title">3. Creación de Interfaces Declarativas Personalizadas (UI)</h2>
+        <p data-i18n="sec3_p1">
+          En j360More <strong>no necesitas escribir código de interfaz gráfica</strong> (Tkinter, PyQt, etc.). Puedes construir ventanas de configuración completas y pestañas personalizadas describiéndolas en formato JSON.
+        </p>
+
+        <h3 id="global-ui" data-i18n="sec3_h3_1">3.1. Diálogo Global de Configuración (global_ui)</h3>
+        <p data-i18n="sec3_p2">
+          Se abre desde el botón <code>⚙ Configurar</code> en la pestaña de plugins. Admite controles como sliders, checkboxes y menús desplegables estáticos o dinámicos:
+        </p>
+
+        <!-- Code Block 3: global_ui schema -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">Fragmento de plugin.json: global_ui</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-prop">"global_ui"</span>: {
+  <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Ajustes de Hardware"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Hardware Settings"</span> },
+  <span class="tok-prop">"fields"</span>: [
+    {
+      <span class="tok-prop">"id"</span>: <span class="tok-str">"port"</span>,
+      <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Puerto COM"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"COM Port"</span> },
+      <span class="tok-prop">"type"</span>: <span class="tok-str">"dynamic_dropdown"</span>,
+      <span class="tok-prop">"discovery_action"</span>: <span class="tok-str">"scan_ports"</span>,
+      <span class="tok-prop">"default"</span>: <span class="tok-str">"Auto"</span>
+    },
+    {
+      <span class="tok-prop">"id"</span>: <span class="tok-str">"baud"</span>,
+      <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Velocidad de Baudios"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Baud Rate"</span> },
+      <span class="tok-prop">"type"</span>: <span class="tok-str">"dropdown"</span>,
+      <span class="tok-prop">"options"</span>: [<span class="tok-str">"9600"</span>, <span class="tok-str">"57600"</span>, <span class="tok-str">"115200"</span>],
+      <span class="tok-prop">"default"</span>: <span class="tok-str">"115200"</span>
+    },
+    {
+      <span class="tok-prop">"id"</span>: <span class="tok-str">"invert"</span>,
+      <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Invertir Ejes"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Invert Axes"</span> },
+      <span class="tok-prop">"type"</span>: <span class="tok-str">"checkbox"</span>,
+      <span class="tok-prop">"default"</span>: <span class="tok-kw">false</span>
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <h3 id="pad-ui" data-i18n="sec3_h3_2">3.2. Pestañas Personalizadas por Mando (pad_ui_customization)</h3>
+        <p data-i18n="sec3_p3">
+          Permite insertar pestañas en el mando virtual seleccionado y desactivar pestañas estándar innecesarias (por ejemplo, ocultar <code>"sticks"</code> si tu plugin es una pedalera de carreras):
+        </p>
+
+        <!-- Code Block 4: pad_ui_customization schema -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">Fragmento: pad_ui_customization</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-prop">"pad_ui_customization"</span>: {
+  <span class="tok-prop">"disable_default_tabs"</span>: [<span class="tok-str">"sticks"</span>],
+  <span class="tok-prop">"custom_tabs"</span>: [
+    {
+      <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals_tab"</span>,
+      <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"🏎️ Pedales"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"🏎️ Pedals"</span> },
+      <span class="tok-prop">"sections"</span>: [
+        {
+          <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Calibración"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Calibration"</span> },
+          <span class="tok-prop">"fields"</span>: [
+            {
+              <span class="tok-prop">"id"</span>: <span class="tok-str">"deadzone"</span>,
+              <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Zona Muerta (%)"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Deadzone (%)"</span> },
+              <span class="tok-prop">"type"</span>: <span class="tok-str">"slider"</span>,
+              <span class="tok-prop">"min"</span>: <span class="tok-num">0</span>,
+              <span class="tok-prop">"max"</span>: <span class="tok-num">30</span>,
+              <span class="tok-prop">"default"</span>: <span class="tok-num">5</span>
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <h3 id="telemetria-ui" data-i18n="sec3_h3_3">3.3. Monitores de Telemetría Dinámicos (progress_bar_multi)</h3>
+        <p data-i18n="sec3_p4">
+          Para animar barras dinámicas en la GUI, define un control <code>progress_bar_multi</code> con las etiquetas que desees:
+        </p>
+        <ul>
+          <li data-i18n="sec3_tb1"><code>center_zero: false</code>: La barra se llena de 0% a 100% (ideal para pedales y gatillos).</li>
+          <li data-i18n="sec3_tb2"><code>center_zero: true</code>: El punto de reposo está centrado al 50% y la barra se expande a la izquierda o derecha (ideal para palancas de stick y ruedas de pitch bend).</li>
+        </ul>
+        <p data-i18n="sec3_p5">
+          En Python, envía eventos de telemetría regulando la tasa a aproximadamente <strong>33 FPS</strong> (~30 ms):
+        </p>
+
+        <!-- Code Block 5: Python send_telemetry -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">main.py (Telemetría a ~33 FPS)</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-kw">import</span> time
+
+now = time.perf_counter()
+<span class="tok-kw">if</span> now - last_telemetry >= <span class="tok-num">0.03</span>:  <span class="tok-com"># ~33 FPS</span>
+    device.send_telemetry({
+        <span class="tok-str">"pedals_monitor"</span>: [gas_norm, brake_norm, clutch_norm]
+    }, pad_id=<span class="tok-num">0</span>)
+    last_telemetry = now</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== Section 4 ==================== -->
+      <section class="doc-section" id="i18n-plugins">
+        <h2 data-i18n="sec4_title">4. Soporte Multi-Idioma (i18n)</h2>
+        <p data-i18n="sec4_p1">
+          j360More soporta 7 idiomas oficiales (Español, Inglés, Francés, Portugués, Alemán, Italiano, Ruso). Puedes traducir tus plugins mediante diccionarios inline en <code>plugin.json</code> o carpetas <code>locales/</code> modulares con archivos <code>es.json</code> y <code>en.json</code>.
+        </p>
+      </section>
+
+      <!-- ==================== Section 5 ==================== -->
+      <section class="doc-section" id="arduino-hardware">
+        <h2 data-i18n="sec5_title">5. Hardware Físico Real 1: Arduino / ESP32 (Pedales y Volantes)</h2>
+        <p data-i18n="sec5_p1">
+          A continuación se detalla cómo construir una pedalera física real usando potenciómetros de 10 kΩ y una placa Arduino Nano, Uno o ESP32 con comunicación serial a <strong>115200 baudios</strong>.
+        </p>
+
+        <h3 id="arduino-circuito" data-i18n="sec5_h3_1">5.1. Circuito y Conexión de Pines</h3>
+
+        <!-- ASCII Circuit Diagram -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">Esquema Eléctrico de Cableado</span>
+            </div>
+            <span class="code-lang-tag">Hardware</span>
+          </div>
+          <pre class="code-content"><code>Arduino Nano / Uno / Pro Micro / ESP32:
+              ┌───────────────────────────┐
+              │ 5V / 3.3V ───► Terminal 1 (VCC de potenciómetros)
+              │ GND       ───► Terminal 3 (GND de potenciómetros)
+              │                           │
+  Acelerador  │ A0        ───► Terminal 2 (Pin central / Señal)
+  Freno       │ A1        ───► Terminal 2 (Pin central / Señal)
+  Embrague    │ A2        ───► Terminal 2 (Pin central / Señal)
+              │                           │
+  Botón 1     │ D2        ───► Pulsador hacia GND (INPUT_PULLUP)
+  Botón 2     │ D3        ───► Pulsador hacia GND (INPUT_PULLUP)
+              └───────────────────────────┘</code></pre>
+        </div>
+
+        <h3 id="arduino-firmware" data-i18n="sec5_h3_2">5.2. Firmware Arduino C++ Completo (pedals_firmware.ino)</h3>
+        <p data-i18n="sec5_p2">
+          Copia este código y súbelo desde <strong>Arduino IDE</strong>. Incorpora un filtro digital pasa-bajos exponencial para eliminar el ruido eléctrico (jitter) y envía tramas compactas a 100 Hz:
+        </p>
+
+        <!-- Code Block 6: pedals_firmware.ino -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">pedals_firmware.ino</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-com">/*
+ * j360More - Firmware para Pedales Físicos USB
+ * Velocidad Serial: 115200 baudios (Latencia &lt; 2ms)
+ */</span>
+
+<span class="tok-kw">const</span> <span class="tok-type">int</span> PIN_GAS    = A0;
+<span class="tok-kw">const</span> <span class="tok-type">int</span> PIN_BRAKE  = A1;
+<span class="tok-kw">const</span> <span class="tok-type">int</span> PIN_CLUTCH = A2;
+<span class="tok-kw">const</span> <span class="tok-type">int</span> PIN_BTN1   = <span class="tok-num">2</span>;
+<span class="tok-kw">const</span> <span class="tok-type">int</span> PIN_BTN2   = <span class="tok-num">3</span>;
+
+<span class="tok-com">// Filtro digital pasa-bajos exponencial para eliminar ruido eléctrico (jitter)</span>
+<span class="tok-type">float</span> smoothGas    = <span class="tok-num">0.0</span>;
+<span class="tok-type">float</span> smoothBrake  = <span class="tok-num">0.0</span>;
+<span class="tok-type">float</span> smoothClutch = <span class="tok-num">0.0</span>;
+<span class="tok-kw">const</span> <span class="tok-type">float</span> ALPHA  = <span class="tok-num">0.25</span>; <span class="tok-com">// 0.1 = muy suave, 0.9 = reactivo instantáneo</span>
+
+<span class="tok-type">void</span> <span class="tok-fn">setup</span>() {
+  Serial.<span class="tok-fn">begin</span>(<span class="tok-num">115200</span>);
+  <span class="tok-kw">while</span> (!Serial && <span class="tok-fn">millis</span>() &lt; <span class="tok-num">3000</span>); <span class="tok-com">// Espera activa segura</span>
+
+  <span class="tok-fn">pinMode</span>(PIN_BTN1, INPUT_PULLUP);
+  <span class="tok-fn">pinMode</span>(PIN_BTN2, INPUT_PULLUP);
+
+  smoothGas    = <span class="tok-fn">analogRead</span>(PIN_GAS);
+  smoothBrake  = <span class="tok-fn">analogRead</span>(PIN_BRAKE);
+  smoothClutch = <span class="tok-fn">analogRead</span>(PIN_CLUTCH);
+}
+
+<span class="tok-type">void</span> <span class="tok-fn">loop</span>() {
+  <span class="tok-com">// 1. Lectura analógica de 10 bits (0 - 1023)</span>
+  <span class="tok-type">int</span> rawGas    = <span class="tok-fn">analogRead</span>(PIN_GAS);
+  <span class="tok-type">int</span> rawBrake  = <span class="tok-fn">analogRead</span>(PIN_BRAKE);
+  <span class="tok-type">int</span> rawClutch = <span class="tok-fn">analogRead</span>(PIN_CLUTCH);
+
+  <span class="tok-com">// 2. Aplicar filtro pasa-bajos</span>
+  smoothGas    = (ALPHA * rawGas)    + ((<span class="tok-num">1.0</span> - ALPHA) * smoothGas);
+  smoothBrake  = (ALPHA * rawBrake)  + ((<span class="tok-num">1.0</span> - ALPHA) * smoothBrake);
+  smoothClutch = (ALPHA * rawClutch) + ((<span class="tok-num">1.0</span> - ALPHA) * smoothClutch);
+
+  <span class="tok-com">// 3. Lectura de pulsadores digitales (lógica invertida por PULLUP)</span>
+  <span class="tok-type">int</span> btn1 = (<span class="tok-fn">digitalRead</span>(PIN_BTN1) == LOW) ? <span class="tok-num">1</span> : <span class="tok-num">0</span>;
+  <span class="tok-type">int</span> btn2 = (<span class="tok-fn">digitalRead</span>(PIN_BTN2) == LOW) ? <span class="tok-num">1</span> : <span class="tok-num">0</span>;
+
+  <span class="tok-com">// 4. Enviar trama compacta optimizada por puerto serie</span>
+  <span class="tok-com">// Formato: GAS:val,BRK:val,CLT:val,BTN1:val,BTN2:val\n</span>
+  Serial.<span class="tok-fn">print</span>(<span class="tok-str">"GAS:"</span>);
+  Serial.<span class="tok-fn">print</span>((<span class="tok-type">int</span>)smoothGas);
+  Serial.<span class="tok-fn">print</span>(<span class="tok-str">",BRK:"</span>);
+  Serial.<span class="tok-fn">print</span>((<span class="tok-type">int</span>)smoothBrake);
+  Serial.<span class="tok-fn">print</span>(<span class="tok-str">",CLT:"</span>);
+  Serial.<span class="tok-fn">print</span>((<span class="tok-type">int</span>)smoothClutch);
+  Serial.<span class="tok-fn">print</span>(<span class="tok-str">",BTN1:"</span>);
+  Serial.<span class="tok-fn">print</span>(btn1);
+  Serial.<span class="tok-fn">print</span>(<span class="tok-str">",BTN2:"</span>);
+  Serial.<span class="tok-fn">println</span>(btn2);
+
+  <span class="tok-fn">delay</span>(<span class="tok-num">10</span>); <span class="tok-com">// Despacho a ~100 Hz</span>
+}</code></pre>
+        </div>
+
+        <h3 id="arduino-python" data-i18n="sec5_h3_3">5.3. Script del Plugin en Python (main.py con pyserial)</h3>
+        <p data-i18n="sec5_p3">
+          El script de Python lee las tramas seriales, reconecta automáticamente si se desenchufa el cable USB y mapea el acelerador y freno directamente a los gatillos <code>RT</code> y <code>LT</code> del mando Xbox virtual:
+        </p>
+
+        <!-- Code Block 7: main.py for Arduino -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">plugins/arduino_pedals/main.py</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-kw">import</span> time
+<span class="tok-kw">import</span> serial
+<span class="tok-kw">import</span> serial.tools.list_ports
+<span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+device = <span class="tok-type">PluginDevice</span>(
+    id=<span class="tok-str">"arduino_pedals"</span>,
+    name=<span class="tok-str">"Arduino Pedals Controller"</span>,
+    num_buttons=<span class="tok-num">2</span>,
+    num_axes=<span class="tok-num">2</span>
+)
+
+active_port = <span class="tok-str">"Auto"</span>
+baud_rate = <span class="tok-num">115200</span>
+ser = <span class="tok-kw">None</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">get_best_port</span>():
+    <span class="tok-kw">for</span> p <span class="tok-kw">in</span> serial.tools.list_ports.comports():
+        desc = p.description.lower()
+        <span class="tok-kw">if</span> <span class="tok-str">"arduino"</span> <span class="tok-kw">in</span> desc <span class="tok-kw">or</span> <span class="tok-str">"ch340"</span> <span class="tok-kw">in</span> desc <span class="tok-kw">or</span> <span class="tok-str">"cp210"</span> <span class="tok-kw">in</span> desc:
+            <span class="tok-kw">return</span> p.device
+    ports = serial.tools.list_ports.comports()
+    <span class="tok-kw">return</span> ports[<span class="tok-num">0</span>].device <span class="tok-kw">if</span> ports <span class="tok-kw">else</span> <span class="tok-kw">None</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">map_axis</span>(val, min_in=<span class="tok-num">50</span>, max_in=<span class="tok-num">950</span>):
+    clamped = max(min_in, min(max_in, val))
+    <span class="tok-kw">return</span> (clamped - min_in) / float(max_in - min_in)
+
+last_telemetry = <span class="tok-num">0.0</span>
+
+<span class="tok-kw">try</span>:
+    <span class="tok-kw">while</span> device.is_running():
+        <span class="tok-com"># Reconexión automática en caliente</span>
+        <span class="tok-kw">if</span> ser <span class="tok-kw">is</span> <span class="tok-kw">None</span> <span class="tok-kw">or</span> <span class="tok-kw">not</span> ser.is_open:
+            port = get_best_port() <span class="tok-kw">if</span> active_port == <span class="tok-str">"Auto"</span> <span class="tok-kw">else</span> active_port
+            <span class="tok-kw">if</span> port:
+                <span class="tok-kw">try</span>:
+                    ser = serial.Serial(port, baud_rate, timeout=<span class="tok-num">0.02</span>)
+                    time.sleep(<span class="tok-num">0.5</span>)
+                <span class="tok-kw">except</span> Exception:
+                    ser = <span class="tok-kw">None</span>
+                    time.sleep(<span class="tok-num">1.0</span>)
+                    <span class="tok-kw">continue</span>
+            <span class="tok-kw">else</span>:
+                time.sleep(<span class="tok-num">1.0</span>)
+                <span class="tok-kw">continue</span>
+
+        <span class="tok-kw">try</span>:
+            line = ser.readline().decode(<span class="tok-str">"ascii"</span>, errors=<span class="tok-str">"ignore"</span>).strip()
+            <span class="tok-kw">if</span> line:
+                data = dict(item.split(<span class="tok-str">":"</span>) <span class="tok-kw">for</span> item <span class="tok-kw">in</span> line.split(<span class="tok-str">","</span>) <span class="tok-kw">if</span> <span class="tok-str">":"</span> <span class="tok-kw">in</span> item)
+                
+                gas_norm = map_axis(int(data.get(<span class="tok-str">"GAS"</span>, <span class="tok-num">0</span>)))
+                brake_norm = map_axis(int(data.get(<span class="tok-str">"BRK"</span>, <span class="tok-num">0</span>)))
+                clutch_norm = map_axis(int(data.get(<span class="tok-str">"CLT"</span>, <span class="tok-num">0</span>)))
+
+                <span class="tok-com"># Mapeo semántico directo a gatillos Xbox</span>
+                device.set_trigger(<span class="tok-str">"RT"</span>, gas_norm)
+                device.set_trigger(<span class="tok-str">"LT"</span>, brake_norm)
+                device.set_button(<span class="tok-str">"A"</span>, int(data.get(<span class="tok-str">"BTN1"</span>, <span class="tok-num">0</span>)) == <span class="tok-num">1</span>)
+                device.set_button(<span class="tok-str">"B"</span>, int(data.get(<span class="tok-str">"BTN2"</span>, <span class="tok-num">0</span>)) == <span class="tok-num">1</span>)
+                device.flush()
+
+                <span class="tok-com"># Telemetría a ~33 FPS para monitores de la GUI</span>
+                now = time.perf_counter()
+                <span class="tok-kw">if</span> now - last_telemetry >= <span class="tok-num">0.03</span>:
+                    device.send_telemetry({
+                        <span class="tok-str">"pedals_monitor"</span>: [gas_norm, brake_norm, clutch_norm]
+                    }, pad_id=<span class="tok-num">0</span>)
+                    last_telemetry = now
+        <span class="tok-kw">except</span> serial.SerialException:
+            ser = <span class="tok-kw">None</span>
+
+        time.sleep(<span class="tok-num">0.005</span>) <span class="tok-com"># 200 Hz loop</span>
+<span class="tok-kw">finally</span>:
+    <span class="tok-kw">if</span> ser <span class="tok-kw">and</span> ser.is_open:
+        ser.close()</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== Section 6 ==================== -->
+      <section class="doc-section" id="midi-hardware">
+        <h2 data-i18n="sec6_title">6. Hardware Físico Real 2: Sintetizadores, Pianos y MIDI Pads</h2>
+        <p data-i18n="sec6_p1">
+          Cualquier teclado musical USB, interfaz MIDI o Launchpad físico puede utilizarse para controlar juegos.
+        </p>
+
+        <h3 id="midi-filtrado" data-i18n="sec6_h3_1">6.1. Filtrado de Puertos de Entrada en Windows</h3>
+        <p data-i18n="sec6_p2">
+          En Windows, el subsistema MIDI enumera puertos que son exclusivamente de salida (como <em>Microsoft GS Wavetable Synth</em>). Abrir un puerto de salida en modo lectura causa un error fatal. Por ello, el escaneo debe filtrar siempre <code>is_input == 1</code>:
+        </p>
+
+        <!-- Code Block 8: Filtering MIDI inputs -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">Filtrado Seguro de Puertos MIDI</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-kw">import</span> pygame.midi
+
+pygame.midi.init()
+input_devices = []
+<span class="tok-kw">for</span> dev_id <span class="tok-kw">in</span> range(pygame.midi.get_count()):
+    interf, name, is_input, is_output, opened = pygame.midi.get_device_info(dev_id)
+    <span class="tok-kw">if</span> is_input == <span class="tok-num">1</span>:  <span class="tok-com"># Solo puertos de entrada física</span>
+        dev_name = name.decode(<span class="tok-str">"utf-8"</span>, errors=<span class="tok-str">"ignore"</span>)
+        input_devices.append((dev_id, dev_name))</code></pre>
+        </div>
+
+        <h3 id="midi-lectura" data-i18n="sec6_h3_2">6.2. Mapeo de Pitch Bend, Modulación y Teclas a Controles de Xbox</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Mensaje MIDI</th>
+              <th>Estado Hex</th>
+              <th>Datos</th>
+              <th>Mapeo Recomendado en Xbox 360</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Note On</strong></td>
+              <td><code>0x90</code></td>
+              <td>Tecla/Pad (velocity &gt; 0)</td>
+              <td>Botones A, B, X, Y, LB, RB, D-Pad</td>
+            </tr>
+            <tr>
+              <td><strong>Note Off</strong></td>
+              <td><code>0x80</code></td>
+              <td>Tecla liberada</td>
+              <td>Liberación del botón</td>
+            </tr>
+            <tr>
+              <td><strong>Pitch Bend</strong></td>
+              <td><code>0xE0</code></td>
+              <td>14 bits (0-16383, centro 8192)</td>
+              <td>Stick izquierdo horizontal (LX: -1.0 a +1.0)</td>
+            </tr>
+            <tr>
+              <td><strong>Modulation Wheel</strong></td>
+              <td><code>0xB0</code> (CC #1)</td>
+              <td>Valor continuo (0-127)</td>
+              <td>Gatillo derecho (RT: 0.0 a 1.0)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Code Block 9: MIDI Mapping in Python -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+              </div>
+              <span class="code-file-title">plugins/midi_controller/main.py (Mapeo)</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-com"># Mapeo de Pitch Bend (14-bit) al Stick Izquierdo LX (-1.0 a +1.0)</span>
+<span class="tok-kw">if</span> status == <span class="tok-num">0xE0</span>:
+    pitch_14bit = (data2 &lt;&lt; <span class="tok-num">7</span>) | data1
+    normalized_lx = (pitch_14bit - <span class="tok-num">8192</span>) / <span class="tok-num">8192.0</span>
+    device.set_stick(<span class="tok-str">"LX"</span>, max(-<span class="tok-num">1.0</span>, min(<span class="tok-num">1.0</span>, normalized_lx)))
+    device.flush()
+
+<span class="tok-com"># Mapeo de Rueda de Modulación (CC 1) al Gatillo Derecho RT (0.0 a 1.0)</span>
+<span class="tok-kw">elif</span> status == <span class="tok-num">0xB0</span> <span class="tok-kw">and</span> data1 == <span class="tok-num">1</span>:
+    normalized_rt = data2 / <span class="tok-num">127.0</span>
+    device.set_trigger(<span class="tok-str">"RT"</span>, normalized_rt)
+    device.flush()
+
+<span class="tok-com"># Mapeo de Notas a Botones</span>
+<span class="tok-kw">elif</span> (status &amp; <span class="tok-num">0xF0</span>) == <span class="tok-num">0x90</span>:
+    is_pressed = (data2 &gt; <span class="tok-num">0</span>)
+    <span class="tok-kw">if</span> data1 == <span class="tok-num">60</span>:    <span class="tok-com"># Do central (C4) -&gt; Botón A</span>
+        device.set_button(<span class="tok-str">"A"</span>, is_pressed)
+    <span class="tok-kw">elif</span> data1 == <span class="tok-num">62</span>:  <span class="tok-com"># Re (D4) -&gt; Botón B</span>
+        device.set_button(<span class="tok-str">"B"</span>, is_pressed)
+    device.flush()</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== Section 7 ==================== -->
+      <section class="doc-section" id="sdk-python">
+        <h2 data-i18n="sec7_title">7. Referencia Completa del SDK de Python (PluginDevice)</h2>
+        <p data-i18n="sec7_p1">
+          La clase <code>PluginDevice</code> provista en <code>plugins.plugin_sdk</code> abstrae toda la comunicación TCP:
+        </p>
+        <ul>
+          <li><code>device.set_button(name: str, pressed: bool)</code>: Asigna botones semánticos (<code>"A"</code>, <code>"B"</code>, <code>"X"</code>, <code>"Y"</code>, <code>"LB"</code>, <code>"RB"</code>, etc.).</li>
+          <li><code>device.set_trigger(name: str, value: float)</code>: Gatillos <code>"LT"</code> y <code>"RT"</code> (rango 0.0 a 1.0).</li>
+          <li><code>device.set_stick(name: str, value: float)</code>: Palancas <code>"LX"</code>, <code>"LY"</code>, <code>"RX"</code>, <code>"RY"</code> (rango -1.0 a 1.0).</li>
+          <li><code>device.flush()</code>: Envía el paquete atómico TCP al emulador. Debe llamarse al final de cada ciclo.</li>
+          <li><code>device.on_rumble(callback)</code>: Recibe la vibración háptica del juego <code>(small_motor, large_motor)</code> para transmitir a motores de vibración físicos en Arduino.</li>
+          <li><code>device.send_telemetry(payload, pad_id=0)</code>: Envía lecturas en tiempo real a los monitores Canvas.</li>
+        </ul>
+      </section>
+
+      <!-- ==================== Section 8 ==================== -->
+      <section class="doc-section" id="diagnostico">
+        <h2 data-i18n="sec8_title">8. Diagnóstico y Resolución de Problemas</h2>
+        <p data-i18n="sec8_p1">
+          j360More incluye una <strong>Consola de Depuración en Vivo</strong> dentro de la pestaña <code>🔌 Plugins</code> que captura todos los <code>print(...)</code> y tracebacks de excepciones de tus scripts.
+        </p>
+
+        <div class="doc-callout warning">
+          <div class="doc-callout-title">⚠️ Error COM Ocupado (Errno 13)</div>
+          <div>
+            Si el log muestra <em>"could not open port 'COMx': PermissionError"</em>, asegúrate de haber cerrado el <strong>Monitor Serie de Arduino IDE</strong>, ya que Windows no permite compartir un puerto COM entre dos programas simultáneamente.
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Floating Mobile Sidebar Toggle Button -->
+  <button id="sidebar-toggle-btn" class="sidebar-mobile-toggle" aria-label="Abrir Índice de Contenido">
+    <span>📑</span>
+    <span data-i18n="doc_btn_index">Índice</span>
+  </button>
+
+  <!-- ==================== Footer ==================== -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <h4>
+          <img src="assets/icon.svg" alt="j360More Icon" width="24" height="24">
+          j360More
+        </h4>
+        <p data-i18n="footer_desc">
+          Emulador de mandos virtuales para Windows y Linux (Beta). Diseñado y desarrollado por <strong>JuanJSAR</strong> para ofrecer la máxima velocidad, estabilidad y flexibilidad en entornos multijugador de 1 a 12 participantes.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h5>Controladores</h5>
+        <ul>
+          <li><a href="https://github.com/vadimgrn/usbip-win2/releases" target="_blank" rel="noopener">usbip-win2 Releases</a></li>
+          <li><a href="https://github.com/Alia5/VIIPER" target="_blank" rel="noopener">VIIPER Daemon</a></li>
+          <li><a href="https://github.com/nefarius/ViGEmBus/releases" target="_blank" rel="noopener">ViGEmBus Releases</a></li>
+          <li><a href="https://github.com/nefarius/HidHide/releases/" target="_blank" rel="noopener">HidHide Releases</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Enlaces y Proyecto</h5>
+        <ul>
+          <li><a href="index.html" data-i18n="nav_home">🏠 Inicio</a></li>
+          <li><a href="https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases" target="_blank" rel="noopener" data-i18n="footer_releases">Descargas / Releases</a></li>
+          <li><a href="https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator.git" target="_blank" rel="noopener">Repositorio GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; 2026 <strong>j360More</strong>. Código abierto bajo licencia MIT.</div>
+      <div>Desarrollado con VIIPER, ViGEmBus & SDL2.</div>
+    </div>
+  </footer>
+
+  <!-- Script with i18n support, search and copy handlers -->
+  <script src="script.js"></script>
+</body>
+</html>

@@ -10,7 +10,47 @@ const translations = {
     nav_requirements: "Requisitos",
     nav_quickstart: "Guía Rápida",
     nav_faq: "Preguntas",
+    nav_plugins: "🔌 Plugins",
+    nav_home: "🏠 Inicio",
     nav_download: "Descargar",
+    doc_badge_plugins: "PLUGINS & HARDWARE",
+    doc_nav_arch: "Arquitectura",
+    doc_nav_create: "Crear Plugin",
+    doc_nav_ui: "Interfaz UI",
+    doc_nav_arduino: "Arduino / ESP32",
+    doc_nav_midi: "MIDI USB",
+    doc_nav_sdk: "SDK Python",
+    doc_hero_tag: "Desarrollo Extensible & Hardware Físico",
+    doc_hero_title: "Sistema de Plugins y Conexión de Hardware Real",
+    doc_hero_desc: "Aprende a construir controladores a medida, diseñar interfaces declarativas sin escribir código GUI, y conectar hardware físico real como pedales Arduino/ESP32 y sintetizadores MIDI USB con cero latencia.",
+    doc_search_ph: "Buscar tema, hardware o función...",
+    doc_search_no_results: "No se encontraron coincidencias.",
+    doc_grp_arch: "📌 Arquitectura & Filosofía",
+    doc_lnk_ipc: "Aislamiento por Procesos IPC",
+    doc_lnk_venv: "Entorno Virtual (.venv)",
+    doc_grp_creation: "🚀 Creación de Plugins",
+    doc_lnk_struct: "Estructura de Archivos",
+    doc_lnk_manifest: "Manifiesto plugin.json",
+    doc_lnk_lifecycle: "Ciclo de Vida",
+    doc_grp_ui: "🎛️ Interfaz Declarativa",
+    doc_lnk_globalui: "Ajustes Globales (global_ui)",
+    doc_lnk_padui: "Pestañas por Mando",
+    doc_lnk_telemetry: "Monitores de Telemetría",
+    doc_grp_i18n: "🌍 Multi-Idioma (i18n)",
+    doc_lnk_i18n: "Inline & Locales Externos",
+    doc_grp_arduino: "🏎️ Hardware Real: Arduino / ESP32",
+    doc_lnk_circuit: "Circuito y Conexión de Pines",
+    doc_lnk_firmware: "Firmware C++ (.ino)",
+    doc_lnk_pyarduino: "Script Python (pyserial)",
+    doc_grp_midi: "🎹 Hardware Real: MIDI USB",
+    doc_lnk_midifilter: "Filtrado de Puertos de Entrada",
+    doc_lnk_midiread: "Lectura y Mapeo en Vivo",
+    doc_grp_sdk: "🐍 SDK de Python",
+    doc_lnk_sdkref: "Referencia de PluginDevice",
+    doc_grp_debug: "🔧 Diagnóstico",
+    doc_lnk_trouble: "Consola & Solución de Problemas",
+    code_copy: "Copiar",
+    doc_btn_index: "Índice",
     hero_badge_players: "🎮 Hasta 12 Mandos Simultáneos",
     hero_badge_hz: "⚡ Ultra Baja Latencia 120Hz",
     hero_badge_multiplatform: "🐧 Windows & Linux (Beta)",
@@ -190,7 +230,47 @@ const translations = {
     nav_requirements: "Requirements",
     nav_quickstart: "Quickstart",
     nav_faq: "FAQ",
+    nav_plugins: "🔌 Plugins",
+    nav_home: "🏠 Home",
     nav_download: "Download",
+    doc_badge_plugins: "PLUGINS & HARDWARE",
+    doc_nav_arch: "Architecture",
+    doc_nav_create: "Create Plugin",
+    doc_nav_ui: "Declarative UI",
+    doc_nav_arduino: "Arduino / ESP32",
+    doc_nav_midi: "USB MIDI",
+    doc_nav_sdk: "Python SDK",
+    doc_hero_tag: "Extensible Development & Physical Hardware",
+    doc_hero_title: "Plugin System & Real Hardware Integration",
+    doc_hero_desc: "Learn how to build custom hardware controllers, design declarative user interfaces without writing GUI code, and connect physical hardware like Arduino/ESP32 pedals and USB-MIDI synthesizers with zero latency.",
+    doc_search_ph: "Search topic, hardware or function...",
+    doc_search_no_results: "No matching topics found.",
+    doc_grp_arch: "📌 Architecture & Philosophy",
+    doc_lnk_ipc: "Process Isolation & IPC",
+    doc_lnk_venv: "Virtual Environment (.venv)",
+    doc_grp_creation: "🚀 Creating Plugins",
+    doc_lnk_struct: "File Structure",
+    doc_lnk_manifest: "Manifest plugin.json",
+    doc_lnk_lifecycle: "Execution Lifecycle",
+    doc_grp_ui: "🎛️ Declarative UI",
+    doc_lnk_globalui: "Global Settings (global_ui)",
+    doc_lnk_padui: "Per-Pad Tabs",
+    doc_lnk_telemetry: "Telemetry Monitors",
+    doc_grp_i18n: "🌍 Multi-Language (i18n)",
+    doc_lnk_i18n: "Inline & External Locales",
+    doc_grp_arduino: "🏎️ Real Hardware: Arduino / ESP32",
+    doc_lnk_circuit: "Circuit & Pin Wiring",
+    doc_lnk_firmware: "C++ Firmware (.ino)",
+    doc_lnk_pyarduino: "Python Script (pyserial)",
+    doc_grp_midi: "🎹 Real Hardware: USB MIDI",
+    doc_lnk_midifilter: "Filtering Input Ports",
+    doc_lnk_midiread: "Live Polling & Mapping",
+    doc_grp_sdk: "🐍 Python SDK",
+    doc_lnk_sdkref: "PluginDevice Reference",
+    doc_grp_debug: "🔧 Troubleshooting",
+    doc_lnk_trouble: "Console & Common Issues",
+    code_copy: "Copy",
+    doc_btn_index: "Table of Contents",
     hero_badge_players: "🎮 Up to 12 Controllers",
     hero_badge_hz: "⚡ Ultra Low Latency 120Hz",
     hero_badge_multiplatform: "🐧 Windows & Linux (Beta)",
@@ -387,6 +467,14 @@ function setLanguage(lang) {
       el.textContent = translations[lang][key];
     }
   });
+
+  // Update input placeholders with data-i18n-ph
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (translations[lang][key]) {
+      el.placeholder = translations[lang][key];
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -445,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Copy Code Buttons
+  // Copy Code Buttons (Generic & Documentation IDE Cards)
   const copyButtons = document.querySelectorAll('.copy-btn');
   copyButtons.forEach(button => {
     button.addEventListener('click', () => {
@@ -461,6 +549,92 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  const docCopyButtons = document.querySelectorAll('.code-copy-btn');
+  docCopyButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.code-editor-card');
+      if (!card) return;
+      const codeEl = card.querySelector('.code-content code');
+      if (!codeEl) return;
+      const codeText = codeEl.textContent;
+      navigator.clipboard.writeText(codeText).then(() => {
+        const label = btn.querySelector('.copy-label') || btn;
+        const originalText = label.textContent;
+        btn.classList.add('copied');
+        label.textContent = currentLang === 'en' ? 'Copied!' : '¡Copiado!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          label.textContent = originalText;
+        }, 2000);
+      });
+    });
+  });
+
+  // Documentation Sidebar Live Search Filter
+  const docSearchInput = document.getElementById('doc-search-input');
+  if (docSearchInput) {
+    const noResults = document.getElementById('search-no-results');
+    docSearchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      let totalMatches = 0;
+      document.querySelectorAll('.doc-nav-group').forEach(group => {
+        let groupMatches = 0;
+        group.querySelectorAll('.doc-nav-link').forEach(link => {
+          const text = link.textContent.toLowerCase();
+          const keywords = (link.getAttribute('data-keywords') || '').toLowerCase();
+          const isMatch = !query || text.includes(query) || keywords.includes(query);
+          link.parentElement.style.display = isMatch ? '' : 'none';
+          if (isMatch) groupMatches++;
+        });
+        group.style.display = groupMatches > 0 ? '' : 'none';
+        totalMatches += groupMatches;
+      });
+      if (noResults) {
+        noResults.style.display = (totalMatches === 0 && query.length > 0) ? 'block' : 'none';
+      }
+    });
+  }
+
+  // Documentation Scroll Spy
+  const docSections = document.querySelectorAll('.doc-section');
+  const docLinks = document.querySelectorAll('.doc-nav-link');
+  if (docSections.length > 0 && docLinks.length > 0 && 'IntersectionObserver' in window) {
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          docLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            link.classList.toggle('active', href === `#${id}`);
+          });
+        }
+      });
+    }, { rootMargin: '-15% 0px -75% 0px' });
+    docSections.forEach(sec => sectionObserver.observe(sec));
+  }
+
+  // Mobile Sidebar Drawer Toggle for Documentation
+  const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+  const docSidebar = document.getElementById('doc-sidebar');
+  if (sidebarToggleBtn && docSidebar) {
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      docSidebar.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (docSidebar.classList.contains('open') && !docSidebar.contains(e.target) && e.target !== sidebarToggleBtn) {
+        docSidebar.classList.remove('open');
+      }
+    });
+
+    docLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        docSidebar.classList.remove('open');
+      });
+    });
+  }
 
   // Header Shadow on Scroll
   const header = document.querySelector('.header');
