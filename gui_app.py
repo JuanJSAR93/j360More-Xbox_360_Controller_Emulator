@@ -3976,23 +3976,25 @@ class J360MoreApp:
             tree_plg_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
 
             plg_scroll = ttk.Scrollbar(tree_plg_frame, orient=tk.VERTICAL)
-            plg_cols = ("status", "name", "version", "author", "id")
+            plg_cols = ("status", "autostart", "name", "version", "author", "id")
             tree_plugins = ttk.Treeview(tree_plg_frame, columns=plg_cols, show="headings", height=5, yscrollcommand=plg_scroll.set, selectmode="browse")
             plg_scroll.config(command=tree_plugins.yview)
             plg_scroll.pack(side=tk.RIGHT, fill=tk.Y)
             tree_plugins.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
             tree_plugins.heading("status", text=self.t("plugins_col_status"))
+            tree_plugins.heading("autostart", text=self.t("plugins_col_autostart"))
             tree_plugins.heading("name", text=self.t("plugins_col_name"))
             tree_plugins.heading("version", text=self.t("plugins_col_version"))
             tree_plugins.heading("author", text=self.t("plugins_col_author"))
             tree_plugins.heading("id", text="ID")
 
-            tree_plugins.column("status", width=105, anchor="center")
-            tree_plugins.column("name", width=220, anchor="w")
-            tree_plugins.column("version", width=75, anchor="center")
-            tree_plugins.column("author", width=120, anchor="w")
-            tree_plugins.column("id", width=130, anchor="w")
+            tree_plugins.column("status", width=95, anchor="center")
+            tree_plugins.column("autostart", width=110, anchor="center")
+            tree_plugins.column("name", width=200, anchor="w")
+            tree_plugins.column("version", width=70, anchor="center")
+            tree_plugins.column("author", width=115, anchor="w")
+            tree_plugins.column("id", width=115, anchor="w")
 
             # Barra de acciones para el plugin seleccionado
             btn_bar_plg = ttk.Frame(plg_container)
@@ -4016,6 +4018,18 @@ class J360MoreApp:
                     if not ok:
                         messagebox.showerror("Error Plugin", f"No se pudo iniciar el plugin: {err}")
                 refresh_plugins_tree()
+
+            def on_toggle_autostart_selected_plugin():
+                p_id = get_selected_plugin_id()
+                if not p_id:
+                    return
+                p = self.plugin_manager.plugins.get(p_id)
+                if not p:
+                    return
+                new_state = not p.is_enabled()
+                self.plugin_manager.set_plugin_enabled(p_id, new_state, stop_if_disabled=False)
+                refresh_plugins_tree()
+                update_selected_plugin_buttons()
 
             def on_config_selected_plugin():
                 p_id = get_selected_plugin_id()
@@ -4052,8 +4066,11 @@ class J360MoreApp:
                 refresh_plugins_tree()
                 self._refresh_all_devices(async_scan=False)
 
-            btn_toggle = ttk.Button(btn_bar_plg, text="▶ / ⏹", width=12, command=on_toggle_selected_plugin)
+            btn_toggle = ttk.Button(btn_bar_plg, text="▶ / ⏹", width=11, command=on_toggle_selected_plugin)
             btn_toggle.pack(side=tk.LEFT, padx=(0, 4))
+
+            btn_autostart = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_enable_autostart"), command=on_toggle_autostart_selected_plugin)
+            btn_autostart.pack(side=tk.LEFT, padx=4)
 
             btn_cfg_p = ttk.Button(btn_bar_plg, text=self.t("plugins_btn_config"), command=on_config_selected_plugin)
             btn_cfg_p.pack(side=tk.LEFT, padx=4)
@@ -4098,8 +4115,10 @@ class J360MoreApp:
                     p_id = p["id"]
                     st = p["status"]
                     st_label = self.t("plugins_status_running") if st == "running" else (self.t("plugins_status_stopped") if st == "stopped" else self.t("plugins_status_error"))
+                    auto_label = self.t("plugins_autostart_enabled") if p.get("enabled", True) else self.t("plugins_autostart_disabled")
                     tree_plugins.insert("", tk.END, iid=p_id, values=(
                         st_label,
+                        auto_label,
                         p["name"],
                         f"v{p['version']}",
                         p["author"],
@@ -4116,6 +4135,7 @@ class J360MoreApp:
                 p_id = get_selected_plugin_id()
                 if not p_id:
                     btn_toggle.config(state="disabled")
+                    btn_autostart.config(state="disabled")
                     btn_cfg_p.config(state="disabled")
                     btn_info.config(state="disabled")
                     btn_install.config(state="disabled")
@@ -4124,12 +4144,18 @@ class J360MoreApp:
                 if not p:
                     return
                 btn_toggle.config(state="normal")
+                btn_autostart.config(state="normal")
                 btn_info.config(state="normal")
                 btn_install.config(state="normal")
                 if p.status == "running":
                     btn_toggle.config(text=self.t("plugins_btn_stop"))
                 else:
                     btn_toggle.config(text=self.t("plugins_btn_start"))
+
+                if p.is_enabled():
+                    btn_autostart.config(text=self.t("plugins_btn_disable_autostart"))
+                else:
+                    btn_autostart.config(text=self.t("plugins_btn_enable_autostart"))
 
                 if p.global_ui and p.global_ui.get("fields"):
                     btn_cfg_p.config(state="normal")

@@ -118,54 +118,71 @@ def set_midi_channel(val, pad_id):
 # MIDI Loop
 # -------------------------------------------------------------
 
+pg_midi_in = None
+
+
+def try_connect_midi() -> bool:
+    global pg_midi_in, midi_in_port
+    # 1. Intentar con pygame.midi
+    try:
+        import pygame.midi
+        if not pygame.midi.get_init():
+            pygame.midi.init()
+        chosen_dev_id = None
+        if active_midi_port != "AUTO" and ":" in active_midi_port:
+            try:
+                chosen_dev_id = int(active_midi_port.split(":")[0])
+            except ValueError:
+                chosen_dev_id = None
+
+        if chosen_dev_id is None:
+            for i in range(pygame.midi.get_count()):
+                info = pygame.midi.get_device_info(i)
+                if info and info[2]:  # is_input
+                    chosen_dev_id = i
+                    break
+
+        if chosen_dev_id is not None:
+            pg_midi_in = pygame.midi.Input(chosen_dev_id)
+            device.log(f"Conectado a puerto MIDI físico vía pygame.midi: ID #{chosen_dev_id}")
+            device.set_connected(True)
+            return True
+    except Exception as ex:
+        pg_midi_in = None
+
+    # 2. Intentar con mido
+    try:
+        import mido
+        inputs = mido.get_input_names()
+        if inputs:
+            target_port = inputs[0] if active_midi_port == "AUTO" else active_midi_port
+            midi_in_port = mido.open_input(target_port)
+            device.log(f"Conectado a puerto MIDI físico vía mido: {target_port}")
+            device.set_connected(True)
+            return True
+    except Exception:
+        midi_in_port = None
+
+    return False
+
+
+# -------------------------------------------------------------
+# MIDI Loop with Hot-Plug & Auto-Reconnection
+# -------------------------------------------------------------
+
 def run_loop():
-    global use_simulator, midi_in_port
-    pg_midi_in = None
+    global use_simulator, midi_in_port, pg_midi_in
+    last_reconnect_time = 0.0
 
     if "--simulate" in sys.argv:
         use_simulator = True
+        device.set_connected(True)
         device.log("Modo de simulación MIDI activado (--simulate).")
     else:
-        # Intentar conectar con pygame.midi
-        try:
-            import pygame.midi
-            if not pygame.midi.get_init():
-                pygame.midi.init()
-            chosen_dev_id = None
-            if active_midi_port != "AUTO" and ":" in active_midi_port:
-                try:
-                    chosen_dev_id = int(active_midi_port.split(":")[0])
-                except ValueError:
-                    chosen_dev_id = None
-
-            if chosen_dev_id is None:
-                for i in range(pygame.midi.get_count()):
-                    info = pygame.midi.get_device_info(i)
-                    if info and info[2]:  # is_input
-                        chosen_dev_id = i
-                        break
-
-            if chosen_dev_id is not None:
-                pg_midi_in = pygame.midi.Input(chosen_dev_id)
-                device.log(f"Conectado a puerto MIDI físico vía pygame.midi: ID #{chosen_dev_id}")
-        except Exception as ex:
-            device.log(f"pygame.midi no pudo abrir puerto: {ex}")
-
-        # Si no se conectó con pygame.midi, intentar mido
-        if not pg_midi_in:
-            try:
-                import mido
-                inputs = mido.get_input_names()
-                if inputs:
-                    target_port = inputs[0] if active_midi_port == "AUTO" else active_midi_port
-                    midi_in_port = mido.open_input(target_port)
-                    device.log(f"Conectado a puerto MIDI físico vía mido: {target_port}")
-            except Exception as e:
-                pass
-
-        if not pg_midi_in and not midi_in_port:
-            use_simulator = True
-            device.log("No se detectó hardware MIDI físico. Activando simulador virtual integrado.")
+        connected = try_connect_midi()
+        if not connected:
+            device.log("No se detectó dispositivo MIDI físico al arrancar. Escuchando conexión física...", "INFO")
+            device.set_connected(False)
 
     device.log("Bucle de recepción MIDI iniciado.")
 
@@ -199,10 +216,38 @@ def run_loop():
                         elif cmd == 0xB0 and d1 == 1:
                             events.append({"type": "control_change", "control": 1, "value": d2})
             except Exception as e:
-                device.log(f"Error leyendo pygame.midi: {e}")
+                device.log(f"Desconexión física o error en pygame.midi: {e}", "WARNING")
+                try:
+                    pg_midi_in.close()
+                except Exception:
+                    pass
+                pg_midi_in = None
+                device.set_connected(False)
+                last_reconnect_time = time.time()
+                continue
         elif midi_in_port:
-            for msg in midi_in_port.iter_pending():
-                events.append(msg.dict())
+            try:
+                for msg in midi_in_port.iter_pending():
+                    events.append(msg.dict())
+            except Exception as e:
+                device.log(f"Desconexión física o error en mido: {e}", "WARNING")
+                try:
+                    midi_in_port.close()
+                except Exception:
+                    pass
+                midi_in_port = None
+                device.set_connected(False)
+                last_reconnect_time = time.time()
+                continue
+        else:
+            # Physical peripheral disconnected: retry connection every 1.5s
+            now = time.time()
+            if now - last_reconnect_time >= 1.5:
+                last_reconnect_time = now
+                if try_connect_midi():
+                    continue
+            time.sleep(0.02)
+            continue
 
         pad_cal = calibration.get(1, {})
         vel_thresh = pad_cal.get("velocity_threshold", 15)

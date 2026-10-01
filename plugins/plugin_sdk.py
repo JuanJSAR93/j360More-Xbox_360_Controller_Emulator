@@ -38,6 +38,7 @@ class PluginDevice:
         self._axes: Dict[int, float] = {i: 0.0 for i in range(num_axes)}
         self._triggers: Dict[str, float] = {"LT": 0.0, "RT": 0.0}
         self._sticks: Dict[str, float] = {"LX": 0.0, "LY": 0.0, "RX": 0.0, "RY": 0.0}
+        self._device_connected: bool = True
 
         self._state_lock = threading.Lock()
         self._ipc_client: Optional[IPCClient] = None
@@ -151,8 +152,58 @@ class PluginDevice:
             self._buttons[idx] = bool(is_pressed)
 
     # ---------------------------------------------------------
-    # State Transmission & Telemetry
+    # State Transmission, Connection Status & Telemetry
     # ---------------------------------------------------------
+
+    def reset_inputs(self, flush: bool = False):
+        """
+        Resets all internal input states (buttons, triggers, sticks, axes) to neutral.
+        Call this when physical hardware disconnects to prevent stuck inputs.
+        """
+        with self._state_lock:
+            self._buttons = {i: False for i in range(self.num_buttons)}
+            self._named_buttons = {btn: False for btn in self.VALID_BUTTONS}
+            self._axes = {i: 0.0 for i in range(self.num_axes)}
+            self._triggers = {"LT": 0.0, "RT": 0.0}
+            self._sticks = {"LX": 0.0, "LY": 0.0, "RX": 0.0, "RY": 0.0}
+        if flush:
+            self.flush()
+
+    def set_connected(self, is_connected: bool, device_id: Optional[str] = None):
+        """
+        Explicitly notifies j360More whether the physical peripheral is connected or disconnected.
+        When set to False, automatically resets inputs to neutral to prevent stuck buttons or axes.
+        """
+        target_id = device_id or self.id
+        self._device_connected = bool(is_connected)
+        if not self._device_connected:
+            self.reset_inputs(flush=False)
+
+        if self._ipc_client and self._ipc_client.is_connected:
+            self.flush()
+            self._ipc_client.send({
+                "event": "device_status",
+                "device_id": target_id,
+                "connected": self._device_connected
+            })
+        status_str = "CONECTADO" if self._device_connected else "DESCONECTADO"
+        self.log(f"Estado de conexión de '{target_id}': {status_str}", "INFO")
+
+    def is_device_connected(self) -> bool:
+        """Returns True if the physical hardware is currently marked as connected."""
+        return self._device_connected
+
+    def report_devices(self, devices: List[Dict[str, Any]]):
+        """
+        Proactively notifies j360More about the list of currently connected physical devices.
+        Allows instant hot-plug registration when devices are plugged or unplugged dynamically.
+        """
+        if self._ipc_client and self._ipc_client.is_connected:
+            self._ipc_client.send({
+                "event": "discovered_devices",
+                "device_id": self.id,
+                "devices": devices or []
+            })
 
     def flush(self):
         """Sends the atomic controller state snapshot over IPC to j360More."""
@@ -163,6 +214,7 @@ class PluginDevice:
             payload = {
                 "event": "state_update",
                 "device_id": self.id,
+                "connected": self._device_connected,
                 "buttons": dict(self._buttons),
                 "named_buttons": dict(self._named_buttons),
                 "axes": dict(self._axes),

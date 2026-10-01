@@ -144,6 +144,12 @@
               <span data-i18n="doc_lnk_lifecycle">Ciclo de Vida</span>
             </a>
           </li>
+          <li>
+            <a href="#autostart-plugins" class="doc-nav-link" data-keywords="autostart activar desactivar inicio automatico arranque boot habilitar">
+              <span>Control de Inicio (Autostart)</span>
+              <span class="nav-tag">Inicio</span>
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -151,6 +157,12 @@
       <div class="doc-nav-group">
         <div class="doc-group-title" data-i18n="doc_grp_ui">🎛️ Interfaz Declarativa</div>
         <ul class="doc-nav-list">
+          <li>
+            <a href="#catalogo-ui" class="doc-nav-link" data-keywords="slider checkbox dropdown dynamic_dropdown button progress_bar_multi catalogo controles">
+              <span>Catálogo de Controles UI</span>
+              <span class="nav-tag">6 tipos</span>
+            </a>
+          </li>
           <li>
             <a href="#global-ui" class="doc-nav-link" data-keywords="global_ui slider checkbox dropdown dynamic_dropdown scan">
               <span data-i18n="doc_lnk_globalui">Ajustes Globales (global_ui)</span>
@@ -167,6 +179,12 @@
               <span class="nav-tag">33 FPS</span>
             </a>
           </li>
+          <li>
+            <a href="#esquema-completo-ui" class="doc-nav-link" data-keywords="esquema plugin.json completo verificada ui">
+              <span>Ejemplo Completo JSON</span>
+              <span class="nav-tag">JSON</span>
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -175,8 +193,25 @@
         <div class="doc-group-title" data-i18n="doc_grp_i18n">🌍 Multi-Idioma (i18n)</div>
         <ul class="doc-nav-list">
           <li>
-            <a href="#i18n-plugins" class="doc-nav-link" data-keywords="i18n idioma locales traduccion ingles espanol en.json es.json">
-              <span data-i18n="doc_lnk_i18n">Inline & Locales Externos</span>
+            <a href="#i18n-plugins" class="doc-nav-link" data-keywords="i18n arquitectura codigos idiomas normalizacion fallback">
+              <span>Arquitectura & Idiomas</span>
+              <span class="nav-tag">7 idiomas</span>
+            </a>
+          </li>
+          <li>
+            <a href="#i18n-inline" class="doc-nav-link" data-keywords="i18n inline plugin.json traducciones diccionarios">
+              <span>Método 1: Inline en JSON</span>
+            </a>
+          </li>
+          <li>
+            <a href="#i18n-locales" class="doc-nav-link" data-keywords="i18n locales carpetas archivos es.json en.json modular">
+              <span>Método 2: Archivos locales/</span>
+              <span class="nav-tag">Modular</span>
+            </a>
+          </li>
+          <li>
+            <a href="#i18n-python" class="doc-nav-link" data-keywords="i18n python callbacks aislamiento neutral ids device.log">
+              <span>Integración con Python</span>
             </a>
           </li>
         </ul>
@@ -219,6 +254,12 @@
               <span data-i18n="doc_lnk_midiread">Lectura y Mapeo en Vivo</span>
             </a>
           </li>
+          <li>
+            <a href="#midi-script" class="doc-nav-link" data-keywords="midi main.py script completo python pygame.midi telemetria 120hz">
+              <span>Script Python Completo</span>
+              <span class="nav-tag">main.py</span>
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -231,10 +272,60 @@
               <span data-i18n="doc_lnk_sdkref">Referencia de PluginDevice</span>
             </a>
           </li>
+          <li>
+            <a href="#sdk-semanticos" class="doc-nav-link" data-keywords="set_button set_trigger set_stick press_button release_button semanticos">
+              <span>Controles Semánticos Xbox</span>
+            </a>
+          </li>
+          <li>
+            <a href="#sdk-indexados" class="doc-nav-link" data-keywords="set_axis set_button_index controles indexados flight stick hotas arcade">
+              <span>Controles Físicos Indexados</span>
+            </a>
+          </li>
+          <li>
+            <a href="#sdk-telemetria" class="doc-nav-link" data-keywords="flush send_telemetry update_field_options set_field_value log">
+              <span>Sincronización y Telemetría</span>
+            </a>
+          </li>
+          <li>
+            <a href="#sdk-decoradores" class="doc-nav-link" data-keywords="on_rumble on_field_change on_action on_discover_devices decoradores">
+              <span>Decoradores de Eventos</span>
+            </a>
+          </li>
         </ul>
       </div>
 
       <!-- Navigation Category 8 -->
+      <div class="doc-nav-group">
+        <div class="doc-group-title">⚡ Conexión & Hot-Plug</div>
+        <ul class="doc-nav-list">
+          <li>
+            <a href="#hotplug-arquitectura" class="doc-nav-link" data-keywords="hotplug conexion desconexion reconexion niveles ipc fisico cable usb midi">
+              <span>Dos Niveles de Enlace</span>
+              <span class="nav-tag">IPC vs Físico</span>
+            </a>
+          </li>
+          <li>
+            <a href="#hotplug-stuck-inputs" class="doc-nav-link" data-keywords="stuck inputs reset_inputs set_connected neutral cero pedales trabados">
+              <span>Prevención de Stuck Inputs</span>
+              <span class="nav-tag">Seguridad</span>
+            </a>
+          </li>
+          <li>
+            <a href="#hotplug-reconnect-loop" class="doc-nav-link" data-keywords="bucle reconexion no bloqueante try_connect time.time auto reconnect">
+              <span>Bucle de Auto-Reconexión</span>
+            </a>
+          </li>
+          <li>
+            <a href="#hotplug-report-devices" class="doc-nav-link" data-keywords="report_devices dinamico lista perifericos hotplug proactivo">
+              <span>Reporte Dinámico</span>
+              <span class="nav-tag">report_devices</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Navigation Category 9 -->
       <div class="doc-nav-group">
         <div class="doc-group-title" data-i18n="doc_grp_debug">🔧 Diagnóstico</div>
         <ul class="doc-nav-list">
@@ -370,155 +461,457 @@
           <li data-i18n="sec2_step4"><strong>Bucle de Mapeo</strong>: El script muestrea el hardware y llama a <code>device.flush()</code> a alta velocidad.</li>
           <li data-i18n="sec2_step5"><strong>Cierre Seguro</strong>: Al detenerse, <code>device.is_running()</code> se vuelve <code>False</code> y el script libera recursos.</li>
         </ol>
+
+        <h3 id="autostart-plugins">2.3. Control de Inicio Automático (Activar / Desactivar Plugins al Iniciar)</h3>
+        <p>
+          En j360More puedes decidir si un plugin arranca solo cada vez que abres el emulador o si debe permanecer apagado hasta que lo inicies manualmente:
+        </p>
+
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">🔘 Configuración de Inicio desde la GUI</h4>
+          <p>
+            En la pestaña <code>🔌 Plugins</code> de la ventana de Ajustes:
+          </p>
+          <ul>
+            <li>La columna <strong>Inicio</strong> muestra <code>✔ Activado</code> o <code>✖ Desactivado</code>.</li>
+            <li>Al seleccionar un plugin y pulsar <strong><code>✔ Activar al Inicio</code></strong> o <strong><code>✖ Desactivar al Inicio</code></strong>, el estado se guarda inmediatamente en <code>config.json</code> (<code>"enabled": false</code>), persistiendo entre reinicios de la aplicación.</li>
+          </ul>
+        </div>
+
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-blue); margin-top: 0; font-size: 1.15rem;">📄 Declaración en el Manifiesto (<code>plugin.json</code>)</h4>
+          <p>
+            Puedes definir el comportamiento inicial por defecto agregando <code>"autostart": false</code> en el manifiesto:
+          </p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code>{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"mi_dispositivo"</span>,
+  <span class="tok-prop">"name"</span>: <span class="tok-str">"Mi Dispositivo"</span>,
+  <span class="tok-prop">"autostart"</span>: <span class="tok-kw">false</span>,
+  <span class="tok-prop">"entry_point"</span>: <span class="tok-str">"main.py"</span>
+}</code></pre>
+          </div>
+        </div>
       </section>
 
       <!-- ==================== Section 3 ==================== -->
       <section class="doc-section" id="interfaz-declarativa">
         <h2 data-i18n="sec3_title">3. Creación de Interfaces Declarativas Personalizadas (UI)</h2>
         <p data-i18n="sec3_p1">
-          En j360More <strong>no necesitas escribir código de interfaz gráfica</strong> (Tkinter, PyQt, etc.). Puedes construir ventanas de configuración completas y pestañas personalizadas describiéndolas en formato JSON.
+          En j360More <strong>no necesitas escribir código de interfaz gráfica</strong> (Tkinter, PyQt, etc.). Puedes construir ventanas de configuración completas y pestañas personalizadas describiéndolas en formato JSON. El motor de renderizado (<code>plugins/plugin_ui_renderer.py</code>) se encarga de crear los componentes visuales nativos y sincronizarlos bidireccionalmente con tu proceso de Python.
         </p>
 
-        <h3 id="global-ui" data-i18n="sec3_h3_1">3.1. Diálogo Global de Configuración (global_ui)</h3>
-        <p data-i18n="sec3_p2">
-          Se abre desde el botón <code>⚙ Configurar</code> en la pestaña de plugins. Admite controles como sliders, checkboxes y menús desplegables estáticos o dinámicos:
+        <h3 id="catalogo-ui">3.1. Catálogo Completo de Controles UI</h3>
+        <p>
+          A continuación se detallan todos los controles visuales soportados, sus parámetros, cómo se declaran en <code>plugin.json</code> y cómo se gestionan en Python:
         </p>
 
-        <!-- Code Block 3: global_ui schema -->
-        <div class="code-editor-card">
-          <div class="code-editor-header">
-            <div class="code-header-left">
-              <div class="code-window-dots">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
+        <!-- Control 1: Slider -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">1. Deslizador Numérico (<code>slider</code>)</h4>
+          <p>Barra deslizante analógica (<code>ttk.Scale</code>) con indicador dinámico de valor numérico entero en tiempo real.</p>
+          <ul>
+            <li><code>id</code> (string): Identificador único del campo.</li>
+            <li><code>label</code> (string o dict i18n): Texto visible en la interfaz.</li>
+            <li><code>min</code> (número, defecto 0) y <code>max</code> (número, defecto 100): Rango del deslizador.</li>
+            <li><code>default</code> (número): Valor inicial.</li>
+            <li><code>step</code> (número, opcional): Incremento por paso.</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json & Python Handler</span>
               </div>
-              <span class="code-file-title">Fragmento de plugin.json: global_ui</span>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
             </div>
-            <button class="code-copy-btn" title="Copiar código">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span class="copy-label" data-i18n="code_copy">Copiar</span>
-            </button>
+            <pre class="code-content"><code><span class="tok-com">// 1. En plugin.json:</span>
+{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"gas_deadzone"</span>,
+  <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Zona Muerta Acelerador (%)"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Gas Deadzone (%)"</span> },
+  <span class="tok-prop">"type"</span>: <span class="tok-str">"slider"</span>,
+  <span class="tok-prop">"min"</span>: <span class="tok-num">0</span>,
+  <span class="tok-prop">"max"</span>: <span class="tok-num">40</span>,
+  <span class="tok-prop">"default"</span>: <span class="tok-num">5</span>
+}
+
+<span class="tok-com"># 2. En main.py:</span>
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"gas_deadzone"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_deadzone_changed</span>(new_val, pad_id):
+    device.log(f<span class="tok-str">"Zona muerta actualizada para mando {pad_id}: {new_val}%"</span>)</code></pre>
           </div>
-          <pre class="code-content"><code><span class="tok-prop">"global_ui"</span>: {
-  <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Ajustes de Hardware"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Hardware Settings"</span> },
-  <span class="tok-prop">"fields"</span>: [
-    {
-      <span class="tok-prop">"id"</span>: <span class="tok-str">"port"</span>,
-      <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Puerto COM"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"COM Port"</span> },
-      <span class="tok-prop">"type"</span>: <span class="tok-str">"dynamic_dropdown"</span>,
-      <span class="tok-prop">"discovery_action"</span>: <span class="tok-str">"scan_ports"</span>,
-      <span class="tok-prop">"default"</span>: <span class="tok-str">"Auto"</span>
-    },
-    {
-      <span class="tok-prop">"id"</span>: <span class="tok-str">"baud"</span>,
-      <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Velocidad de Baudios"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Baud Rate"</span> },
-      <span class="tok-prop">"type"</span>: <span class="tok-str">"dropdown"</span>,
-      <span class="tok-prop">"options"</span>: [<span class="tok-str">"9600"</span>, <span class="tok-str">"57600"</span>, <span class="tok-str">"115200"</span>],
-      <span class="tok-prop">"default"</span>: <span class="tok-str">"115200"</span>
-    },
-    {
-      <span class="tok-prop">"id"</span>: <span class="tok-str">"invert"</span>,
-      <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Invertir Ejes"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Invert Axes"</span> },
-      <span class="tok-prop">"type"</span>: <span class="tok-str">"checkbox"</span>,
-      <span class="tok-prop">"default"</span>: <span class="tok-kw">false</span>
-    }
-  ]
-}</code></pre>
         </div>
 
-        <h3 id="pad-ui" data-i18n="sec3_h3_2">3.2. Pestañas Personalizadas por Mando (pad_ui_customization)</h3>
-        <p data-i18n="sec3_p3">
-          Permite insertar pestañas en el mando virtual seleccionado y desactivar pestañas estándar innecesarias (por ejemplo, ocultar <code>"sticks"</code> si tu plugin es una pedalera de carreras):
-        </p>
+        <!-- Control 2: Checkbox -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">2. Interruptor Booleano (<code>checkbox</code>)</h4>
+          <p>Casilla de verificación estándar (<code>ttk.Checkbutton</code>) para habilitar o deshabilitar opciones booleanas.</p>
+          <ul>
+            <li><code>id</code> (string): Identificador único.</li>
+            <li><code>label</code> (string o dict i18n): Texto explicativo.</li>
+            <li><code>default</code> (boolean): Estado inicial (<code>true</code> o <code>false</code>).</li>
+          </ul>
 
-        <!-- Code Block 4: pad_ui_customization schema -->
-        <div class="code-editor-card">
-          <div class="code-editor-header">
-            <div class="code-header-left">
-              <div class="code-window-dots">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json & Python Handler</span>
               </div>
-              <span class="code-file-title">Fragmento: pad_ui_customization</span>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
             </div>
-            <button class="code-copy-btn" title="Copiar código">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span class="copy-label" data-i18n="code_copy">Copiar</span>
-            </button>
+            <pre class="code-content"><code><span class="tok-com">// En plugin.json:</span>
+{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"invert_brake"</span>,
+  <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Invertir Polaridad Freno"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Invert Brake Polarity"</span> },
+  <span class="tok-prop">"type"</span>: <span class="tok-str">"checkbox"</span>,
+  <span class="tok-prop">"default"</span>: <span class="tok-kw">false</span>
+}
+
+<span class="tok-com"># En main.py:</span>
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"invert_brake"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_invert_brake</span>(is_inverted: <span class="tok-type">bool</span>, pad_id: <span class="tok-type">int</span>):
+    device.log(f<span class="tok-str">"Inversión de freno: {is_inverted}"</span>)</code></pre>
           </div>
-          <pre class="code-content"><code><span class="tok-prop">"pad_ui_customization"</span>: {
-  <span class="tok-prop">"disable_default_tabs"</span>: [<span class="tok-str">"sticks"</span>],
-  <span class="tok-prop">"custom_tabs"</span>: [
-    {
-      <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals_tab"</span>,
-      <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"🏎️ Pedales"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"🏎️ Pedals"</span> },
-      <span class="tok-prop">"sections"</span>: [
-        {
-          <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Calibración"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Calibration"</span> },
-          <span class="tok-prop">"fields"</span>: [
-            {
-              <span class="tok-prop">"id"</span>: <span class="tok-str">"deadzone"</span>,
-              <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Zona Muerta (%)"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Deadzone (%)"</span> },
-              <span class="tok-prop">"type"</span>: <span class="tok-str">"slider"</span>,
-              <span class="tok-prop">"min"</span>: <span class="tok-num">0</span>,
-              <span class="tok-prop">"max"</span>: <span class="tok-num">30</span>,
-              <span class="tok-prop">"default"</span>: <span class="tok-num">5</span>
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}</code></pre>
         </div>
 
-        <h3 id="telemetria-ui" data-i18n="sec3_h3_3">3.3. Monitores de Telemetría Dinámicos (progress_bar_multi)</h3>
-        <p data-i18n="sec3_p4">
-          Para animar barras dinámicas en la GUI, define un control <code>progress_bar_multi</code> con las etiquetas que desees:
-        </p>
-        <ul>
-          <li data-i18n="sec3_tb1"><code>center_zero: false</code>: La barra se llena de 0% a 100% (ideal para pedales y gatillos).</li>
-          <li data-i18n="sec3_tb2"><code>center_zero: true</code>: El punto de reposo está centrado al 50% y la barra se expande a la izquierda o derecha (ideal para palancas de stick y ruedas de pitch bend).</li>
-        </ul>
-        <p data-i18n="sec3_p5">
-          En Python, envía eventos de telemetría regulando la tasa a aproximadamente <strong>33 FPS</strong> (~30 ms):
-        </p>
+        <!-- Control 3: Dropdown -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">3. Menú Desplegable Estático (<code>dropdown</code>)</h4>
+          <p>Selector de opciones de solo lectura (<code>ttk.Combobox</code>) con lista estática de opciones.</p>
+          <ul>
+            <li><code>id</code> (string): Identificador único.</li>
+            <li><code>label</code> (string o dict i18n): Título del selector.</li>
+            <li><code>options</code> (lista de strings): Opciones disponibles.</li>
+            <li><code>default</code> (string): Valor por defecto.</li>
+          </ul>
 
-        <!-- Code Block 5: Python send_telemetry -->
-        <div class="code-editor-card">
-          <div class="code-editor-header">
-            <div class="code-header-left">
-              <div class="code-window-dots">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json & Python Handler</span>
               </div>
-              <span class="code-file-title">main.py (Telemetría a ~33 FPS)</span>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
             </div>
-            <button class="code-copy-btn" title="Copiar código">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span class="copy-label" data-i18n="code_copy">Copiar</span>
-            </button>
+            <pre class="code-content"><code><span class="tok-com">// En plugin.json:</span>
+{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"baud_rate"</span>,
+  <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Velocidad Serial"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Serial Baud Rate"</span> },
+  <span class="tok-prop">"type"</span>: <span class="tok-str">"dropdown"</span>,
+  <span class="tok-prop">"options"</span>: [<span class="tok-str">"9600"</span>, <span class="tok-str">"57600"</span>, <span class="tok-str">"115200"</span>],
+  <span class="tok-prop">"default"</span>: <span class="tok-str">"115200"</span>
+}
+
+<span class="tok-com"># En main.py:</span>
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"baud_rate"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_baud_change</span>(new_baud_str, pad_id):
+    active_baud = <span class="tok-type">int</span>(new_baud_str)</code></pre>
           </div>
-          <pre class="code-content"><code><span class="tok-kw">import</span> time
+        </div>
+
+        <!-- Control 4: Dynamic Dropdown -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">4. Menú Desplegable Dinámico con Escaneo en Vivo (<code>dynamic_dropdown</code>)</h4>
+          <p>Desplegable interactivo acompañado de un botón <code>🔄</code> que consulta a tu plugin en caliente para descubrir puertos físicos conectados (COM o MIDI) y actualiza el menú en tiempo real sin reiniciar la aplicación.</p>
+          <ul>
+            <li><code>discovery_action</code> (string): Nombre de la acción registrada en Python que se ejecuta al pulsar <code>🔄</code>.</li>
+            <li><code>device.update_field_options(field_id, options)</code>: Método del SDK para refrescar las opciones en pantalla.</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json & Python Handler</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com">// En plugin.json:</span>
+{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"midi_port"</span>,
+  <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Puerto MIDI Físico"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Physical MIDI Port"</span> },
+  <span class="tok-prop">"type"</span>: <span class="tok-str">"dynamic_dropdown"</span>,
+  <span class="tok-prop">"discovery_action"</span>: <span class="tok-str">"scan_midi_ports"</span>,
+  <span class="tok-prop">"options"</span>: [<span class="tok-str">"AUTO"</span>],
+  <span class="tok-prop">"default"</span>: <span class="tok-str">"AUTO"</span>
+}
+
+<span class="tok-com"># En main.py:</span>
+<span class="tok-fn">@device.on_action</span>(<span class="tok-str">"scan_midi_ports"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">handle_scan</span>(pad_id: <span class="tok-type">int</span>):
+    <span class="tok-kw">import</span> pygame.midi
+    found = [<span class="tok-str">"AUTO"</span>]
+    <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(pygame.midi.get_count()):
+        info = pygame.midi.get_device_info(i)
+        <span class="tok-kw">if</span> info <span class="tok-kw">and</span> info[<span class="tok-num">2</span>] == <span class="tok-num">1</span>:  <span class="tok-com"># Solo puertos de entrada física</span>
+            found.append(f<span class="tok-str">"{i}: {info[1].decode('utf-8')}"</span>)
+    device.update_field_options(<span class="tok-str">"midi_port"</span>, found)</code></pre>
+          </div>
+        </div>
+
+        <!-- Control 5: Button -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">5. Botón de Acción (<code>button</code>)</h4>
+          <p>Botón de comando (<code>ttk.Button</code>) para invocar rutinas específicas como auto-calibración en cero o reinicio de hardware.</p>
+          <ul>
+            <li><code>id</code> (string): Identificador único.</li>
+            <li><code>label</code> (string o dict i18n): Texto del botón.</li>
+            <li><code>action</code> (string, opcional): Nombre de la acción a disparar (por defecto coincide con <code>id</code>).</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json & Python Handler</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com">// En plugin.json:</span>
+{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"btn_zero_cal"</span>,
+  <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Calibrar Centro en Cero"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Calibrate Center Zero"</span> },
+  <span class="tok-prop">"type"</span>: <span class="tok-str">"button"</span>,
+  <span class="tok-prop">"action"</span>: <span class="tok-str">"zero_calibrate"</span>
+}
+
+<span class="tok-com"># En main.py:</span>
+<span class="tok-fn">@device.on_action</span>(<span class="tok-str">"zero_calibrate"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_zero_calibrate</span>(pad_id: <span class="tok-type">int</span>):
+    device.log(f<span class="tok-str">"Centro calibrado correctamente para mando {pad_id}"</span>)</code></pre>
+          </div>
+        </div>
+
+        <!-- Control 6: Telemetry Monitor -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h4 id="telemetria-ui" style="color: var(--color-green); margin-top: 0; font-size: 1.15rem;">6. Monitores de Telemetría Dinámicos (<code>progress_bar_multi</code> y <code>progress_bar_pair</code>)</h4>
+          <p>Monitor interactivo dibujado sobre un lienzo <code>tk.Canvas</code> oscuro. Incluye barras individuales con código de colores, texto dinámico de porcentaje (0% a 100%) y nombres de canal personalizados.</p>
+          <ul>
+            <li><code>bars</code> (entero): Número de barras paralelas (ej. 2 o 3).</li>
+            <li><code>labels</code> (array de strings): Nombres de cada barra (ej. <code>["GAS", "FRENO", "CLUTCH"]</code>).</li>
+            <li><code>center_zero: false</code>: La barra se llena de 0% a 100% (ideal para pedales y gatillos).</li>
+            <li><code>center_zero: true</code>: Reposo en el 50% y expansión bidireccional izquierda/derecha (ideal para joysticks y pitch bend).</li>
+            <li><strong>Frecuencia recomendada</strong>: Enviar telemetría a aproximadamente <strong>33 FPS</strong> (~30 ms) para mantener la GUI completamente fluida.</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json & Python Streaming</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com">// En plugin.json:</span>
+{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals_monitor"</span>,
+  <span class="tok-prop">"type"</span>: <span class="tok-str">"progress_bar_multi"</span>,
+  <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Recorrido Físico de Pedales"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Pedals Physical Travel"</span> },
+  <span class="tok-prop">"bars"</span>: <span class="tok-num">3</span>,
+  <span class="tok-prop">"labels"</span>: [<span class="tok-str">"GAS"</span>, <span class="tok-str">"FRENO"</span>, <span class="tok-str">"CLUTCH"</span>],
+  <span class="tok-prop">"center_zero"</span>: <span class="tok-kw">false</span>
+}
+
+<span class="tok-com"># En main.py:</span>
+<span class="tok-kw">import</span> time
 
 now = time.perf_counter()
 <span class="tok-kw">if</span> now - last_telemetry >= <span class="tok-num">0.03</span>:  <span class="tok-com"># ~33 FPS</span>
     device.send_telemetry({
         <span class="tok-str">"pedals_monitor"</span>: [gas_norm, brake_norm, clutch_norm]
-    }, pad_id=<span class="tok-num">0</span>)
+    }, pad_id=<span class="tok-num">1</span>)
     last_telemetry = now</code></pre>
+          </div>
+        </div>
+
+        <h3 id="global-ui" data-i18n="sec3_h3_1">3.2. Contenedores de Diseño: global_ui vs pad_ui_customization</h3>
+        <p>El sistema provee dos ubicaciones estratégicas para renderizar tu interfaz:</p>
+        
+        <h4>A. Diálogo de Configuración Global (<code>global_ui</code>)</h4>
+        <p>Se declara en la raíz de <code>plugin.json</code> y se abre mediante el botón <strong><code>⚙ Configurar</code></strong> de la lista de plugins. Es ideal para parámetros del puerto COM, baudios o selección de periféricos físicos que afectan al plugin en general.</p>
+
+        <h4 id="pad-ui">B. Pestañas Personalizadas por Mando (<code>pad_ui_customization</code>)</h4>
+        <p>Inserta pestañas personalizadas dentro del panel de cada mando virtual (Mando 1, Mando 2, etc.):</p>
+        <ul>
+          <li>
+            <strong><code>disable_default_tabs</code></strong>: Array de strings con los identificadores exactos de las sub-pestañas nativas que deseas ocultar porque no aplican a tu periférico físico.
+            <div style="margin-top: 0.75rem; overflow-x: auto;">
+              <table class="doc-table">
+                <thead>
+                  <tr>
+                    <th>Identificador String</th>
+                    <th>Sub-pestaña Nativa Ocultada</th>
+                    <th>Cuándo utilizarlo / Casos de uso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>"sticks"</code></td>
+                    <td><strong>Sticks / Palancas Analógicas</strong> (Calibración de sticks izquierdo LX/LY y derecho RX/RY, zonas muertas y curvas)</td>
+                    <td>Dispositivos sin palancas analógicas como <strong>pedaleras de carreras</strong>, volantes puros, guitarras o botoneras arcade.</td>
+                  </tr>
+                  <tr>
+                    <td><code>"triggers"</code></td>
+                    <td><strong>Gatillos / Triggers</strong> (Calibración analógica de recorrido, umbrales y zonas muertas de gatillos traseros LT y RT)</td>
+                    <td>Controles sin gatillos analógicos, como joysticks de aviación clásicos, palancas de lucha retro o teclados simples.</td>
+                  </tr>
+                  <tr>
+                    <td><code>"rumble"</code></td>
+                    <td><strong>Vibración / Force Feedback</strong> (Ajuste de intensidad y prueba de motores hápticos de alta y baja frecuencia)</td>
+                    <td>Periféricos que no disponen de motores físicos de vibración excéntrica o actuadores hápticos.</td>
+                  </tr>
+                  <tr>
+                    <td><code>"general"</code></td>
+                    <td><strong>General / Mapeo de Botones</strong> (Asignación de botones A, B, X, Y, LB, RB, D-Pad, Start, Back, Guide)</td>
+                    <td>Periféricos dedicados que reemplazan todo el mapeo estándar por su propia interfaz de calibración personalizada.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+              <strong>Ejemplos típicos:</strong> Para pedaleras: <code>["sticks", "rumble"]</code>. Para arcade fight sticks digitales: <code>["triggers", "sticks"]</code>. Para teclados MIDI: <code>["sticks", "rumble"]</code>.
+            </p>
+          </li>
+          <li><code>custom_tabs</code>: Array de pestañas que contienen <code>sections</code> (agrupaciones visuales <code>ttk.LabelFrame</code>) con sus respectivos <code>fields</code>.</li>
+        </ul>
+
+        <h3 id="esquema-completo-ui">3.3. Ejemplo Completo Verificado de plugin.json con Todos los Controles</h3>
+        <p>A continuación se muestra un manifiesto exhaustivo y verificado que integra todos los controles y contenedores simultáneamente:</p>
+
+        <!-- Complete plugin.json card -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+              <span class="code-file-title">plugins/pedales_pro/plugin.json</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code>{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"pedales_pro"</span>,
+  <span class="tok-prop">"name"</span>: <span class="tok-str">"Pedales de Carreras Pro USB"</span>,
+  <span class="tok-prop">"version"</span>: <span class="tok-str">"1.0.0"</span>,
+  <span class="tok-prop">"author"</span>: <span class="tok-str">"Tu Nombre"</span>,
+  <span class="tok-prop">"entry_point"</span>: <span class="tok-str">"main.py"</span>,
+  <span class="tok-prop">"devices"</span>: [
+    {
+      <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals"</span>,
+      <span class="tok-prop">"name"</span>: <span class="tok-str">"Pedalera Analógica"</span>,
+      <span class="tok-prop">"type"</span>: <span class="tok-str">"gamepad"</span>,
+      <span class="tok-prop">"num_buttons"</span>: <span class="tok-num">4</span>,
+      <span class="tok-prop">"num_axes"</span>: <span class="tok-num">3</span>
+    }
+  ],
+  <span class="tok-prop">"global_ui"</span>: {
+    <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Ajustes de Conexión Serial"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Serial Connection Settings"</span> },
+    <span class="tok-prop">"fields"</span>: [
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"port"</span>,
+        <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Puerto COM Arduino"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Arduino COM Port"</span> },
+        <span class="tok-prop">"type"</span>: <span class="tok-str">"dynamic_dropdown"</span>,
+        <span class="tok-prop">"discovery_action"</span>: <span class="tok-str">"scan_ports"</span>,
+        <span class="tok-prop">"options"</span>: [<span class="tok-str">"AUTO"</span>],
+        <span class="tok-prop">"default"</span>: <span class="tok-str">"AUTO"</span>
+      },
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"baud"</span>,
+        <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Velocidad de Baudios"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Baud Rate"</span> },
+        <span class="tok-prop">"type"</span>: <span class="tok-str">"dropdown"</span>,
+        <span class="tok-prop">"options"</span>: [<span class="tok-str">"9600"</span>, <span class="tok-str">"57600"</span>, <span class="tok-str">"115200"</span>],
+        <span class="tok-prop">"default"</span>: <span class="tok-str">"115200"</span>
+      },
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"simulate"</span>,
+        <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Modo Simulación (Sin Hardware)"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Simulation Mode (No Hardware)"</span> },
+        <span class="tok-prop">"type"</span>: <span class="tok-str">"checkbox"</span>,
+        <span class="tok-prop">"default"</span>: <span class="tok-kw">false</span>
+      }
+    ]
+  },
+  <span class="tok-prop">"pad_ui_customization"</span>: {
+    <span class="tok-prop">"disable_default_tabs"</span>: [<span class="tok-str">"sticks"</span>],
+    <span class="tok-prop">"custom_tabs"</span>: [
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals_cal"</span>,
+        <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"🏎️ Pedales"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"🏎️ Pedals"</span> },
+        <span class="tok-prop">"sections"</span>: [
+          {
+            <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Ajuste de Recorrido"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Travel Calibration"</span> },
+            <span class="tok-prop">"fields"</span>: [
+              {
+                <span class="tok-prop">"id"</span>: <span class="tok-str">"deadzone_gas"</span>,
+                <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Zona Muerta Gas (%)"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Gas Deadzone (%)"</span> },
+                <span class="tok-prop">"type"</span>: <span class="tok-str">"slider"</span>,
+                <span class="tok-prop">"min"</span>: <span class="tok-num">0</span>,
+                <span class="tok-prop">"max"</span>: <span class="tok-num">30</span>,
+                <span class="tok-prop">"default"</span>: <span class="tok-num">3</span>
+              },
+              {
+                <span class="tok-prop">"id"</span>: <span class="tok-str">"invert_pedals"</span>,
+                <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Invertir Dirección de Ejes"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Invert Axis Direction"</span> },
+                <span class="tok-prop">"type"</span>: <span class="tok-str">"checkbox"</span>,
+                <span class="tok-prop">"default"</span>: <span class="tok-kw">false</span>
+              },
+              {
+                <span class="tok-prop">"id"</span>: <span class="tok-str">"btn_reset_cal"</span>,
+                <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Restablecer a Fábrica"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Reset to Defaults"</span> },
+                <span class="tok-prop">"type"</span>: <span class="tok-str">"button"</span>,
+                <span class="tok-prop">"action"</span>: <span class="tok-str">"reset_calibration"</span>
+              }
+            ]
+          },
+          {
+            <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Monitor en Vivo"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Live Monitor"</span> },
+            <span class="tok-prop">"fields"</span>: [
+              {
+                <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals_telemetry"</span>,
+                <span class="tok-prop">"type"</span>: <span class="tok-str">"progress_bar_multi"</span>,
+                <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Presión Física de Pedales"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Pedals Physical Pressure"</span> },
+                <span class="tok-prop">"bars"</span>: <span class="tok-num">3</span>,
+                <span class="tok-prop">"labels"</span>: [<span class="tok-str">"GAS"</span>, <span class="tok-str">"FRENO"</span>, <span class="tok-str">"EMBRAGUE"</span>],
+                <span class="tok-prop">"center_zero"</span>: <span class="tok-kw">false</span>
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
         </div>
       </section>
 
@@ -526,8 +919,319 @@ now = time.perf_counter()
       <section class="doc-section" id="i18n-plugins">
         <h2 data-i18n="sec4_title">4. Soporte Multi-Idioma (i18n)</h2>
         <p data-i18n="sec4_p1">
-          j360More soporta 7 idiomas oficiales (Español, Inglés, Francés, Portugués, Alemán, Italiano, Ruso). Puedes traducir tus plugins mediante diccionarios inline en <code>plugin.json</code> o carpetas <code>locales/</code> modulares con archivos <code>es.json</code> y <code>en.json</code>.
+          El sistema de plugins cuenta con un motor de internacionalización nativo (<code>plugins/plugin_i18n.py</code>) integrado con el selector de idioma global de j360More. Permite que tus diálogos de configuración, nombres de dispositivos, pestañas personalizadas, opciones de menús y monitores de telemetría se adapten al idioma del usuario sin requerir código complejo ni reiniciar el emulador.
         </p>
+
+        <!-- 4.1. Arquitectura y Códigos -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">4.1. Arquitectura y Códigos de Idioma Admitidos</h3>
+          <p>El motor de traducción normaliza y soporta oficialmente los siguientes códigos de idioma:</p>
+          
+          <div style="overflow-x: auto;">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Idioma</th>
+                  <th>Nota de Normalización</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>"es"</code></td>
+                  <td><strong>Español</strong></td>
+                  <td>Idioma predeterminado del emulador. Utilizado como base principal de respaldo (fallback).</td>
+                </tr>
+                <tr>
+                  <td><code>"en"</code></td>
+                  <td><strong>English</strong></td>
+                  <td>Idioma internacional secundario de fallback.</td>
+                </tr>
+                <tr>
+                  <td><code>"fr"</code></td>
+                  <td><strong>Français</strong></td>
+                  <td>Francés estándar.</td>
+                </tr>
+                <tr>
+                  <td><code>"pt_BR"</code></td>
+                  <td><strong>Português (Brasil)</strong></td>
+                  <td>Se normaliza automáticamente si se especifica como <code>"pt"</code>, <code>"pt-br"</code>, <code>"pt_br"</code> o <code>"pt-BR"</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>"de"</code></td>
+                  <td><strong>Deutsch</strong></td>
+                  <td>Alemán estándar.</td>
+                </tr>
+                <tr>
+                  <td><code>"it"</code></td>
+                  <td><strong>Italiano</strong></td>
+                  <td>Italiano estándar.</td>
+                </tr>
+                <tr>
+                  <td><code>"ru"</code></td>
+                  <td><strong>Русский</strong></td>
+                  <td>Ruso (soporte completo de caracteres cirílicos UTF-8 sin restricciones).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 style="margin-top: 1rem; color: var(--color-blue); font-size: 1rem;">Cascada de Respaldo Inteligente (Fallback)</h4>
+          <p>
+            Si el usuario ejecuta j360More en un idioma no traducido en tu plugin (por ejemplo, Alemán <code>de</code>), el sistema busca en <code>de</code> &rarr; si falta, busca en <code>es</code> &rarr; si falta, busca en <code>en</code> &rarr; si ninguna coincide, muestra la primera disponible. <strong>La interfaz nunca falla ni lanza excepciones</strong> por falta de una traducción.
+          </p>
+        </div>
+
+        <!-- 4.2. Método 1: Inline -->
+        <div id="i18n-inline" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">4.2. Método 1: Enfoque Inline (Dentro de plugin.json)</h3>
+          <p>
+            <strong>¿Cuándo usarlo?</strong> Ideal para plugins sencillos o prototipos donde prefieres mantener todas las declaraciones concentradas en un único archivo <code>plugin.json</code>.
+          </p>
+          <p>Cualquier campo de texto visible puede definirse directamente como un diccionario con pares <code>"código": "texto"</code>:</p>
+          <ul>
+            <li><code>"name"</code> y <code>"description"</code> del plugin y de <code>devices[]</code>.</li>
+            <li><code>"global_ui.title"</code> y <code>"fields[].label"</code>.</li>
+            <li><code>"labels"</code> en <code>progress_bar_multi</code> (diccionario de listas de nombres de barra).</li>
+            <li><code>"options"</code> en desplegables (como objetos con <code>"value"</code> técnico y <code>"label"</code> traducible).</li>
+            <li><code>"custom_tabs[].title"</code> y <code>"sections[].name"</code>.</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">plugin.json (Ejemplo Inline Completo)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code>{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"pedales_usb"</span>,
+  <span class="tok-prop">"name"</span>: {
+    <span class="tok-prop">"es"</span>: <span class="tok-str">"Pedales de Carreras USB"</span>,
+    <span class="tok-prop">"en"</span>: <span class="tok-str">"USB Racing Pedals"</span>,
+    <span class="tok-prop">"fr"</span>: <span class="tok-str">"Pédales de Course USB"</span>
+  },
+  <span class="tok-prop">"global_ui"</span>: {
+    <span class="tok-prop">"title"</span>: {
+      <span class="tok-prop">"es"</span>: <span class="tok-str">"Ajustes de Conexión Serial"</span>,
+      <span class="tok-prop">"en"</span>: <span class="tok-str">"Serial Connection Settings"</span>
+    },
+    <span class="tok-prop">"fields"</span>: [
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"mode"</span>,
+        <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Modo de Operación"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Operating Mode"</span> },
+        <span class="tok-prop">"type"</span>: <span class="tok-str">"dropdown"</span>,
+        <span class="tok-prop">"options"</span>: [
+          { <span class="tok-prop">"value"</span>: <span class="tok-str">"linear"</span>, <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Lineal Estándar"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Standard Linear"</span> } },
+          { <span class="tok-prop">"value"</span>: <span class="tok-str">"sport"</span>, <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Deportivo Agresivo"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Aggressive Sport"</span> } }
+        ],
+        <span class="tok-prop">"default"</span>: <span class="tok-str">"linear"</span>
+      }
+    ]
+  },
+  <span class="tok-prop">"pad_ui_customization"</span>: {
+    <span class="tok-prop">"disable_default_tabs"</span>: [<span class="tok-str">"sticks"</span>, <span class="tok-str">"rumble"</span>],
+    <span class="tok-prop">"custom_tabs"</span>: [
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"cal_tab"</span>,
+        <span class="tok-prop">"title"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"🏎️ Calibración"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"🏎️ Calibration"</span> },
+        <span class="tok-prop">"sections"</span>: [
+          {
+            <span class="tok-prop">"name"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Ajuste Físico"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Physical Adjustment"</span> },
+            <span class="tok-prop">"fields"</span>: [
+              {
+                <span class="tok-prop">"id"</span>: <span class="tok-str">"deadzone"</span>,
+                <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Zona Muerta (%)"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Deadzone (%)"</span> },
+                <span class="tok-prop">"type"</span>: <span class="tok-str">"slider"</span>,
+                <span class="tok-prop">"min"</span>: <span class="tok-num">0</span>,
+                <span class="tok-prop">"max"</span>: <span class="tok-num">30</span>,
+                <span class="tok-prop">"default"</span>: <span class="tok-num">5</span>
+              }
+            ]
+          },
+          {
+            <span class="tok-prop">"name"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Telemetría en Vivo"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Live Telemetry"</span> },
+            <span class="tok-prop">"fields"</span>: [
+              {
+                <span class="tok-prop">"id"</span>: <span class="tok-str">"pedals_monitor"</span>,
+                <span class="tok-prop">"type"</span>: <span class="tok-str">"progress_bar_multi"</span>,
+                <span class="tok-prop">"label"</span>: { <span class="tok-prop">"es"</span>: <span class="tok-str">"Presión de Pedales"</span>, <span class="tok-prop">"en"</span>: <span class="tok-str">"Pedal Pressure"</span> },
+                <span class="tok-prop">"bars"</span>: <span class="tok-num">2</span>,
+                <span class="tok-prop">"labels"</span>: {
+                  <span class="tok-prop">"es"</span>: [<span class="tok-str">"ACELERADOR"</span>, <span class="tok-str">"FRENO"</span>],
+                  <span class="tok-prop">"en"</span>: [<span class="tok-str">"THROTTLE"</span>, <span class="tok-str">"BRAKE"</span>]
+                },
+                <span class="tok-prop">"center_zero"</span>: <span class="tok-kw">false</span>
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- 4.3. Método 2: Modular locales/ -->
+        <div id="i18n-locales" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">4.3. Método 2: Enfoque Modular con Archivos en locales/</h3>
+          <p>
+            <strong>¿Cuándo usarlo?</strong> Recomendado para plugins de gran escala, proyectos abiertos o cuando traductores externos trabajan en los textos sin riesgo de romper el formato JSON del manifiesto técnico.
+          </p>
+
+          <p>Estructura de directorios requerida:</p>
+          <pre class="code-content" style="border-radius: 8px; margin-bottom: 1rem;"><code>plugins/mi_dispositivo/
+├── plugin.json
+├── main.py
+└── locales/
+    ├── es.json      <span class="tok-com"># Español (Base)</span>
+    ├── en.json      <span class="tok-com"># English</span>
+    ├── fr.json      <span class="tok-com"># Français</span>
+    ├── pt_BR.json   <span class="tok-com"># Português</span>
+    └── de.json      <span class="tok-com"># Deutsch</span></code></pre>
+
+          <p>Cada archivo en <code>locales/</code> es un mapa plano de pares <code>"clave": "texto traducido"</code>:</p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">locales/es.json & locales/en.json</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com">// locales/es.json</span>
+{
+  <span class="tok-prop">"plugin_name"</span>: <span class="tok-str">"Volante Pro FFB"</span>,
+  <span class="tok-prop">"cfg_title"</span>: <span class="tok-str">"Ajustes de Conexión Serial"</span>,
+  <span class="tok-prop">"lbl_port"</span>: <span class="tok-str">"Puerto COM del Volante"</span>,
+  <span class="tok-prop">"tab_title"</span>: <span class="tok-str">"🏎️ Calibración"</span>,
+  <span class="tok-prop">"sec_angles"</span>: <span class="tok-str">"Ángulo de Giro y Zona Muerta"</span>,
+  <span class="tok-prop">"lbl_max_angle"</span>: <span class="tok-str">"Ángulo Máximo (Grados)"</span>,
+  <span class="tok-prop">"lbl_deadzone"</span>: <span class="tok-str">"Zona Muerta (%)"</span>,
+  <span class="tok-prop">"btn_zero"</span>: <span class="tok-str">"Calibrar Centro en Cero"</span>,
+  <span class="tok-prop">"sec_telemetry"</span>: <span class="tok-str">"Monitor en Vivo"</span>,
+  <span class="tok-prop">"bar_wheel"</span>: <span class="tok-str">"VOLANTE"</span>,
+  <span class="tok-prop">"bar_gas"</span>: <span class="tok-str">"GAS"</span>,
+  <span class="tok-prop">"bar_brake"</span>: <span class="tok-str">"FRENO"</span>
+}
+
+<span class="tok-com">// locales/en.json</span>
+{
+  <span class="tok-prop">"plugin_name"</span>: <span class="tok-str">"Pro FFB Wheel"</span>,
+  <span class="tok-prop">"cfg_title"</span>: <span class="tok-str">"Serial Connection Settings"</span>,
+  <span class="tok-prop">"lbl_port"</span>: <span class="tok-str">"Wheel COM Port"</span>,
+  <span class="tok-prop">"tab_title"</span>: <span class="tok-str">"🏎️ Calibration"</span>,
+  <span class="tok-prop">"sec_angles"</span>: <span class="tok-str">"Steering Angle & Deadzone"</span>,
+  <span class="tok-prop">"lbl_max_angle"</span>: <span class="tok-str">"Max Rotation Angle (Degrees)"</span>,
+  <span class="tok-prop">"lbl_deadzone"</span>: <span class="tok-str">"Deadzone (%)"</span>,
+  <span class="tok-prop">"btn_zero"</span>: <span class="tok-str">"Calibrate Center Zero"</span>,
+  <span class="tok-prop">"sec_telemetry"</span>: <span class="tok-str">"Live Monitor"</span>,
+  <span class="tok-prop">"bar_wheel"</span>: <span class="tok-str">"STEERING"</span>,
+  <span class="tok-prop">"bar_gas"</span>: <span class="tok-str">"THROTTLE"</span>,
+  <span class="tok-prop">"bar_brake"</span>: <span class="tok-str">"BRAKE"</span>
+}</code></pre>
+          </div>
+
+          <p style="margin-top: 1rem;">
+            En <code>plugin.json</code> simplemente referencias la clave deseada (puedes anteponer opcionalmente el prefijo <code>@</code> o <code>$</code>):
+          </p>
+
+          <pre class="code-content" style="border-radius: 8px;"><code>{
+  <span class="tok-prop">"id"</span>: <span class="tok-str">"volante_pro"</span>,
+  <span class="tok-prop">"name"</span>: <span class="tok-str">"@plugin_name"</span>,
+  <span class="tok-prop">"global_ui"</span>: {
+    <span class="tok-prop">"title"</span>: <span class="tok-str">"@cfg_title"</span>,
+    <span class="tok-prop">"fields"</span>: [
+      { <span class="tok-prop">"id"</span>: <span class="tok-str">"port"</span>, <span class="tok-prop">"label"</span>: <span class="tok-str">"@lbl_port"</span>, <span class="tok-prop">"type"</span>: <span class="tok-str">"dynamic_dropdown"</span>, <span class="tok-prop">"discovery_action"</span>: <span class="tok-str">"scan_ports"</span> }
+    ]
+  },
+  <span class="tok-prop">"pad_ui_customization"</span>: {
+    <span class="tok-prop">"disable_default_tabs"</span>: [<span class="tok-str">"sticks"</span>],
+    <span class="tok-prop">"custom_tabs"</span>: [
+      {
+        <span class="tok-prop">"id"</span>: <span class="tok-str">"cal"</span>,
+        <span class="tok-prop">"title"</span>: <span class="tok-str">"@tab_title"</span>,
+        <span class="tok-prop">"sections"</span>: [
+          {
+            <span class="tok-prop">"name"</span>: <span class="tok-str">"@sec_angles"</span>,
+            <span class="tok-prop">"fields"</span>: [
+              { <span class="tok-prop">"id"</span>: <span class="tok-str">"deadzone"</span>, <span class="tok-prop">"label"</span>: <span class="tok-str">"@lbl_deadzone"</span>, <span class="tok-prop">"type"</span>: <span class="tok-str">"slider"</span>, <span class="tok-prop">"min"</span>: <span class="tok-num">0</span>, <span class="tok-prop">"max"</span>: <span class="tok-num">20</span>, <span class="tok-prop">"default"</span>: <span class="tok-num">2</span> },
+              { <span class="tok-prop">"id"</span>: <span class="tok-str">"btn_zero"</span>, <span class="tok-prop">"label"</span>: <span class="tok-str">"@btn_zero"</span>, <span class="tok-prop">"type"</span>: <span class="tok-str">"button"</span>, <span class="tok-prop">"action"</span>: <span class="tok-str">"zero_cal"</span> }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- 4.4. Integración Python -->
+        <div id="i18n-python" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">4.4. Cómo se Utiliza e Interactúa con el Código Python (main.py)</h3>
+          
+          <h4 style="color: var(--color-blue); margin-top: 0.5rem;">Aislamiento Técnico del Idioma</h4>
+          <p>
+            Tus funciones y callbacks en Python están completamente desacoplados del idioma visible del usuario:
+          </p>
+          <ul>
+            <li>
+              <strong>Identificadores Neutros en Callbacks</strong>: <code>@device.on_field_change("deadzone")</code> siempre recibe el <code>id</code> técnico (<code>"deadzone"</code>), sin importar si la interfaz muestra <em>"Zona Muerta (%)"</em>, <em>"Deadzone (%)"</em> o <em>"Totzone (%)"</em>.
+            </li>
+            <li>
+              <strong>Valores Técnicos en Desplegables</strong>: Si una opción tiene <code>{ "value": "AUTO", "label": { "es": "Automático", "en": "Automatic" } }</code>, tu función en Python recibirá siempre <code>"AUTO"</code>.
+            </li>
+            <li>
+              <strong>Logs en Consola</strong>: Utiliza <code>device.log("Mensaje", "INFO")</code> para emitir información diagnóstica visible en la consola integrada de j360More.
+            </li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">main.py (Callbacks con IDs Neutros)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com"># Python escucha siempre el id técnico "deadzone"</span>
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"deadzone"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_deadzone</span>(new_val, pad_id):
+    active_deadzone = <span class="tok-type">float</span>(new_val) / <span class="tok-num">100.0</span>
+    device.log(f<span class="tok-str">"Zona muerta aplicada al mando {pad_id}: {new_val}%"</span>)
+
+<span class="tok-com"># La acción escucha "zero_cal" independientemente del texto del botón</span>
+<span class="tok-fn">@device.on_action</span>(<span class="tok-str">"zero_cal"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_zero_calibrate</span>(pad_id):
+    device.log(f<span class="tok-str">"Calibración de cero ejecutada para mando {pad_id}"</span>)</code></pre>
+          </div>
+        </div>
+
+        <!-- 4.5. Conmutación en Caliente -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">4.5. Prueba y Conmutación en Caliente en j360More</h3>
+          <p>
+            Puedes verificar inmediatamente el funcionamiento multi-idioma de tu plugin:
+          </p>
+          <ol>
+            <li>Abre <strong>j360More</strong> con tu plugin activado.</li>
+            <li>En la barra superior de navegación, pulsa el botón <strong><code>EN</code></strong> o <strong><code>ES</code></strong> (o cambia el idioma en la pestaña <em>Configuración</em>).</li>
+            <li>Abre el diálogo <strong><code>⚙ Configurar</code></strong> o selecciona la pestaña del mando virtual asignado a tu plugin.</li>
+            <li><strong>Resultado instantáneo</strong>: El motor invoca <code>localize_ui_definition()</code> y re-renderiza todos los textos en el idioma elegido en tiempo real, <strong>sin interrumpir la emulación ni reiniciar tu proceso de Python</strong>.</li>
+          </ol>
+        </div>
       </section>
 
       <!-- ==================== Section 5 ==================== -->
@@ -875,6 +1579,198 @@ input_devices = []
     <span class="tok-kw">elif</span> data1 == <span class="tok-num">62</span>:  <span class="tok-com"># Re (D4) -&gt; Botón B</span>
         device.set_button(<span class="tok-str">"B"</span>, is_pressed)
     device.flush()</code></pre>
+        <h3 id="midi-script">6.3. Script Completo y Ejecutable del Plugin MIDI (main.py)</h3>
+        <p>
+          A continuación se presenta el código fuente completo, probado y listo para producción del plugin MIDI (<code>plugins/midi_controller/main.py</code>), con decodificación de eventos, soporte de reconexión, escaneo dinámico y telemetría en tiempo real:
+        </p>
+
+        <!-- Code Block 10: Complete MIDI main.py -->
+        <div class="code-editor-card">
+          <div class="code-editor-header">
+            <div class="code-header-left">
+              <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+              <span class="code-file-title">plugins/midi_controller/main.py</span>
+            </div>
+            <button class="code-copy-btn" title="Copiar código">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span class="copy-label" data-i18n="code_copy">Copiar</span>
+            </button>
+          </div>
+          <pre class="code-content"><code><span class="tok-str">"""
+plugins/midi_controller/main.py
+Controlador de Teclado y Pads MIDI Físicos para j360More.
+"""</span>
+
+<span class="tok-kw">import</span> sys
+<span class="tok-kw">import</span> os
+<span class="tok-kw">import</span> time
+
+sys.path.insert(<span class="tok-num">0</span>, os.path.abspath(os.path.join(os.path.dirname(__file__), <span class="tok-str">"../.."</span>)))
+<span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+<span class="tok-com"># 1. Instanciación del dispositivo con 8 botones semánticos y 4 ejes</span>
+device = <span class="tok-type">PluginDevice</span>(
+    id=<span class="tok-str">"midi_controller"</span>,
+    name=<span class="tok-str">"Controlador MIDI USB"</span>,
+    num_buttons=<span class="tok-num">8</span>,
+    num_axes=<span class="tok-num">4</span>
+)
+
+<span class="tok-com"># Mapeo de notas MIDI estándar a botones de Xbox 360</span>
+NOTE_MAP = {
+    <span class="tok-num">60</span>: <span class="tok-str">"A"</span>,       <span class="tok-com"># C4 (Do central)</span>
+    <span class="tok-num">62</span>: <span class="tok-str">"B"</span>,       <span class="tok-com"># D4 (Re)</span>
+    <span class="tok-num">64</span>: <span class="tok-str">"X"</span>,       <span class="tok-com"># E4 (Mi)</span>
+    <span class="tok-num">65</span>: <span class="tok-str">"Y"</span>,       <span class="tok-com"># F4 (Fa)</span>
+    <span class="tok-num">67</span>: <span class="tok-str">"LB"</span>,      <span class="tok-com"># G4 (Sol)</span>
+    <span class="tok-num">69</span>: <span class="tok-str">"RB"</span>,      <span class="tok-com"># A4 (La)</span>
+    <span class="tok-num">71</span>: <span class="tok-str">"START"</span>,   <span class="tok-com"># B4 (Si)</span>
+    <span class="tok-num">72</span>: <span class="tok-str">"GUIDE"</span>,   <span class="tok-com"># C5 (Do agudo)</span>
+}
+
+active_midi_port = <span class="tok-str">"AUTO"</span>
+velocity_threshold = <span class="tok-num">15</span>
+
+<span class="tok-com"># -------------------------------------------------------------</span>
+<span class="tok-com"># Callbacks de Interfaz UI</span>
+<span class="tok-com"># -------------------------------------------------------------</span>
+
+<span class="tok-fn">@device.on_action</span>(<span class="tok-str">"scan_midi_ports"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">handle_scan_midi_ports</span>(pad_id: <span class="tok-type">int</span>):
+    <span class="tok-str">"""Escanea puertos de entrada física y actualiza el combobox."""</span>
+    found = [<span class="tok-str">"AUTO"</span>]
+    <span class="tok-kw">try</span>:
+        <span class="tok-kw">import</span> pygame.midi
+        <span class="tok-kw">if</span> <span class="tok-kw">not</span> pygame.midi.get_init():
+            pygame.midi.init()
+        <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(pygame.midi.get_count()):
+            info = pygame.midi.get_device_info(i)
+            <span class="tok-kw">if</span> info <span class="tok-kw">and</span> info[<span class="tok-num">2</span>] == <span class="tok-num">1</span>:  <span class="tok-com"># Filtrar estrictamente solo puertos de entrada</span>
+                dev_name = info[<span class="tok-num">1</span>].decode(<span class="tok-str">"utf-8"</span>, errors=<span class="tok-str">"ignore"</span>)
+                found.append(f<span class="tok-str">"{i}: {dev_name}"</span>)
+    <span class="tok-kw">except</span> Exception <span class="tok-kw">as</span> e:
+        device.log(f<span class="tok-str">"Error escaneando MIDI: {e}"</span>, <span class="tok-str">"ERROR"</span>)
+
+    device.update_field_options(<span class="tok-str">"midi_port"</span>, found)
+    device.log(f<span class="tok-str">"Puertos MIDI detectados: {found}"</span>)
+
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"midi_port"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">handle_port_change</span>(new_port, pad_id):
+    <span class="tok-kw">global</span> active_midi_port
+    active_midi_port = str(new_port)
+    device.log(f<span class="tok-str">"Puerto MIDI seleccionado: {active_midi_port}"</span>)
+
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"velocity_threshold"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">handle_velocity_change</span>(new_val, pad_id):
+    <span class="tok-kw">global</span> velocity_threshold
+    velocity_threshold = <span class="tok-type">int</span>(new_val)
+    device.log(f<span class="tok-str">"Umbral de velocidad: {velocity_threshold}"</span>)
+
+<span class="tok-com"># -------------------------------------------------------------</span>
+<span class="tok-com"># Bucle de Control y Lectura a 120 Hz</span>
+<span class="tok-com"># -------------------------------------------------------------</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">run_loop</span>():
+    <span class="tok-kw">import</span> pygame.midi
+    <span class="tok-kw">if</span> <span class="tok-kw">not</span> pygame.midi.get_init():
+        pygame.midi.init()
+
+    pg_midi_in = <span class="tok-kw">None</span>
+    target_id = <span class="tok-kw">None</span>
+
+    <span class="tok-kw">if</span> active_midi_port != <span class="tok-str">"AUTO"</span> <span class="tok-kw">and</span> <span class="tok-str">":"</span> <span class="tok-kw">in</span> active_midi_port:
+        <span class="tok-kw">try</span>:
+            target_id = <span class="tok-type">int</span>(active_midi_port.split(<span class="tok-str">":"</span>)[<span class="tok-num">0</span>])
+        <span class="tok-kw">except</span> ValueError:
+            target_id = <span class="tok-kw">None</span>
+
+    <span class="tok-kw">if</span> target_id <span class="tok-kw">is</span> <span class="tok-kw">None</span>:
+        <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(pygame.midi.get_count()):
+            info = pygame.midi.get_device_info(i)
+            <span class="tok-kw">if</span> info <span class="tok-kw">and</span> info[<span class="tok-num">2</span>] == <span class="tok-num">1</span>:
+                target_id = i
+                <span class="tok-kw">break</span>
+
+    <span class="tok-kw">if</span> target_id <span class="tok-kw">is</span> <span class="tok-kw">not</span> <span class="tok-kw">None</span>:
+        <span class="tok-kw">try</span>:
+            pg_midi_in = pygame.midi.Input(target_id)
+            device.log(f<span class="tok-str">"Conectado a dispositivo MIDI #{target_id}"</span>)
+        <span class="tok-kw">except</span> Exception <span class="tok-kw">as</span> e:
+            device.log(f<span class="tok-str">"No se pudo abrir MIDI #{target_id}: {e}"</span>, <span class="tok-str">"ERROR"</span>)
+    <span class="tok-kw">else</span>:
+        device.log(<span class="tok-str">"Esperando conexión de teclado MIDI..."</span>, <span class="tok-str">"WARN"</span>)
+
+    last_velocity_norm = <span class="tok-num">0.0</span>
+    last_pitch_norm = <span class="tok-num">0.5</span>  <span class="tok-com"># Centro neutro (50%)</span>
+    last_mod_norm = <span class="tok-num">0.0</span>
+    last_telemetry_time = <span class="tok-num">0.0</span>
+
+    <span class="tok-kw">try</span>:
+        <span class="tok-kw">while</span> device.is_running():
+            t0 = time.perf_counter()
+
+            <span class="tok-kw">if</span> pg_midi_in <span class="tok-kw">and</span> pg_midi_in.poll():
+                midi_packets = pg_midi_in.read(<span class="tok-num">16</span>)
+                <span class="tok-kw">for</span> packet <span class="tok-kw">in</span> midi_packets:
+                    data, timestamp = packet
+                    status, d1, d2, _ = data
+                    cmd = status &amp; <span class="tok-num">0xF0</span>
+
+                    <span class="tok-com"># 1. Note On / Note Off</span>
+                    <span class="tok-kw">if</span> cmd == <span class="tok-num">0x90</span> <span class="tok-kw">and</span> d2 &gt; <span class="tok-num">0</span>:
+                        <span class="tok-kw">if</span> d2 &gt;= velocity_threshold:
+                            btn = NOTE_MAP.get(d1)
+                            <span class="tok-kw">if</span> btn:
+                                device.set_button(btn, <span class="tok-kw">True</span>)
+                            device.set_button_index(d1 % <span class="tok-num">8</span>, <span class="tok-kw">True</span>)
+                            last_velocity_norm = d2 / <span class="tok-num">127.0</span>
+                    <span class="tok-kw">elif</span> cmd == <span class="tok-num">0x80</span> <span class="tok-kw">or</span> (cmd == <span class="tok-num">0x90</span> <span class="tok-kw">and</span> d2 == <span class="tok-num">0</span>):
+                        btn = NOTE_MAP.get(d1)
+                        <span class="tok-kw">if</span> btn:
+                            device.set_button(btn, <span class="tok-kw">False</span>)
+                        device.set_button_index(d1 % <span class="tok-num">8</span>, <span class="tok-kw">False</span>)
+
+                    <span class="tok-com"># 2. Pitch Bend Wheel (14 bits)</span>
+                    <span class="tok-kw">elif</span> cmd == <span class="tok-num">0xE0</span>:
+                        pitch_14bit = (d2 &lt;&lt; <span class="tok-num">7</span>) | d1
+                        norm_stick = max(-<span class="tok-num">1.0</span>, min(<span class="tok-num">1.0</span>, (pitch_14bit - <span class="tok-num">8192</span>) / <span class="tok-num">8192.0</span>))
+                        device.set_stick(<span class="tok-str">"LX"</span>, norm_stick)
+                        last_pitch_norm = (norm_stick + <span class="tok-num">1.0</span>) / <span class="tok-num">2.0</span>
+
+                    <span class="tok-com"># 3. Modulation Wheel (CC #1)</span>
+                    <span class="tok-kw">elif</span> cmd == <span class="tok-num">0xB0</span> <span class="tok-kw">and</span> d1 == <span class="tok-num">1</span>:
+                        norm_trigger = max(<span class="tok-num">0.0</span>, min(<span class="tok-num">1.0</span>, d2 / <span class="tok-num">127.0</span>))
+                        device.set_trigger(<span class="tok-str">"RT"</span>, norm_trigger)
+                        last_mod_norm = norm_trigger
+
+                device.flush()
+
+            <span class="tok-kw">if</span> last_velocity_norm &gt; <span class="tok-num">0</span>:
+                last_velocity_norm = max(<span class="tok-num">0.0</span>, last_velocity_norm - <span class="tok-num">0.04</span>)
+
+            now = time.perf_counter()
+            <span class="tok-kw">if</span> now - last_telemetry_time &gt;= <span class="tok-num">0.03</span>:
+                last_telemetry_time = now
+                device.send_telemetry({
+                    <span class="tok-str">"midi_telemetry"</span>: [last_velocity_norm, last_pitch_norm, last_mod_norm]
+                }, pad_id=<span class="tok-num">0</span>)
+
+            elapsed = time.perf_counter() - t0
+            sleep_time = <span class="tok-num">0.0083</span> - elapsed
+            <span class="tok-kw">if</span> sleep_time &gt; <span class="tok-num">0</span>:
+                time.sleep(sleep_time)
+
+    <span class="tok-kw">finally</span>:
+        <span class="tok-kw">if</span> pg_midi_in:
+            <span class="tok-kw">try</span>:
+                pg_midi_in.close()
+            <span class="tok-kw">except</span> Exception:
+                <span class="tok-kw">pass</span>
+        pygame.midi.quit()
+        device.log(<span class="tok-str">"Dispositivo MIDI cerrado limpiamente."</span>)
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    device.start(run_loop)</code></pre>
         </div>
       </section>
 
@@ -882,21 +1778,489 @@ input_devices = []
       <section class="doc-section" id="sdk-python">
         <h2 data-i18n="sec7_title">7. Referencia Completa del SDK de Python (PluginDevice)</h2>
         <p data-i18n="sec7_p1">
-          La clase <code>PluginDevice</code> provista en <code>plugins.plugin_sdk</code> abstrae toda la comunicación TCP:
+          La clase <code>PluginDevice</code> (ubicada en <code>plugins/plugin_sdk.py</code>) encapsula todo el protocolo IPC de bajo nivel, la gestión de memoria protegida por hilos (<code>threading.Lock</code>) y la comunicación por sockets TCP JSON locales con el motor de j360More.
         </p>
-        <ul>
-          <li><code>device.set_button(name: str, pressed: bool)</code>: Asigna botones semánticos (<code>"A"</code>, <code>"B"</code>, <code>"X"</code>, <code>"Y"</code>, <code>"LB"</code>, <code>"RB"</code>, etc.).</li>
-          <li><code>device.set_trigger(name: str, value: float)</code>: Gatillos <code>"LT"</code> y <code>"RT"</code> (rango 0.0 a 1.0).</li>
-          <li><code>device.set_stick(name: str, value: float)</code>: Palancas <code>"LX"</code>, <code>"LY"</code>, <code>"RX"</code>, <code>"RY"</code> (rango -1.0 a 1.0).</li>
-          <li><code>device.flush()</code>: Envía el paquete atómico TCP al emulador. Debe llamarse al final de cada ciclo.</li>
-          <li><code>device.on_rumble(callback)</code>: Recibe la vibración háptica del juego <code>(small_motor, large_motor)</code> para transmitir a motores de vibración físicos en Arduino.</li>
-          <li><code>device.send_telemetry(payload, pad_id=0)</code>: Envía lecturas en tiempo real a los monitores Canvas.</li>
-        </ul>
+
+        <!-- 7.1. Inicialización y Ciclo de Vida -->
+        <div class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">7.1. Inicialización y Ciclo de Vida</h3>
+          
+          <p><strong><code>__init__(id: str, name: str, num_buttons: int = 16, num_axes: int = 6)</code></strong><br>
+          Constructor principal. Inicializa los búferes internos de botones semánticos, ejes y disparadores.</p>
+          <ul>
+            <li><code>id</code> (str): Identificador único (debe coincidir con <code>devices[].id</code> en <code>plugin.json</code>).</li>
+            <li><code>name</code> (str): Nombre descriptivo visible para el usuario en la GUI.</li>
+            <li><code>num_buttons</code> (int): Cantidad de botones físicos indexados (<code>0..N-1</code>).</li>
+            <li><code>num_axes</code> (int): Cantidad de ejes analógicos indexados (<code>0..N-1</code>).</li>
+          </ul>
+
+          <p><strong><code>is_running() -> bool</code></strong><br>
+          Indica si el proceso de emulación y el socket IPC permanecen activos. Debe ser la condición principal del bucle <code>while</code>.</p>
+
+          <p><strong><code>set_connected(is_connected: bool, device_id: Optional[str] = None)</code></strong><br>
+          Notifica explícitamente a j360More sobre la conexión o desconexión del cable físico. Si se pasa <code>False</code>, invoca <code>reset_inputs()</code> automáticamente para evitar entradas pegadas y marca el dispositivo como <code>[Offline]</code> en la GUI.</p>
+
+          <p><strong><code>is_device_connected() -> bool</code></strong><br>
+          Devuelve <code>True</code> si el dispositivo físico está marcado como conectado y operativo.</p>
+
+          <p><strong><code>reset_inputs(flush: bool = False)</code></strong><br>
+          Restablece de inmediato todos los botones a <code>False</code>, gatillos a <code>0.0</code> y palancas a <code>0.0</code> en memoria.</p>
+
+          <p><strong><code>report_devices(devices: List[Dict[str, Any]])</code></strong><br>
+          Registra o actualiza dinámicamente ante j360More una lista de periféricos conectados en caliente sin esperar a que el emulador pregunte.</p>
+
+          <p><strong><code>start(loop_fn: Optional[Callable[[], None]] = None)</code></strong><br>
+          Punto de entrada de ejecución del plugin. Parsea argumentos CLI (<code>--ipc-port</code>, <code>--ipc-host</code>, <code>--simulate</code>), realiza el handshake e inicia el bucle en el hilo principal.</p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">Ejemplo de Inicialización</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+device = <span class="tok-type">PluginDevice</span>(id=<span class="tok-str">"mi_volante"</span>, name=<span class="tok-str">"Volante FFB"</span>, num_buttons=<span class="tok-num">12</span>, num_axes=<span class="tok-num">4</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">run_loop</span>():
+    <span class="tok-kw">while</span> device.is_running():
+        <span class="tok-com"># lectura de sensores</span>
+        device.flush()
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    device.start(run_loop)</code></pre>
+          </div>
+        </div>
+
+        <!-- 7.2. Controles Semánticos de Xbox -->
+        <div id="sdk-semanticos" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">7.2. Controles Semánticos de Xbox (Recomendado)</h3>
+
+          <p><strong><code>set_button(name: str, is_pressed: bool)</code></strong><br>
+          Asigna el estado de un botón oficial de Xbox 360 por su nombre semántico exacto:<br>
+          <code>"A"</code>, <code>"B"</code>, <code>"X"</code>, <code>"Y"</code>, <code>"LB"</code>, <code>"RB"</code>, <code>"BACK"</code>, <code>"START"</code>, <code>"GUIDE"</code>, <code>"L3"</code>, <code>"R3"</code>, <code>"DPAD_UP"</code>, <code>"DPAD_DOWN"</code>, <code>"DPAD_LEFT"</code>, <code>"DPAD_RIGHT"</code>.</p>
+
+          <p><strong><code>press_button(name: str)</code> y <code>release_button(name: str)</code></strong><br>
+          Métodos abreviados para presionar o liberar botones semánticos.</p>
+
+          <p><strong><code>set_trigger(name: str, value: float)</code></strong><br>
+          Asigna el valor de los gatillos traseros <code>"LT"</code> o <code>"RT"</code> (normalizado de <code>0.0</code> a <code>1.0</code> con clamp automático).</p>
+
+          <p><strong><code>set_stick(*args, **kwargs)</code></strong><br>
+          Asigna coordenadas bidimensionales de las palancas analógicas (rango <code>-1.0</code> a <code>+1.0</code>). Soporta firmas ultra-flexibles:</p>
+          <ul>
+            <li>Por nombre de eje individual: <code>device.set_stick('LX', 0.5)</code></li>
+            <li>Por kwargs: <code>device.set_stick(LX=0.5, LY=-0.2, RX=0.0, RY=0.0)</code></li>
+            <li>Por pares posicionales: <code>device.set_stick('left', x_val, y_val)</code></li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">Ejemplo de Mapeo Semántico</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code>device.set_button(<span class="tok-str">"A"</span>, <span class="tok-kw">True</span>)
+device.set_trigger(<span class="tok-str">"RT"</span>, <span class="tok-num">0.90</span>)          <span class="tok-com"># Acelerador al 90%</span>
+device.set_stick(LX=<span class="tok-num">0.75</span>, LY=<span class="tok-num">0.50</span>)      <span class="tok-com"># Stick izquierdo diagonal</span>
+device.flush()</code></pre>
+          </div>
+        </div>
+
+        <!-- 7.3. Controles Físicos Indexados -->
+        <div id="sdk-indexados" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">7.3. Controles Físicos Indexados</h3>
+          <p>
+            Ideales para periféricos con disposición libre (palancas de vuelo HOTAS con 32 botones, volantes DIY con botoneras personalizadas o placas arcade USB), donde el usuario mapea libremente cada botón o eje en la interfaz de configuración del emulador sin nombres fijos predefinidos:
+          </p>
+          <ul>
+            <li><code>device.set_axis(axis_index: int, value: float)</code>: Asigna el eje analógico numerado <code>0..num_axes-1</code> (-1.0 a +1.0).</li>
+            <li><code>device.set_button_index(button_index: int, is_pressed: bool)</code>: Asigna el botón físico numerado <code>0..num_buttons-1</code> (True o False).</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">main.py (HOTAS Flight Stick: 12 Botones y 4 Ejes a 120 Hz)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-kw">import</span> time
+<span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+<span class="tok-com"># Declarar dispositivo con 12 botones físicos y 4 ejes analógicos</span>
+device = <span class="tok-type">PluginDevice</span>(id=<span class="tok-str">"flight_stick"</span>, name=<span class="tok-str">"Flight Stick HOTAS"</span>, num_buttons=<span class="tok-num">12</span>, num_axes=<span class="tok-num">4</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">run_loop</span>():
+    device.log(<span class="tok-str">"Iniciando lectura de joystick indexado a 120 Hz."</span>, <span class="tok-str">"INFO"</span>)
+    <span class="tok-kw">while</span> device.is_running():
+        <span class="tok-com"># 1. Normalizar los 4 canales analógicos crudos al rango [-1.0, 1.0]</span>
+        device.set_axis(<span class="tok-num">0</span>, <span class="tok-num">0.0</span>)    <span class="tok-com"># Eje 0: Alerones (centro)</span>
+        device.set_axis(<span class="tok-num">1</span>, <span class="tok-num">0.5</span>)    <span class="tok-com"># Eje 1: Elevador (+50%)</span>
+        device.set_axis(<span class="tok-num">2</span>, <span class="tok-num">0.0</span>)    <span class="tok-com"># Eje 2: Timón de cola (centro)</span>
+        device.set_axis(<span class="tok-num">3</span>, -<span class="tok-num">0.8</span>)   <span class="tok-com"># Eje 3: Acelerador (-80%)</span>
+
+        <span class="tok-com"># 2. Leer estado de los 12 pulsadores físicos</span>
+        <span class="tok-kw">for</span> btn_idx <span class="tok-kw">in</span> range(<span class="tok-num">12</span>):
+            device.set_button_index(btn_idx, btn_idx <span class="tok-kw">in</span> (<span class="tok-num">0</span>, <span class="tok-num">3</span>))
+
+        <span class="tok-com"># 3. Transmisión atómica de todos los índices al emulador</span>
+        device.flush()
+        time.sleep(<span class="tok-num">0.0083</span>) <span class="tok-com"># ~120 Hz</span>
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    device.start(run_loop)</code></pre>
+          </div>
+        </div>
+
+        <!-- 7.4. Sincronización y Telemetría -->
+        <div id="sdk-telemetria" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">7.4. Sincronización y Transmisión de Estados</h3>
+
+          <p><strong><code>flush()</code></strong><br>
+          Empaqueta de forma atómica y segura (<code>threading.Lock</code>) todos los cambios acumulados de botones, gatillos y palancas y los envía al emulador por TCP. <strong>Debe llamarse al final de cada iteración de lectura</strong>.</p>
+
+          <p><strong><code>send_telemetry(data: Dict[str, Any], pad_id: int = 1)</code></strong><br>
+          Transmite datos numéricos en vivo a los monitores Canvas (<code>progress_bar_multi</code>) de la GUI. Se recomienda regular su envío a ~33 FPS (cada 30-33 ms) para evitar saturar el hilo de interfaz.</p>
+
+          <p><strong><code>update_field_options(field_id: str, options: List[Any])</code></strong><br>
+          Actualiza dinámicamente las opciones de un combobox (<code>dropdown</code> o <code>dynamic_dropdown</code>) en la GUI sin recargar.</p>
+
+          <p><strong><code>set_field_value(field_id: str, value: Any, pad_id: int = 1)</code></strong><br>
+          Fuerza un nuevo valor visual en un widget de la GUI (útil tras rutinas automáticas de centrado).</p>
+
+          <p><strong><code>log(message: str, level: str = "INFO")</code></strong><br>
+          Imprime un mensaje en stdout y lo retransmite simultáneamente a la <strong>Consola de Depuración de Plugins</strong> integrada en j360More. Niveles válidos: <code>"INFO"</code>, <code>"WARN"</code>, <code>"ERROR"</code>, <code>"DEBUG"</code>.</p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">main.py (Bucle a 120 Hz + Telemetría Regulada a 33 FPS)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-kw">import</span> time
+<span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+device = <span class="tok-type">PluginDevice</span>(id=<span class="tok-str">"pedales_pro"</span>, name=<span class="tok-str">"Pedales de Competición"</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">run_loop</span>():
+    last_telemetry = <span class="tok-num">0.0</span>
+    telemetry_interval = <span class="tok-num">0.033</span>  <span class="tok-com"># ~33 FPS para no saturar la GUI</span>
+
+    device.log(<span class="tok-str">"Driver iniciado a 120 Hz con telemetría regulada."</span>, <span class="tok-str">"INFO"</span>)
+
+    <span class="tok-kw">while</span> device.is_running():
+        t_start = time.perf_counter()
+
+        gas_norm, brake_norm = <span class="tok-num">0.85</span>, <span class="tok-num">0.10</span>
+
+        <span class="tok-com"># 1. Enviar entradas de control al emulador a 120 Hz</span>
+        device.set_trigger(<span class="tok-str">"RT"</span>, gas_norm)
+        device.set_trigger(<span class="tok-str">"LT"</span>, brake_norm)
+        device.flush()  <span class="tok-com"># Envío atómico inmediato por socket TCP</span>
+
+        <span class="tok-com"># 2. Enviar telemetría visual regulada para monitores de la GUI</span>
+        now = time.perf_counter()
+        <span class="tok-kw">if</span> now - last_telemetry &gt;= telemetry_interval:
+            last_telemetry = now
+            device.send_telemetry({<span class="tok-str">"monitor_barras"</span>: [gas_norm, brake_norm, <span class="tok-num">0.0</span>]}, pad_id=<span class="tok-num">1</span>)
+
+        <span class="tok-com"># 3. Mantener cadencia de 120 Hz (8.33 ms)</span>
+        elapsed = time.perf_counter() - t_start
+        sleep_rem = <span class="tok-num">0.00833</span> - elapsed
+        <span class="tok-kw">if</span> sleep_rem &gt; <span class="tok-num">0</span>:
+            time.sleep(sleep_rem)
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    device.start(run_loop)</code></pre>
+          </div>
+        </div>
+
+        <!-- 7.5. Decoradores de Eventos Bidireccionales -->
+        <div id="sdk-decoradores" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">7.5. Decoradores de Eventos Bidireccionales</h3>
+
+          <p><strong><code>@device.on_rumble</code></strong><br>
+          Firma: <code>callback(small_motor: float, large_motor: float)</code><br>
+          Se ejecuta cada vez que el juego envía vibración háptica XInput hacia el mando emulado (0.0 a 1.0) para transmitirla a motores físicos en Arduino o volantes con force feedback.</p>
+
+          <p><strong><code>@device.on_field_change(field_id: str)</code></strong><br>
+          Firma: <code>callback(new_value: Any, pad_id: int)</code><br>
+          Se dispara inmediatamente cuando el usuario mueve un slider, alterna un checkbox o selecciona una opción del combobox en la interfaz.</p>
+
+          <p><strong><code>@device.on_action(action_name: str)</code></strong><br>
+          Firma: <code>callback(pad_id: int)</code><br>
+          Se ejecuta cuando el usuario presiona un botón (<code>button</code>) o el botón de refresco <code>🔄</code> de un menú desplegable dinámico (<code>discovery_action</code>).</p>
+
+          <p><strong><code>@device.on_discover_devices</code></strong><br>
+          Firma: <code>callback() -> List[Dict[str, Any]]</code><br>
+          Permite registrar dispositivos adicionales provistos dinámicamente ante el gestor de plugins.</p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">main.py (Integración de los 4 Decoradores)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+device = <span class="tok-type">PluginDevice</span>(id=<span class="tok-str">"volante_ffb"</span>, name=<span class="tok-str">"Volante Force Feedback"</span>)
+
+<span class="tok-com"># 1. Rumble / FFB desde el juego</span>
+<span class="tok-fn">@device.on_rumble</span>
+<span class="tok-kw">def</span> <span class="tok-fn">handle_rumble</span>(small_motor: <span class="tok-type">float</span>, large_motor: <span class="tok-type">float</span>):
+    device.log(f<span class="tok-str">"FFB -> Pesado: {int(large_motor*255)}, Ligero: {int(small_motor*255)}"</span>, <span class="tok-str">"DEBUG"</span>)
+
+<span class="tok-com"># 2. Cambios en Widgets de la GUI</span>
+<span class="tok-fn">@device.on_field_change</span>(<span class="tok-str">"sensibilidad"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_sens_change</span>(new_val, pad_id: <span class="tok-type">int</span>):
+    device.log(f<span class="tok-str">"Sensibilidad ajustada a {new_val}% en Mando {pad_id}"</span>)
+
+<span class="tok-com"># 3. Acciones de Botón en la GUI</span>
+<span class="tok-fn">@device.on_action</span>(<span class="tok-str">"calibrar_centro"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">on_calibrar</span>(pad_id: <span class="tok-type">int</span>):
+    device.set_field_value(<span class="tok-str">"offset_centro"</span>, <span class="tok-num">0</span>, pad_id=pad_id)
+    device.log(f<span class="tok-str">"Centro calibrado a cero para Mando {pad_id}."</span>)
+
+<span class="tok-com"># 4. Descubrimiento Dinámico de Periféricos</span>
+<span class="tok-fn">@device.on_discover_devices</span>
+<span class="tok-kw">def</span> <span class="tok-fn">on_discover</span>():
+    <span class="tok-kw">return</span> [{<span class="tok-str">"id"</span>: <span class="tok-str">"volante"</span>, <span class="tok-str">"name"</span>: <span class="tok-str">"Volante FFB"</span>, <span class="tok-str">"num_buttons"</span>: <span class="tok-num">12</span>, <span class="tok-str">"num_axes"</span>: <span class="tok-num">4</span>}]
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    device.start()</code></pre>
+          </div>
+        </div>
       </section>
 
-      <!-- ==================== Section 8 ==================== -->
+      <!-- ==================== Section 8: Conexión & Hot-Plug ==================== -->
+      <section class="doc-section" id="hotplug-conexion">
+        <h2>8. Gestión de Conexión, Desconexión y Reconexión en Caliente (Hot-Plug)</h2>
+        <p>
+          En periféricos de juego y simuladores físicos (pedales, volantes, cajas de cambio o teclados MIDI), un tirón accidental del cable USB o una micro-desconexión no debe congelar el emulador ni dejar entradas trabadas (*stuck inputs*) acelerando indefinidamente.
+        </p>
+
+        <!-- 8.1. Dos Niveles de Enlace -->
+        <div id="hotplug-arquitectura" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-blue); margin-top: 0; font-size: 1.2rem;">8.1. Los Dos Niveles de Enlace: IPC vs Hardware Físico</h3>
+          <p>
+            El sistema de j360More separa estrictamente la capa de comunicación de software de la capa de conexión física de hardware:
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0;">
+            <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 1rem;">
+              <h4 style="color: var(--color-blue); margin: 0 0 0.5rem 0;">🌐 Nivel 1: Enlace IPC Local</h4>
+              <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">
+                Socket TCP local entre <code>main.py</code> y j360More. Si el proceso termina o se cae, el servidor detecta el cierre, pone el plugin en <code>stopped</code> y limpia los mandos virtuales al instante.
+              </p>
+            </div>
+            <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 1rem;">
+              <h4 style="color: var(--color-green); margin: 0 0 0.5rem 0;">🔌 Nivel 2: Enlace Físico de Hardware</h4>
+              <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">
+                Cable USB/COM o MIDI entre el dispositivo físico y <code>main.py</code>. Si se desenchufa el cable, el script Python sigue vivo, por lo que debe detectar la desconexión e informar a j360More.
+              </p>
+            </div>
+          </div>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">main.py (Desacoplamiento IPC Nivel 1 vs Enlace Físico Nivel 2)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com"># Nivel 1 (IPC): El socket con j360More permanece vivo aunque se caiga el cable USB</span>
+<span class="tok-kw">while</span> device.is_running():
+    <span class="tok-kw">if</span> hardware_serial <span class="tok-kw">is not None</span>:
+        <span class="tok-kw">try</span>:
+            <span class="tok-com"># Nivel 2: Lectura física sobre el cable USB</span>
+            line = hardware_serial.readline().decode().strip()
+            device.set_trigger(<span class="tok-str">"RT"</span>, <span class="tok-type">float</span>(line) / <span class="tok-num">1023.0</span>)
+            device.flush()
+        <span class="tok-kw">except</span> <span class="tok-type">Exception</span> <span class="tok-kw">as</span> err:
+            <span class="tok-com"># Falla de cable en Nivel 2: Notificar a j360More vía Nivel 1</span>
+            device.log(f<span class="tok-str">"Pérdida de enlace físico USB: {err}"</span>, <span class="tok-str">"WARNING"</span>)
+            <span class="tok-kw">try</span>: hardware_serial.close()
+            <span class="tok-kw">except</span>: <span class="tok-kw">pass</span>
+            hardware_serial = <span class="tok-kw">None</span>
+            device.set_connected(<span class="tok-kw">False</span>)
+    <span class="tok-kw">else</span>:
+        time.sleep(<span class="tok-num">1.0</span>) <span class="tok-com"># Esperar reconexión física</span></code></pre>
+          </div>
+        </div>
+
+        <!-- 8.2. Prevención de Stuck Inputs -->
+        <div id="hotplug-stuck-inputs" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-yellow); margin-top: 0; font-size: 1.2rem;">8.2. Prevención de Entradas Pegadas (Stuck Inputs)</h3>
+          <p>
+            Si un jugador pisa el pedal a fondo (<code>RT: 1.0</code>) y el cable USB se desconecta, sin una gestión adecuada el emulador retendría ese <code>1.0</code> en memoria para siempre. Para evitarlo:
+          </p>
+          <ul>
+            <li><code>device.reset_inputs(flush=True)</code>: Restablece de forma atómica todos los botones a <code>False</code> y ejes a <code>0.0</code> en memoria.</li>
+            <li><code>device.set_connected(False)</code>: Neutraliza automáticamente las entradas, notifica al emulador el evento <code>device_status</code> y en la GUI el mando pasa a mostrar la etiqueta <code>[Offline]</code>.</li>
+          </ul>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">main.py (Prevención de Stuck Inputs: Vulnerable vs Seguro)</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-com"># ❌ INCORRECTO: VULNERABLE A ENTRADAS TRABADAS (STUCK INPUTS)</span>
+<span class="tok-kw">try</span>:
+    raw = ser.readline()
+    device.set_trigger(<span class="tok-str">"RT"</span>, <span class="tok-type">int</span>(raw) / <span class="tok-num">1023.0</span>) <span class="tok-com"># 1.0 (a fondo)</span>
+    device.flush()
+<span class="tok-kw">except</span> <span class="tok-type">Exception</span>:
+    <span class="tok-kw">pass</span>  <span class="tok-com"># ¡ERROR! Si el cable se suelta, RT queda congelado en 1.0 indefinidamente</span>
+
+
+<span class="tok-com"># ✅ CORRECTO: PROTECCIÓN TOTAL CON RESET_INPUTS Y SET_CONNECTED</span>
+<span class="tok-kw">try</span>:
+    raw = ser.readline()
+    device.set_trigger(<span class="tok-str">"RT"</span>, <span class="tok-type">int</span>(raw) / <span class="tok-num">1023.0</span>)
+    device.flush()
+<span class="tok-kw">except</span> <span class="tok-type">Exception</span> <span class="tok-kw">as</span> e:
+    device.log(f<span class="tok-str">"Cable USB desconectado: {e}"</span>, <span class="tok-str">"WARNING"</span>)
+    <span class="tok-com"># 1. Neutraliza controles a 0.0 / False en memoria</span>
+    <span class="tok-com"># 2. Envía snapshot neutro por IPC al emulador</span>
+    <span class="tok-com"># 3. Notifica a la GUI que el mando está [Offline]</span>
+    device.set_connected(<span class="tok-kw">False</span>)
+    device.reset_inputs(flush=<span class="tok-kw">True</span>)</code></pre>
+          </div>
+        </div>
+
+        <!-- 8.3. Bucle de Auto-Reconexión -->
+        <div id="hotplug-reconnect-loop" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-green); margin-top: 0; font-size: 1.2rem;">8.3. Patrón de Auto-Reconexión en Caliente No Bloqueante</h3>
+          <p>
+            Tu script nunca debe abortar ni colapsar si el puerto no está listo o si el cable se desconecta. Implementa un intento periódico no bloqueante:
+          </p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">Patrón de Reconexión USB Hot-Plug</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code><span class="tok-kw">import</span> time, serial
+<span class="tok-kw">from</span> plugins.plugin_sdk <span class="tok-kw">import</span> <span class="tok-type">PluginDevice</span>
+
+device = <span class="tok-type">PluginDevice</span>(id=<span class="tok-str">"pedales"</span>, name=<span class="tok-str">"Pedales USB"</span>)
+serial_conn = <span class="tok-kw">None</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">try_connect</span>() -> <span class="tok-type">bool</span>:
+    <span class="tok-kw">global</span> serial_conn
+    <span class="tok-kw">try</span>:
+        serial_conn = serial.Serial(<span class="tok-str">"COM3"</span>, <span class="tok-num">115200</span>, timeout=<span class="tok-num">0.01</span>)
+        device.set_connected(<span class="tok-kw">True</span>)  <span class="tok-com"># Informa a j360More: Hardware activo</span>
+        device.log(<span class="tok-str">"Hardware USB conectado en COM3."</span>, <span class="tok-str">"INFO"</span>)
+        <span class="tok-kw">return</span> <span class="tok-kw">True</span>
+    <span class="tok-kw">except</span> <span class="tok-type">Exception</span>:
+        serial_conn = <span class="tok-kw">None</span>
+        <span class="tok-kw">return</span> <span class="tok-kw">False</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">run_loop</span>():
+    <span class="tok-kw">global</span> serial_conn
+    last_reconnect = <span class="tok-num">0.0</span>
+
+    <span class="tok-kw">if</span> <span class="tok-kw">not</span> try_connect():
+        device.set_connected(<span class="tok-kw">False</span>)
+        device.log(<span class="tok-str">"Dispositivo offline. Escuchando conexión física..."</span>)
+
+    <span class="tok-kw">while</span> device.is_running():
+        <span class="tok-kw">if</span> serial_conn:
+            <span class="tok-kw">try</span>:
+                line = serial_conn.readline().decode(<span class="tok-str">"utf-8"</span>).strip()
+                <span class="tok-kw">if</span> line:
+                    procesar_trama(line)
+                    device.flush()
+            <span class="tok-kw">except</span> <span class="tok-type">Exception</span> <span class="tok-kw">as</span> e:
+                device.log(<span class="tok-str">f"Desconexión física: {e}"</span>, <span class="tok-str">"WARNING"</span>)
+                <span class="tok-kw">try</span>: serial_conn.close()
+                <span class="tok-kw">except</span>: <span class="tok-kw">pass</span>
+                serial_conn = <span class="tok-kw">None</span>
+                device.set_connected(<span class="tok-kw">False</span>)  <span class="tok-com"># ¡Neutraliza entradas de inmediato!</span>
+                last_reconnect = time.time()
+                <span class="tok-kw">continue</span>
+        <span class="tok-kw">else</span>:
+            <span class="tok-com"># Reintentar cada 1.5s sin bloquear el bucle</span>
+            now = time.time()
+            <span class="tok-kw">if</span> now - last_reconnect >= <span class="tok-num">1.5</span>:
+                last_reconnect = now
+                <span class="tok-kw">if</span> try_connect():
+                    <span class="tok-kw">continue</span>
+            time.sleep(<span class="tok-num">0.02</span>)</code></pre>
+          </div>
+        </div>
+
+        <!-- 8.4. Reporte Dinámico con report_devices -->
+        <div id="hotplug-report-devices" class="feature-card" style="margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+          <h3 style="color: var(--color-blue); margin-top: 0; font-size: 1.2rem;">8.4. Registro Proactivo con <code>report_devices()</code></h3>
+          <p>
+            Cuando tu plugin maneja múltiples dispositivos físicos que pueden conectarse o desconectarse independientemente (ej. un teclado MIDI y un pad de percusión), puedes enviar la lista actualizada en cualquier momento:
+          </p>
+
+          <div class="code-editor-card" style="margin-top: 0.75rem;">
+            <div class="code-editor-header">
+              <div class="code-header-left">
+                <div class="code-window-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span class="code-file-title">Notificación Proactiva de Periféricos</span>
+              </div>
+              <button class="code-copy-btn" title="Copiar código">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span class="copy-label" data-i18n="code_copy">Copiar</span>
+              </button>
+            </div>
+            <pre class="code-content"><code>device.report_devices([
+    {<span class="tok-str">"id"</span>: <span class="tok-str">"volante"</span>, <span class="tok-str">"name"</span>: <span class="tok-str">"Volante USB"</span>, <span class="tok-str">"num_buttons"</span>: <span class="tok-num">12</span>, <span class="tok-str">"num_axes"</span>: <span class="tok-num">4</span>},
+    {<span class="tok-str">"id"</span>: <span class="tok-str">"shifter"</span>, <span class="tok-str">"name"</span>: <span class="tok-str">"Palanca H"</span>, <span class="tok-str">"num_buttons"</span>: <span class="tok-num">8</span>, <span class="tok-str">"num_axes"</span>: <span class="tok-num">0</span>}
+])</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== Section 9: Diagnóstico ==================== -->
       <section class="doc-section" id="diagnostico">
-        <h2 data-i18n="sec8_title">8. Diagnóstico y Resolución de Problemas</h2>
+        <h2 data-i18n="sec8_title">9. Diagnóstico y Resolución de Problemas</h2>
         <p data-i18n="sec8_p1">
           j360More incluye una <strong>Consola de Depuración en Vivo</strong> dentro de la pestaña <code>🔌 Plugins</code> que captura todos los <code>print(...)</code> y tracebacks de excepciones de tus scripts.
         </p>

@@ -138,35 +138,47 @@ def set_baudrate(val, pad_id):
 
 
 # -------------------------------------------------------------
-# Hardware Reader Loop
+# Hardware Reader Loop with Hot-Plug & Auto-Reconnection
 # -------------------------------------------------------------
+
+def try_connect_serial() -> bool:
+    global serial_conn
+    try:
+        import serial
+        import serial.tools.list_ports
+        target_port = None
+        if active_com_port != "AUTO":
+            target_port = active_com_port
+        else:
+            ports = [p.device for p in serial.tools.list_ports.comports() if "arduino" in p.description.lower() or "ch340" in p.description.lower()]
+            if ports:
+                target_port = ports[0]
+
+        if target_port:
+            serial_conn = serial.Serial(target_port, active_baudrate, timeout=0.01)
+            device.log(f"Conectado a puerto físico {target_port} a {active_baudrate} baudios.")
+            device.set_connected(True)
+            return True
+    except Exception as e:
+        serial_conn = None
+    return False
+
 
 def run_loop():
     global use_simulator, serial_conn
-    # Check if forced simulation via CLI or if pyserial is absent
+    last_reconnect_attempt = 0.0
+
+    # Check if forced simulation via CLI
     if "--simulate" in sys.argv:
         use_simulator = True
+        device.set_connected(True)
         device.log("Modo de simulación de hardware activado (--simulate).")
     else:
-        try:
-            import serial
-            import serial.tools.list_ports
-            # Try connecting if real port
-            if active_com_port != "AUTO":
-                serial_conn = serial.Serial(active_com_port, active_baudrate, timeout=0.01)
-                device.log(f"Conectado a puerto físico {active_com_port} a {active_baudrate} baudios.")
-            else:
-                # AUTO: Look for an Arduino device
-                ports = [p.device for p in serial.tools.list_ports.comports() if "arduino" in p.description.lower() or "ch340" in p.description.lower()]
-                if ports:
-                    serial_conn = serial.Serial(ports[0], active_baudrate, timeout=0.01)
-                    device.log(f"Arduino auto-detectado en {ports[0]}.")
-                else:
-                    use_simulator = True
-                    device.log("No se detectó Arduino físico en puertos COM. Usando simulador de hardware.")
-        except Exception as e:
-            use_simulator = True
-            device.log(f"No se pudo abrir puerto COM ({e}). Activando simulador de hardware.")
+        connected = try_connect_serial()
+        if not connected:
+            # Check if simulation fallback or wait for hotplug
+            device.log("No se detectó Arduino en puertos COM al arrancar. Escuchando conexión física...", "INFO")
+            device.set_connected(False)
 
     device.log("Bucle de lectura de pedales iniciado a 120 Hz.")
 
@@ -187,11 +199,25 @@ def run_loop():
                 else:
                     time.sleep(0.005)
                     continue
-            except Exception:
-                time.sleep(0.005)
+            except Exception as e:
+                # Physical disconnection detected (USB unplugged)
+                device.log(f"Desconexión física de Arduino detectada ({e}). Restableciendo entradas neutras.", "WARNING")
+                try:
+                    serial_conn.close()
+                except Exception:
+                    pass
+                serial_conn = None
+                device.set_connected(False)
+                last_reconnect_attempt = time.time()
                 continue
         else:
-            time.sleep(0.01)
+            # Physical peripheral is offline: attempt reconnection every 1.5s
+            now = time.time()
+            if now - last_reconnect_attempt >= 1.5:
+                last_reconnect_attempt = now
+                if try_connect_serial():
+                    continue
+            time.sleep(0.02)
             continue
 
         pad_cal = calibration.get(1, {})

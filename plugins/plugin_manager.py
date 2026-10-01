@@ -93,6 +93,23 @@ class PluginInstance:
         res = localize_text(key, lang=lang, default_lang="es", locales=self.locales)
         return res if res else (default if default is not None else key)
 
+    def is_enabled(self) -> bool:
+        """
+        Returns True if the plugin is set to start automatically on application launch.
+        Checks user config in config.json first ('enabled'), falling back to manifest 'autostart' (default True).
+        """
+        if "enabled" in self.config_data:
+            return bool(self.config_data["enabled"])
+        return bool(self.manifest.get("autostart", True))
+
+    def set_enabled(self, enabled: bool):
+        """
+        Enables or disables automatic startup of the plugin at application launch.
+        Persists the setting into the plugin's config.json.
+        """
+        self.config_data["enabled"] = bool(enabled)
+        self.save_config()
+
     def _load_saved_config(self) -> Dict[str, Any]:
         cfg_file = os.path.join(self.plugin_dir, "config.json")
         if os.path.isfile(cfg_file):
@@ -365,13 +382,33 @@ class PluginManager:
         event = msg.get("event")
         if event == "state_update":
             dev_id = msg.get("device_id", instance.id)
+            connected = bool(msg.get("connected", True))
             instance.device_states[dev_id] = {
+                "connected": connected,
                 "buttons": {int(k): v for k, v in msg.get("buttons", {}).items()},
                 "named_buttons": msg.get("named_buttons", {}),
                 "axes": {int(k): v for k, v in msg.get("axes", {}).items()},
                 "triggers": msg.get("triggers", {}),
                 "sticks": msg.get("sticks", {}),
             }
+
+        elif event == "device_status":
+            dev_id = msg.get("device_id", instance.id)
+            connected = bool(msg.get("connected", True))
+            if dev_id not in instance.device_states:
+                instance.device_states[dev_id] = {}
+            instance.device_states[dev_id]["connected"] = connected
+            if not connected:
+                # Clear all active inputs to prevent stuck buttons or axes
+                instance.device_states[dev_id].update({
+                    "buttons": {},
+                    "named_buttons": {},
+                    "axes": {},
+                    "triggers": {},
+                    "sticks": {},
+                })
+            instance.append_log(f"[STATUS] Periférico '{dev_id}': {'Conectado' if connected else 'Desconectado'}")
+            self._notify_device_list_changed()
 
         elif event == "handshake":
             # Handshake received from plugin
@@ -445,12 +482,15 @@ class PluginManager:
                             dev_name = localize_text(dev_raw_name, lang=use_lang, default_lang="es", locales=inst.locales)
                         else:
                             dev_name = inst.get_name(use_lang)
-                        display_name = f"🔌 [Plugin] {dev_name}"
+                        is_conn = inst.device_states.get(d_id, {}).get("connected", True)
+                        conn_tag = "" if is_conn else " [Offline]"
+                        display_name = f"🔌 [Plugin] {dev_name}{conn_tag}"
                         result.append({
                             "id": full_id,
                             "name": display_name,
                             "plugin_id": p_id,
                             "device_id": d_id,
+                            "connected": is_conn,
                             "num_buttons": dev.get("num_buttons", 16),
                             "num_axes": dev.get("num_axes", 6),
                         })
@@ -478,6 +518,16 @@ class PluginManager:
         state = inst.device_states.get(device_id)
         if not state:
             return None
+
+        if not state.get("connected", True):
+            return {
+                "connected": False,
+                "buttons": {},
+                "named_buttons": {},
+                "axes": {},
+                "triggers": {},
+                "sticks": {},
+            }
 
         return state
 
@@ -567,11 +617,30 @@ class PluginManager:
         """Alias for shutdown."""
         self.shutdown()
 
+    def set_plugin_enabled(self, plugin_id: str, enabled: bool, stop_if_disabled: bool = True) -> bool:
+        """
+        Enables or disables automatic startup of a plugin at application launch.
+        If disabled and running, optionally stops the plugin immediately.
+        """
+        inst = self.plugins.get(plugin_id)
+        if not inst:
+            return False
+        inst.set_enabled(enabled)
+        if not enabled and stop_if_disabled and inst.status == "running":
+            self.stop_plugin(plugin_id)
+        return True
+
+    def is_plugin_enabled(self, plugin_id: str) -> bool:
+        """Returns True if the plugin is set to start automatically."""
+        inst = self.plugins.get(plugin_id)
+        if not inst:
+            return False
+        return inst.is_enabled()
+
     def start_all_auto(self):
-        """Starts all plugins that have autostart enabled or are active by default."""
+        """Starts all plugins that have autostart enabled by the user or manifest."""
         for p_id, inst in list(self.plugins.items()):
-            autostart = inst.manifest.get("autostart", True)
-            if autostart and inst.status != "running":
+            if inst.is_enabled() and inst.status != "running":
                 self.start_plugin(p_id)
 
     def get_plugins_info(self, lang: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -586,6 +655,7 @@ class PluginManager:
                 "author": p.author,
                 "description": p.get_description(use_lang),
                 "status": p.status,
+                "enabled": p.is_enabled(),
                 "is_simulated": p.is_simulated,
                 "requirements": p.requirements,
                 "devices_count": len(p.discovered_devices),
