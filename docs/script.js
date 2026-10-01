@@ -626,22 +626,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Documentation Scroll Spy
-  const docSections = document.querySelectorAll('.doc-section');
+  // Documentation Scroll Spy (Precise tracking for all sections & subheadings)
   const docLinks = document.querySelectorAll('.doc-nav-link');
-  if (docSections.length > 0 && docLinks.length > 0 && 'IntersectionObserver' in window) {
-    const sectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.getAttribute('id');
-          docLinks.forEach(link => {
-            const href = link.getAttribute('href');
-            link.classList.toggle('active', href === `#${id}`);
-          });
+  if (docLinks.length > 0) {
+    const targets = [];
+    docLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('#')) {
+        const targetId = href.slice(1);
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targets.push({ id: targetId, el: targetEl, link: link });
         }
-      });
-    }, { rootMargin: '-15% 0px -75% 0px' });
-    docSections.forEach(sec => sectionObserver.observe(sec));
+      }
+    });
+
+    const updateActiveScrollSpy = () => {
+      // Reading position: 130px below top of viewport (clearing sticky header)
+      const scrollPos = window.scrollY + 130;
+      let activeTarget = null;
+
+      for (let i = 0; i < targets.length; i++) {
+        const top = targets[i].el.getBoundingClientRect().top + window.scrollY;
+        if (scrollPos >= top - 25) {
+          activeTarget = targets[i];
+        } else {
+          break;
+        }
+      }
+
+      // Default to first target if near top
+      if (!activeTarget && targets.length > 0) {
+        activeTarget = targets[0];
+      }
+
+      // Force last target if scrolled to the very bottom of the document
+      if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 60)) {
+        activeTarget = targets[targets.length - 1];
+      }
+
+      // Update active states
+      if (activeTarget) {
+        docLinks.forEach(link => {
+          link.classList.toggle('active', link === activeTarget.link);
+        });
+
+        // Ensure active item stays visible if sidebar has its own scrollbar
+        const sidebar = document.getElementById('doc-sidebar');
+        if (sidebar && sidebar.scrollHeight > sidebar.clientHeight && activeTarget.link) {
+          const linkRect = activeTarget.link.getBoundingClientRect();
+          const sidebarRect = sidebar.getBoundingClientRect();
+          if (linkRect.top < sidebarRect.top + 20 || linkRect.bottom > sidebarRect.bottom - 20) {
+            activeTarget.link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', updateActiveScrollSpy, { passive: true });
+    window.addEventListener('resize', updateActiveScrollSpy, { passive: true });
+    // Initialize active item immediately
+    setTimeout(updateActiveScrollSpy, 50);
   }
 
   // Mobile Sidebar Drawer Toggle for Documentation

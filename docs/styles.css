@@ -2254,10 +2254,15 @@ html, body {
 }
 
 .doc-nav-link.active {
-  color: var(--xbox-neon);
-  background: rgba(16, 207, 101, 0.1);
-  border-left-color: var(--xbox-neon);
-  font-weight: 600;
+  color: #ffffff !important;
+  background: rgba(16, 207, 101, 0.16) !important;
+  border-left: 3px solid var(--xbox-neon) !important;
+  font-weight: 700 !important;
+}
+
+.doc-nav-link.active span:first-child {
+  color: var(--xbox-neon) !important;
+  text-shadow: 0 0 10px rgba(16, 207, 101, 0.4);
 }
 
 .doc-nav-link .nav-tag {
