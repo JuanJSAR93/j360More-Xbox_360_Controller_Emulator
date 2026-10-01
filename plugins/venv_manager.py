@@ -18,6 +18,18 @@ PYTHON_EMBED_URL_AMD64 = "https://www.python.org/ftp/python/3.11.9/python-3.11.9
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 
 
+def get_default_base_dir() -> str:
+    """
+    Returns the persistent base directory of the application:
+    - If running as a frozen PyInstaller binary, returns the directory of the executable (EXE_DIR),
+      NOT the temporary extraction directory (sys._MEIPASS).
+    - If running from source, returns the project root.
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
 class VenvManager:
     """
     Manages the isolated Python virtual environment for plugins.
@@ -26,7 +38,7 @@ class VenvManager:
 
     def __init__(self, base_dir: Optional[str] = None):
         if not base_dir:
-            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            base_dir = get_default_base_dir()
         self.base_dir = base_dir
         self.plugins_dir = os.path.join(self.base_dir, "plugins")
         self.venv_dir = os.path.join(self.plugins_dir, ".venv")

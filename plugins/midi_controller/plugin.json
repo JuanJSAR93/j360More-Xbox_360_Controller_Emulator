@@ -83,9 +83,32 @@
         },
         "type": "checkbox",
         "default": true
+      },
+      {
+        "id": "auto_map_controller",
+        "label": {
+          "es": "Auto-mapear controles al asignar a un mando",
+          "en": "Auto-map controls when assigning to a controller",
+          "fr": "Auto-mapper les contrôles lors de l'assignation",
+          "pt_BR": "Auto-mapear controles ao atribuir a um controle",
+          "de": "Steuerung automatisch zuweisen beim Belegen",
+          "it": "Auto-mappa i controlli all'assegnazione",
+          "ru": "Автоматически назначать кнопки при привязке"
+        },
+        "type": "checkbox",
+        "default": true
       }
     ]
   },
+  "default_mappings": {
+    "LEFT_STICK_X": "Axis 1",
+    "RIGHT_TRIGGER": "Axis 2",
+    "A": "Button 1",
+    "B": "Button 2",
+    "X": "Button 3",
+    "Y": "Button 4"
+  },
+  "auto_map_controller": true,
   "pad_ui_customization": {
     "disable_default_tabs": [],
     "custom_tabs": [

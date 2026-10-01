@@ -51,6 +51,12 @@ class PluginDevice:
         self._field_change_callbacks: Dict[str, List[Callable[[Any, int], None]]] = {}
         self._general_config_callbacks: List[Callable[[str, Any, int], None]] = []
         self._action_callbacks: Dict[str, List[Callable[[int], None]]] = {}
+        self._default_mappings: Dict[str, str] = {}
+
+    def set_default_mappings(self, mappings: Dict[str, str]):
+        """Sets default recommended button/axis mappings for this plugin device."""
+        with self._state_lock:
+            self._default_mappings = dict(mappings)
 
     # ---------------------------------------------------------
     # High-level Semantic Controls
@@ -415,7 +421,8 @@ class PluginDevice:
                     "name": self.name,
                     "num_buttons": self.num_buttons,
                     "num_axes": self.num_axes,
-                    "simulated": self._is_simulated
+                    "simulated": self._is_simulated,
+                    "default_mappings": self._default_mappings
                 })
             else:
                 print(f"[WARN] Plugin {self.id}: Could not connect to IPC server. Running standalone.")

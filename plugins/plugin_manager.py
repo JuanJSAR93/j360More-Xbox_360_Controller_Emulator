@@ -68,6 +68,15 @@ class PluginInstance:
 
         # Config per pad
         self.config_data: Dict[str, Any] = self._load_saved_config()
+        self.default_mappings: Dict[str, str] = dict(self.manifest.get("default_mappings", {}))
+        self.auto_map_controller: bool = bool(self.manifest.get("auto_map_controller", True))
+
+    def is_auto_map_enabled(self) -> bool:
+        """Returns True if auto_map_controller is enabled in stored config or manifest."""
+        global_cfg = self.config_data.get("global", {})
+        if "auto_map_controller" in global_cfg:
+            return bool(global_cfg["auto_map_controller"])
+        return bool(self.manifest.get("auto_map_controller", self.auto_map_controller))
 
     @property
     def name(self) -> str:
@@ -134,6 +143,18 @@ class PluginInstance:
             self.log_lines.pop(0)
 
 
+def get_default_base_dir() -> str:
+    """
+    Returns the persistent base directory of the application:
+    - If running as a frozen PyInstaller binary, returns the directory of the executable (EXE_DIR),
+      NOT the temporary extraction directory (sys._MEIPASS).
+    - If running from source, returns the project root.
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
 class PluginManager:
     """
     Central hub managing all plugins, communication with DeviceManager/EmulatorEngine,
@@ -142,7 +163,7 @@ class PluginManager:
 
     def __init__(self, base_dir: Optional[str] = None):
         if not base_dir:
-            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            base_dir = get_default_base_dir()
         self.base_dir = base_dir
         self.plugins_dir = os.path.join(self.base_dir, "plugins")
         self.venv_manager = VenvManager(base_dir=self.base_dir)
@@ -292,7 +313,12 @@ class PluginManager:
 
         # Set PYTHONPATH so plugins can import plugins.plugin_sdk easily
         env = os.environ.copy()
-        env["PYTHONPATH"] = self.base_dir + os.pathsep + env.get("PYTHONPATH", "")
+        python_paths = [self.base_dir]
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            python_paths.append(sys._MEIPASS)
+        if env.get("PYTHONPATH"):
+            python_paths.append(env["PYTHONPATH"])
+        env["PYTHONPATH"] = os.pathsep.join(python_paths)
 
         try:
             instance.process = subprocess.Popen(
@@ -413,6 +439,8 @@ class PluginManager:
         elif event == "handshake":
             # Handshake received from plugin
             instance.append_log(f"[IPC] Conectado exitosamente: {msg.get('name')}")
+            if "default_mappings" in msg and isinstance(msg["default_mappings"], dict):
+                instance.default_mappings.update(msg["default_mappings"])
             # Register initial device if not yet discovered
             dev_id = msg.get("device_id", instance.id)
             instance.discovered_devices = [{
@@ -495,6 +523,32 @@ class PluginManager:
                             "num_axes": dev.get("num_axes", 6),
                         })
         return result
+
+    def get_plugin_default_mappings(self, full_device_id: str) -> Optional[Dict[str, str]]:
+        """Returns the default mapping dictionary for a plugin device, if available."""
+        if not full_device_id or not full_device_id.startswith("plugin:"):
+            return None
+        parts = full_device_id.split(":", 2)
+        if len(parts) < 3:
+            return None
+        plugin_id = parts[1]
+        inst = self.plugins.get(plugin_id)
+        if inst and inst.default_mappings:
+            return dict(inst.default_mappings)
+        return None
+
+    def is_plugin_auto_map_enabled(self, full_device_id: str) -> bool:
+        """Checks if auto-mapping is enabled for this plugin device."""
+        if not full_device_id or not full_device_id.startswith("plugin:"):
+            return False
+        parts = full_device_id.split(":", 2)
+        if len(parts) < 3:
+            return False
+        plugin_id = parts[1]
+        inst = self.plugins.get(plugin_id)
+        if inst:
+            return inst.is_auto_map_enabled()
+        return False
 
     def read_physical_state(self, full_device_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -683,5 +737,7 @@ def get_plugin_manager(base_dir: Optional[str] = None) -> PluginManager:
     """Singleton getter for the global PluginManager."""
     global _global_plugin_manager
     if _global_plugin_manager is None:
+        if not base_dir:
+            base_dir = get_default_base_dir()
         _global_plugin_manager = PluginManager(base_dir=base_dir)
     return _global_plugin_manager

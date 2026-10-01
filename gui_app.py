@@ -68,6 +68,8 @@ else:
     CONFIG_FILE = os.path.join(SCRIPT_DIR, "config_mapping.json")
     ASSETS_DIR = os.path.join(SCRIPT_DIR, "assets")
 
+APP_DIR = EXE_DIR if getattr(sys, "frozen", False) else SCRIPT_DIR
+
 CONTROLLER_360_SVG_PATH = os.path.join(ASSETS_DIR, "controller_360.svg") if os.path.exists(os.path.join(ASSETS_DIR, "controller_360.svg")) else os.path.join(ASSETS_DIR, "controller.svg")
 CONTROLLER_ONE_SVG_PATH = os.path.join(ASSETS_DIR, "controller_one.svg")
 CONTROLLER_DS4_SVG_PATH = os.path.join(ASSETS_DIR, "controller_DS4.svg")
@@ -845,7 +847,7 @@ class J360MoreApp:
         self.engine.set_config(self.config)
 
         # Gestor de Plugins para hardware externo (Arduino, MIDI, etc.)
-        self.plugin_manager = get_plugin_manager()
+        self.plugin_manager = get_plugin_manager(base_dir=APP_DIR)
         self.device_manager.plugin_manager = self.plugin_manager
         self._plugin_telemetry_refs = {}
         self.plugin_manager.add_on_telemetry(self._on_plugin_telemetry_received)
@@ -1637,6 +1639,11 @@ class J360MoreApp:
         btn_wizard.pack(side=tk.LEFT, padx=4)
         widgets["mapping_controls"].append(btn_wizard)
         widgets["btn_wizard"] = btn_wizard
+
+        btn_auto_map = ttk.Button(top_bar, text=self.t("btn_auto_map"), command=lambda p=pad_id: self._manual_auto_map(p))
+        btn_auto_map.pack(side=tk.LEFT, padx=4)
+        widgets["mapping_controls"].append(btn_auto_map)
+        widgets["btn_auto_map"] = btn_auto_map
 
         btn_rumble = ttk.Button(top_bar, text=self.t("btn_test_rumble"), command=lambda p=pad_id: self._test_controller_rumble(p))
         btn_rumble.pack(side=tk.LEFT, padx=4)
@@ -2795,6 +2802,64 @@ class J360MoreApp:
         except Exception:
             pass
 
+    def _pad_has_active_mappings(self, pad_id: int) -> bool:
+        """Determina si un slot de mando ya tiene asignaciones configuradas (no vacías)."""
+        widgets = self.tab_widgets.get(pad_id)
+        if widgets and "combos" in widgets:
+            for cb in widgets["combos"].values():
+                val = cb.get().strip()
+                if not is_none_mapping(val):
+                    return True
+        cfg_maps = self.config.get("controllers", {}).get(str(pad_id), {}).get("mappings", {})
+        if cfg_maps:
+            return any(not is_none_mapping(v) for v in cfg_maps.values())
+        return False
+
+    def _get_device_auto_mappings(self, dev_id: str, check_enabled: bool = True) -> Optional[Dict[str, str]]:
+        """Devuelve el diccionario de auto-mapeo recomendado si el dispositivo lo soporta."""
+        if not dev_id or dev_id == "none":
+            return None
+        if dev_id.startswith("phone_"):
+            return dict(DEFAULT_PHONE_MAPPINGS)
+        if dev_id.startswith("plugin:"):
+            if hasattr(self, "plugin_manager") and self.plugin_manager:
+                if not check_enabled or self.plugin_manager.is_plugin_auto_map_enabled(dev_id):
+                    return self.plugin_manager.get_plugin_default_mappings(dev_id)
+        return None
+
+    def _apply_auto_mapping_to_pad(self, pad_id: int, auto_maps: Dict[str, str]):
+        """Aplica un diccionario de mapeos a los combos del mando especificado."""
+        widgets = self.tab_widgets.get(pad_id)
+        if not widgets:
+            return
+        combos = widgets.get("combos", {})
+        for target, cb in combos.items():
+            val = auto_maps.get(target, "-- Ninguno --")
+            cb.set(self.localize_mapping(val))
+
+    def _manual_auto_map(self, pad_id: int):
+        """Aplica manualmente la plantilla de mapeo recomendada para el dispositivo actual."""
+        widgets = self.tab_widgets.get(pad_id)
+        if not widgets:
+            return
+        sel_idx = widgets["dev_combo"].current()
+        if not (0 <= sel_idx < len(self.available_devices)):
+            messagebox.showinfo(self.t("btn_auto_map"), self.t("automap_no_template"))
+            return
+        dev = self.available_devices[sel_idx]
+        dev_id = dev["id"]
+        auto_maps = self._get_device_auto_mappings(dev_id, check_enabled=False)
+        if not auto_maps:
+            messagebox.showinfo(self.t("btn_auto_map"), self.t("automap_no_template"))
+            return
+
+        self._apply_auto_mapping_to_pad(pad_id, auto_maps)
+        self._sync_ui_to_config()
+        self.engine.set_config(self.config)
+        self.save_config(silent=True)
+        dev_disp_name = self.get_device_display_name(dev)
+        messagebox.showinfo(self.t("btn_auto_map"), self.t("automap_success", pad_id=pad_id, dev_name=dev_disp_name))
+
     def _on_device_selected(self, pad_id: int):
         widgets = self.tab_widgets[pad_id]
         sel_idx = widgets["dev_combo"].current()
@@ -2805,13 +2870,17 @@ class J360MoreApp:
                 self.config["controllers"][str(pad_id)] = {}
             self.config["controllers"][str(pad_id)]["physical_device_id"] = dev_id
 
-            if dev_id.startswith("phone_"):
-                cur_maps = self.config["controllers"][str(pad_id)].get("mappings", {})
-                all_none = all(is_none_mapping(v) for v in cur_maps.values())
-                if all_none or not cur_maps:
-                    self.config["controllers"][str(pad_id)]["mappings"] = dict(DEFAULT_PHONE_MAPPINGS)
-                    for target, cb in widgets.get("combos", {}).items():
-                        cb.set(self.localize_mapping(DEFAULT_PHONE_MAPPINGS.get(target, "-- Ninguno --")))
+            auto_maps = self._get_device_auto_mappings(dev_id, check_enabled=True)
+            if auto_maps:
+                should_apply = True
+                if self._pad_has_active_mappings(pad_id):
+                    dev_disp_name = self.get_device_display_name(dev)
+                    should_apply = messagebox.askyesno(
+                        self.t("automap_prompt_title"),
+                        self.t("automap_prompt_msg", pad_id=pad_id, dev_name=dev_disp_name)
+                    )
+                if should_apply:
+                    self._apply_auto_mapping_to_pad(pad_id, auto_maps)
 
             has_dev = (dev_id != "none")
             if has_dev:
@@ -3911,8 +3980,10 @@ class J360MoreApp:
             has_folder = self.plugin_manager.is_plugins_folder_present()
             has_rt = self.plugin_manager.has_runtime()
 
-            if not has_folder or not has_rt:
-                # ==================== VISTA DE ADVERTENCIA / DESCARGA ====================
+            if not has_folder:
+                # ==================== CASO 1: CARPETA 'plugins' AUSENTE ====================
+                # El soporte de plugins no está activado / instalado en este equipo.
+                # Se indica al usuario descargar la dependencia / paquete de plugins desde los Releases de GitHub.
                 setup_box = ttk.LabelFrame(plg_container, text=f"⚠️ {self.t('plugins_not_installed_title')}", padding=16)
                 setup_box.pack(fill=tk.BOTH, expand=True, padx=4, pady=6)
 
@@ -3927,10 +3998,45 @@ class J360MoreApp:
                     wraplength=640
                 ).pack(anchor="center", pady=(0, 16))
 
+                def _open_releases():
+                    target_url = getattr(self, "_update_release_url", None) or "https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases"
+                    webbrowser.open(target_url)
+
+                btn_dl_release = ttk.Button(setup_box, text=self.t("plugins_btn_download_release"), command=_open_releases)
+                btn_dl_release.pack(anchor="center", pady=(0, 14))
+
+                action_row = ttk.Frame(setup_box)
+                action_row.pack(anchor="center", pady=(4, 0))
+
+                app_dir = APP_DIR
+                btn_open_app = ttk.Button(action_row, text=self.t("plugins_btn_open_app_folder"), command=lambda: self._open_folder(app_dir))
+                btn_open_app.pack(side=tk.LEFT, padx=6)
+
+                btn_check_again = ttk.Button(action_row, text=self.t("plugins_btn_check_again"), command=render_tab_plugins_content)
+                btn_check_again.pack(side=tk.LEFT, padx=6)
+                return
+
+            if not has_rt:
+                # ==================== CASO 2: CARPETA PRESENTE PERO ENTORNO NO INICIALIZADO ====================
+                # La carpeta plugins existe, pero falta el entorno virtual de Python.
+                setup_box = ttk.LabelFrame(plg_container, text=f"⚙️ {self.t('plugins_not_initialized_title')}", padding=16)
+                setup_box.pack(fill=tk.BOTH, expand=True, padx=4, pady=6)
+
+                ttk.Label(setup_box, text="🐍", font=("Segoe UI", 36)).pack(anchor="center", pady=(12, 4))
+                ttk.Label(setup_box, text=self.t("plugins_not_initialized_title"), font=("Segoe UI", 12, "bold")).pack(anchor="center", pady=(0, 6))
+                ttk.Label(
+                    setup_box,
+                    text=self.t("plugins_not_initialized_desc"),
+                    font=("Segoe UI", 9),
+                    foreground="#444444",
+                    justify="center",
+                    wraplength=640
+                ).pack(anchor="center", pady=(0, 16))
+
                 btn_init_plugins = ttk.Button(setup_box, text="📥 " + self.t("plugins_btn_download_deps"))
                 btn_init_plugins.pack(anchor="center", pady=(0, 14))
 
-                init_console_box = ttk.LabelFrame(setup_box, text="📋 Progreso de Inicialización", padding=6)
+                init_console_box = ttk.LabelFrame(setup_box, text=f"📋 {self.t('plugins_init_progress_title')}", padding=6)
                 init_console_box.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
 
                 txt_init = tk.Text(init_console_box, height=6, bg="#1e1e1e", fg="#e0e0e0", insertbackground="white", font=("Consolas", 8), relief="flat")
