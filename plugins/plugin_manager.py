@@ -16,6 +16,13 @@ from typing import Any, Callable, Dict, List, Optional
 
 from plugins.plugin_ipc import IPCServer
 from plugins.venv_manager import VenvManager
+from plugins.plugin_i18n import (
+    localize_text,
+    localize_list,
+    localize_ui_definition,
+    load_plugin_locales,
+    normalize_lang_code
+)
 
 logger = logging.getLogger("j360More.PluginManager")
 
@@ -27,14 +34,23 @@ class PluginInstance:
         self.plugin_dir = plugin_dir
         self.manifest = manifest
         self.id = manifest.get("id", os.path.basename(plugin_dir))
-        self.name = manifest.get("name", self.id)
         self.version = manifest.get("version", "1.0.0")
         self.author = manifest.get("author", "Comunidad")
-        self.description = manifest.get("description", "")
         self.entrypoint = manifest.get("entrypoint", "main.py")
         self.requirements = manifest.get("requirements", [])
         self.global_ui = manifest.get("global_ui", {})
         self.pad_ui = manifest.get("pad_ui_customization", {})
+
+        # Multi-language / Internationalization
+        self.locales = load_plugin_locales(self.plugin_dir)
+        extra_i18n = manifest.get("i18n") or manifest.get("locales")
+        if isinstance(extra_i18n, dict):
+            for lk, lv in extra_i18n.items():
+                nlk = normalize_lang_code(lk)
+                if nlk not in self.locales:
+                    self.locales[nlk] = {}
+                if isinstance(lv, dict):
+                    self.locales[nlk].update({str(k): str(v) for k, v in lv.items()})
 
         # Runtime state
         self.status = "stopped"  # stopped, running, error, missing_dependencies
@@ -52,6 +68,30 @@ class PluginInstance:
 
         # Config per pad
         self.config_data: Dict[str, Any] = self._load_saved_config()
+
+    @property
+    def name(self) -> str:
+        return self.get_name("es")
+
+    @property
+    def description(self) -> str:
+        return self.get_description("es")
+
+    def get_name(self, lang: str = "es") -> str:
+        return localize_text(self.manifest.get("name", self.id), lang=lang, default_lang="es", locales=self.locales)
+
+    def get_description(self, lang: str = "es") -> str:
+        return localize_text(self.manifest.get("description", ""), lang=lang, default_lang="es", locales=self.locales)
+
+    def get_global_ui(self, lang: str = "es") -> Dict[str, Any]:
+        return localize_ui_definition(self.global_ui, lang=lang, default_lang="es", locales=self.locales)
+
+    def get_pad_ui(self, lang: str = "es") -> Dict[str, Any]:
+        return localize_ui_definition(self.pad_ui, lang=lang, default_lang="es", locales=self.locales)
+
+    def get_text(self, key: str, lang: str = "es", default: Optional[str] = None) -> str:
+        res = localize_text(key, lang=lang, default_lang="es", locales=self.locales)
+        return res if res else (default if default is not None else key)
 
     def _load_saved_config(self) -> Dict[str, Any]:
         cfg_file = os.path.join(self.plugin_dir, "config.json")
@@ -92,6 +132,7 @@ class PluginManager:
 
         self.plugins: Dict[str, PluginInstance] = {}
         self._lock = threading.Lock()
+        self.current_lang: str = "es"
 
         # Callbacks for GUI telemetry & device changes
         self._on_device_list_changed: List[Callable[[], None]] = []
@@ -383,7 +424,7 @@ class PluginManager:
     # Integration with DeviceManager & EmulatorEngine
     # ---------------------------------------------------------
 
-    def get_available_devices(self) -> List[Dict[str, Any]]:
+    def get_available_devices(self, lang: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Returns all devices registered by running plugins.
         Prefixed with 'plugin:<plugin_id>:<device_id>'.
@@ -391,6 +432,7 @@ class PluginManager:
         if not self.is_plugins_folder_present():
             return []
 
+        use_lang = lang or self.current_lang or "es"
         result = []
         with self._lock:
             for p_id, inst in self.plugins.items():
@@ -398,7 +440,12 @@ class PluginManager:
                     for dev in inst.discovered_devices:
                         d_id = dev.get("id", p_id)
                         full_id = f"plugin:{p_id}:{d_id}"
-                        display_name = f"🔌 [Plugin] {dev.get('name', inst.name)}"
+                        dev_raw_name = dev.get("name")
+                        if dev_raw_name:
+                            dev_name = localize_text(dev_raw_name, lang=use_lang, default_lang="es", locales=inst.locales)
+                        else:
+                            dev_name = inst.get_name(use_lang)
+                        display_name = f"🔌 [Plugin] {dev_name}"
                         result.append({
                             "id": full_id,
                             "name": display_name,
@@ -527,16 +574,17 @@ class PluginManager:
             if autostart and inst.status != "running":
                 self.start_plugin(p_id)
 
-    def get_plugins_info(self) -> List[Dict[str, Any]]:
+    def get_plugins_info(self, lang: Optional[str] = None) -> List[Dict[str, Any]]:
         """Returns structured metadata of all discovered plugins for UI rendering."""
+        use_lang = lang or self.current_lang or "es"
         res = []
         for p_id, p in self.plugins.items():
             res.append({
                 "id": p.id,
-                "name": p.name,
+                "name": p.get_name(use_lang),
                 "version": p.version,
                 "author": p.author,
-                "description": p.description,
+                "description": p.get_description(use_lang),
                 "status": p.status,
                 "is_simulated": p.is_simulated,
                 "requirements": p.requirements,

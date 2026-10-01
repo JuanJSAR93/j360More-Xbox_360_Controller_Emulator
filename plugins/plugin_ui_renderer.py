@@ -10,6 +10,9 @@ from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional
 
 
+from plugins.plugin_i18n import localize_text, localize_list
+
+
 class PluginUIRenderer:
     """Renders declarative widgets from JSON schema definitions."""
 
@@ -19,7 +22,9 @@ class PluginUIRenderer:
         fields: List[Dict[str, Any]],
         current_values: Dict[str, Any],
         on_field_change: Optional[Callable[[str, Any], None]] = None,
-        on_action: Optional[Callable[[str], None]] = None
+        on_action: Optional[Callable[[str], None]] = None,
+        lang: str = "es",
+        locales: Optional[Dict[str, Dict[str, str]]] = None
     ) -> Dict[str, Any]:
         """
         Renders a list of fields into parent container.
@@ -30,7 +35,7 @@ class PluginUIRenderer:
         for row_idx, field in enumerate(fields):
             f_id = field.get("id")
             f_type = field.get("type", "slider")
-            label_text = field.get("label", f_id)
+            label_text = localize_text(field.get("label", f_id), lang=lang, locales=locales)
             default_val = field.get("default")
             curr_val = current_values.get(f_id, default_val)
 
@@ -88,7 +93,14 @@ class PluginUIRenderer:
                 lbl = ttk.Label(row_frame, text=label_text, width=28, anchor="w")
                 lbl.pack(side=tk.LEFT)
 
-                options = list(field.get("options", []))
+                raw_options = list(field.get("options", []))
+                options = []
+                for opt in raw_options:
+                    if isinstance(opt, dict):
+                        options.append(localize_text(opt.get("label", opt.get("value", "")), lang=lang, locales=locales))
+                    else:
+                        options.append(localize_text(opt, lang=lang, locales=locales))
+
                 combo_var = tk.StringVar(value=str(curr_val if curr_val is not None else (options[0] if options else "")))
 
                 combo = ttk.Combobox(
@@ -138,10 +150,12 @@ class PluginUIRenderer:
                 canvas = tk.Canvas(row_frame, height=canvas_h, bg="#1e1e1e", highlightthickness=1, highlightbackground="#333333")
                 canvas.pack(fill=tk.X, expand=True, pady=2)
 
+                bar_labels = localize_list(field.get("labels", []), lang=lang, locales=locales)
+
                 rendered_refs[f_id] = {
                     "widget": canvas,
                     "type": f_type,
-                    "labels": field.get("labels", [])
+                    "labels": bar_labels
                 }
 
         return rendered_refs

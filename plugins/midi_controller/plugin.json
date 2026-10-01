@@ -1,20 +1,52 @@
 {
   "id": "midi_controller",
-  "name": "Controlador de Teclado/Pads MIDI",
+  "name": {
+    "es": "Controlador de Teclado/Pads MIDI",
+    "en": "MIDI Keyboard/Pad Controller",
+    "fr": "Contrôleur de Clavier/Pads MIDI",
+    "pt_BR": "Controlador de Teclado/Pads MIDI",
+    "de": "MIDI-Tastatur/Pad-Controller",
+    "it": "Controller Tastiera/Pad MIDI",
+    "ru": "MIDI Клавиатура/Контроллер Пэдов"
+  },
   "version": "1.0.0",
   "author": "Comunidad j360More",
-  "description": "Convierte cualquier teclado musical MIDI, sintetizador USB o Launchpad en un mando de juegos. Asigna notas a botones y Pitch Bend / Modulación a palancas analógicas.",
+  "description": {
+    "es": "Convierte cualquier teclado musical MIDI, sintetizador USB o Launchpad en un mando de juegos. Asigna notas a botones y Pitch Bend / Modulación a palancas analógicas.",
+    "en": "Converts any MIDI musical keyboard, USB synth or Launchpad into a game controller. Maps notes to buttons and Pitch Bend / Modulation to analog sticks.",
+    "fr": "Convertit n'importe quel clavier musical MIDI, synthétiseur USB ou Launchpad en manette de jeu. Mappe les notes sur les boutons et Pitch Bend / Modulation sur les sticks analogiques.",
+    "pt_BR": "Converte qualquer teclado musical MIDI, sintetizador USB ou Launchpad em um controle de jogo. Mapeia notas para botões e Pitch Bend / Modulação para alavancas analógicas.",
+    "de": "Verwandelt jedes MIDI-Keyboard, jeden USB-Synthesizer oder Launchpad in einen Gaming-Controller. Weist Noten Tasten und Pitch Bend / Modulation Analogsticks zu.",
+    "it": "Converte qualsiasi tastiera musicale MIDI, sintetizzatore USB o Launchpad in un controller di gioco. Mappa le note sui pulsanti e Pitch Bend / Modulazione sugli stick analogici.",
+    "ru": "Превращает любую MIDI-клавиатуру, USB-синтезатор или Launchpad в игровой контроллер. Назначает ноты на кнопки, а Pitch Bend / Модуляцию на аналоговые стики."
+  },
   "entrypoint": "main.py",
   "requirements": [
-    "mido>=1.2.10",
-    "python-rtmidi>=1.5.0"
+    "pygame-ce>=2.5.0",
+    "mido>=1.2.10"
   ],
   "global_ui": {
-    "title": "Ajustes de Conexión MIDI",
+    "title": {
+      "es": "Ajustes de Conexión MIDI",
+      "en": "MIDI Connection Settings",
+      "fr": "Paramètres de Connexion MIDI",
+      "pt_BR": "Configurações de Conexão MIDI",
+      "de": "MIDI-Verbindungseinstellungen",
+      "it": "Impostazioni Connessione MIDI",
+      "ru": "Настройки подключения MIDI"
+    },
     "fields": [
       {
         "id": "midi_port",
-        "label": "Puerto / Dispositivo MIDI:",
+        "label": {
+          "es": "Puerto / Dispositivo MIDI:",
+          "en": "MIDI Port / Device:",
+          "fr": "Port / Périphérique MIDI :",
+          "pt_BR": "Porta / Dispositivo MIDI:",
+          "de": "MIDI-Port / Gerät:",
+          "it": "Porta / Dispositivo MIDI:",
+          "ru": "MIDI-порт / Устройство:"
+        },
         "type": "dynamic_dropdown",
         "discovery_action": "scan_midi_ports",
         "options": ["AUTO", "Virtual MIDI In", "nanoKEY2", "Launchpad"],
@@ -22,9 +54,20 @@
       },
       {
         "id": "midi_channel",
-        "label": "Canal MIDI (1-16 o Todos):",
+        "label": {
+          "es": "Canal MIDI (1-16 o Todos):",
+          "en": "MIDI Channel (1-16 or All):",
+          "fr": "Canal MIDI (1-16 ou Tous) :",
+          "pt_BR": "Canal MIDI (1-16 ou Todos):",
+          "de": "MIDI-Kanal (1-16 oder Alle):",
+          "it": "Canale MIDI (1-16 o Tutti):",
+          "ru": "MIDI-канал (1-16 или Все):"
+        },
         "type": "dropdown",
-        "options": ["TODOS", "1", "2", "3", "4", "10"],
+        "options": [
+          {"value": "TODOS", "label": {"es": "TODOS", "en": "ALL", "fr": "TOUS", "pt_BR": "TODOS", "de": "ALLE", "it": "TUTTI", "ru": "ВСЕ"}},
+          "1", "2", "3", "4", "10"
+        ],
         "default": "TODOS"
       }
     ]
@@ -34,14 +77,38 @@
     "custom_tabs": [
       {
         "id": "midi_mapping",
-        "title": "🎹 Calibración MIDI",
+        "title": {
+          "es": "🎹 Calibración MIDI",
+          "en": "🎹 MIDI Calibration",
+          "fr": "🎹 Calibrage MIDI",
+          "pt_BR": "🎹 Calibração MIDI",
+          "de": "🎹 MIDI-Kalibrierung",
+          "it": "🎹 Calibrazione MIDI",
+          "ru": "🎹 Калибровка MIDI"
+        },
         "sections": [
           {
-            "name": "Sensibilidad y Respuesta",
+            "name": {
+              "es": "Sensibilidad y Respuesta",
+              "en": "Sensitivity & Response",
+              "fr": "Sensibilité et Réponse",
+              "pt_BR": "Sensibilidade e Resposta",
+              "de": "Empfindlichkeit & Ansprechverhalten",
+              "it": "Sensibilità e Risposta",
+              "ru": "Чувствительность и отклик"
+            },
             "fields": [
               {
                 "id": "velocity_threshold",
-                "label": "Umbral Mínimo de Velocidad (0-127):",
+                "label": {
+                  "es": "Umbral Mínimo de Velocidad (0-127):",
+                  "en": "Minimum Velocity Threshold (0-127):",
+                  "fr": "Seuil Minimum de Vélocité (0-127) :",
+                  "pt_BR": "Limiar Mínimo de Velocidade (0-127):",
+                  "de": "Minimale Anschlagstärke-Schwelle (0-127):",
+                  "it": "Soglia Minima di Velocity (0-127):",
+                  "ru": "Минимальный порог Velocity (0-127):"
+                },
                 "type": "slider",
                 "min": 1,
                 "max": 127,
@@ -49,7 +116,15 @@
               },
               {
                 "id": "pitch_bend_sens",
-                "label": "Sensibilidad Pitch Bend (%):",
+                "label": {
+                  "es": "Sensibilidad Pitch Bend (%):",
+                  "en": "Pitch Bend Sensitivity (%):",
+                  "fr": "Sensibilité Pitch Bend (%) :",
+                  "pt_BR": "Sensibilidade do Pitch Bend (%):",
+                  "de": "Pitch-Bend-Empfindlichkeit (%):",
+                  "it": "Sensibilità Pitch Bend (%):",
+                  "ru": "Чувствительность Pitch Bend (%):"
+                },
                 "type": "slider",
                 "min": 10,
                 "max": 200,
@@ -58,13 +133,37 @@
             ]
           },
           {
-            "name": "Monitor de Actividad MIDI",
+            "name": {
+              "es": "Monitor de Actividad MIDI",
+              "en": "MIDI Activity Monitor",
+              "fr": "Moniteur d'Activité MIDI",
+              "pt_BR": "Monitor de Atividade MIDI",
+              "de": "MIDI-Aktivitätsmonitor",
+              "it": "Monitor Attività MIDI",
+              "ru": "Монитор активности MIDI"
+            },
             "fields": [
               {
                 "id": "midi_telemetry",
-                "label": "Actividad de Notas y Rueda (Pitch / Modulación):",
+                "label": {
+                  "es": "Actividad de Notas y Rueda (Pitch / Modulación):",
+                  "en": "Note & Wheel Activity (Pitch / Modulation):",
+                  "fr": "Activité des Notes et Molette (Pitch / Modulation) :",
+                  "pt_BR": "Atividade de Notas e Roda (Pitch / Modulação):",
+                  "de": "Noten- und Rad-Aktivität (Pitch / Modulation):",
+                  "it": "Attività Note e Rotella (Pitch / Modulazione):",
+                  "ru": "Активность нот и колеса (Pitch / Модуляция):"
+                },
                 "type": "progress_bar_multi",
-                "labels": ["VELOCIDAD", "PITCH BEND", "MODULACIÓN"]
+                "labels": {
+                  "es": ["VELOCIDAD", "PITCH BEND", "MODULACIÓN"],
+                  "en": ["VELOCITY", "PITCH BEND", "MODULATION"],
+                  "fr": ["VÉLOCITÉ", "PITCH BEND", "MODULATION"],
+                  "pt_BR": ["VELOCIDADE", "PITCH BEND", "MODULAÇÃO"],
+                  "de": ["VELOCITY", "PITCH BEND", "MODULATION"],
+                  "it": ["VELOCITY", "PITCH BEND", "MODULAZIONE"],
+                  "ru": ["СКОРОСТЬ", "PITCH BEND", "МОДУЛЯЦИЯ"]
+                }
               }
             ]
           }

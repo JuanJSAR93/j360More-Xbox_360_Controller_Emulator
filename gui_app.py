@@ -1083,6 +1083,12 @@ class J360MoreApp:
             conn_str = self.t("conn_usb") if c_type == "USB" else (self.t("conn_bt") if c_type in ("BT", "BTH") else (self.t("conn_int") if c_type == "INT" else c_type))
             pname = d.get("product_name", self.t("keyboard_device_name"))
             return self.t("kbd_device_item", num=kbd_idx, name=pname, conn=conn_str)
+        if dev_id.startswith("plugin:"):
+            parts = dev_id.split(":")
+            p_id = parts[1] if len(parts) > 1 else ""
+            inst = self.plugin_manager.plugins.get(p_id)
+            if inst:
+                return f"🔌 [Plugin] {inst.get_name(self.current_lang)}"
         return d.get("name", self.t("dev_device_fallback"))
 
     def _toggle_language(self):
@@ -1147,6 +1153,8 @@ class J360MoreApp:
                 self.lbl_version.config(text=f"v{APP_VERSION}")
 
         self._update_airpad_status_ui(force=True)
+        if hasattr(self, "plugin_manager") and self.plugin_manager:
+            self.plugin_manager.current_lang = self.current_lang
         self._rebuild_tabs(max_ctrls)
 
     def _update_airpad_status_ui(self, force: bool = False):
@@ -4085,7 +4093,7 @@ class J360MoreApp:
             def refresh_plugins_tree():
                 cur_sel = get_selected_plugin_id()
                 tree_plugins.delete(*tree_plugins.get_children())
-                infos = self.plugin_manager.get_plugins_info()
+                infos = self.plugin_manager.get_plugins_info(lang=self.current_lang)
                 for p in infos:
                     p_id = p["id"]
                     st = p["status"]
@@ -4304,7 +4312,9 @@ class J360MoreApp:
             plugin_id = parts[1] if len(parts) > 1 else ""
             plugin = self.plugin_manager.plugins.get(plugin_id)
             if plugin:
-                disabled_tabs = plugin.pad_ui.get("disable_default_tabs", [])
+                lang = self.current_lang
+                localized_pad_ui = plugin.get_pad_ui(lang)
+                disabled_tabs = localized_pad_ui.get("disable_default_tabs", [])
                 for name, frame, label in widgets.get("default_tabs", []):
                     should_hide = (name in disabled_tabs)
                     is_visible = (frame in sub_nb.tabs() or str(frame) in sub_nb.tabs())
@@ -4313,7 +4323,7 @@ class J360MoreApp:
                     elif not should_hide and not is_visible:
                         sub_nb.add(frame, text=label)
 
-                custom_tabs_def = plugin.pad_ui.get("custom_tabs", [])
+                custom_tabs_def = localized_pad_ui.get("custom_tabs", [])
                 pad_cfg = plugin.config_data.get("pads", {}).get(str(pad_id), {})
 
                 for c_def in custom_tabs_def:
@@ -4354,7 +4364,9 @@ class J360MoreApp:
                                 sec.get("fields", []),
                                 pad_cfg,
                                 on_field_change=fc_cb,
-                                on_action=act_cb
+                                on_action=act_cb,
+                                lang=lang,
+                                locales=plugin.locales
                             )
                             merged_refs.update(s_refs)
                     else:
@@ -4364,7 +4376,9 @@ class J360MoreApp:
                             fields,
                             pad_cfg,
                             on_field_change=fc_cb,
-                            on_action=act_cb
+                            on_action=act_cb,
+                            lang=lang,
+                            locales=plugin.locales
                         )
                         merged_refs.update(s_refs)
 
@@ -4391,16 +4405,20 @@ class J360MoreApp:
             messagebox.showwarning("Plugin", f"Plugin '{plugin_id}' no encontrado.")
             return
 
-        global_ui = plugin.global_ui
+        lang = self.current_lang
+        global_ui = plugin.get_global_ui(lang)
+        p_name = plugin.get_name(lang)
+        p_desc = plugin.get_description(lang)
+
         if not global_ui or not global_ui.get("fields"):
             messagebox.showinfo(
-                plugin.name,
-                f"El plugin '{plugin.name}' no requiere configuración global adicional."
+                p_name,
+                f"El plugin '{p_name}' no requiere configuración global adicional."
             )
             return
 
         dlg = tk.Toplevel(self.root)
-        dlg.title(f"⚙ {self.t('plugins_btn_config')} - {plugin.name}")
+        dlg.title(f"⚙ {self.t('plugins_btn_config')} - {p_name}")
         dlg_w, dlg_h = 580, 480
         dlg.geometry(f"{dlg_w}x{dlg_h}")
         dlg.resizable(False, False)
@@ -4415,22 +4433,22 @@ class J360MoreApp:
 
         header_lbl = ttk.Label(
             content_box,
-            text=f"⚙ {global_ui.get('title', plugin.name)}",
+            text=f"⚙ {global_ui.get('title', p_name)}",
             font=("Segoe UI", 11, "bold")
         )
         header_lbl.pack(anchor="w", pady=(0, 4))
 
-        if plugin.description:
+        if p_desc:
             desc_lbl = ttk.Label(
                 content_box,
-                text=plugin.description,
+                text=p_desc,
                 font=("Segoe UI", 8),
                 foreground="#555555",
                 wraplength=540
             )
             desc_lbl.pack(anchor="w", pady=(0, 10))
 
-        fields_frame = ttk.LabelFrame(content_box, text="Parámetros de Configuración", padding=8)
+        fields_frame = ttk.LabelFrame(content_box, text=self.t("plugins_dialog_params"), padding=8)
         fields_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         global_cfg = plugin.config_data.get("global", {})
@@ -4450,7 +4468,9 @@ class J360MoreApp:
             global_ui.get("fields", []),
             global_cfg,
             on_field_change=on_field_change,
-            on_action=on_action
+            on_action=on_action,
+            lang=lang,
+            locales=plugin.locales
         )
 
         def on_options_update(p_id, f_id, new_options):
@@ -4471,8 +4491,12 @@ class J360MoreApp:
         if not plugin:
             return
 
+        lang = self.current_lang
+        p_name = plugin.get_name(lang)
+        p_desc = plugin.get_description(lang)
+
         dlg = tk.Toplevel(self.root)
-        dlg.title(f"ℹ {self.t('plugins_btn_info')} - {plugin.name}")
+        dlg.title(f"ℹ {self.t('plugins_btn_info')} - {p_name}")
         dlg_w, dlg_h = 560, 420
         dlg.geometry(f"{dlg_w}x{dlg_h}")
         dlg.resizable(False, False)
@@ -4485,15 +4509,15 @@ class J360MoreApp:
         content_box = ttk.Frame(dlg, padding=12)
         content_box.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(content_box, text=f"🔌 {plugin.name} v{plugin.version}", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 2))
-        ttk.Label(content_box, text=f"Por: {plugin.author}", font=("Segoe UI", 9, "italic"), foreground="#444444").pack(anchor="w", pady=(0, 8))
+        ttk.Label(content_box, text=f"🔌 {p_name} v{plugin.version}", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 2))
+        ttk.Label(content_box, text=self.t("plugins_dialog_author", author=plugin.author), font=("Segoe UI", 9, "italic"), foreground="#444444").pack(anchor="w", pady=(0, 8))
 
-        if plugin.description:
-            desc_frame = ttk.LabelFrame(content_box, text="Descripción", padding=8)
+        if p_desc:
+            desc_frame = ttk.LabelFrame(content_box, text=self.t("plugins_dialog_desc_section"), padding=8)
             desc_frame.pack(fill=tk.X, pady=(0, 8))
-            ttk.Label(desc_frame, text=plugin.description, wraplength=520, font=("Segoe UI", 9)).pack(anchor="w")
+            ttk.Label(desc_frame, text=p_desc, wraplength=520, font=("Segoe UI", 9)).pack(anchor="w")
 
-        tech_frame = ttk.LabelFrame(content_box, text="Detalles Técnicos y Estado", padding=8)
+        tech_frame = ttk.LabelFrame(content_box, text=self.t("plugins_dialog_tech_section"), padding=8)
         tech_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
 
         grid = ttk.Frame(tech_frame)
@@ -4503,21 +4527,21 @@ class J360MoreApp:
             ttk.Label(grid, text=label, font=("Segoe UI", 9, "bold")).grid(row=row, column=0, sticky="w", pady=2, padx=4)
             ttk.Label(grid, text=val, font=("Segoe UI", 9)).grid(row=row, column=1, sticky="w", pady=2, padx=4)
 
-        status_text = "🟢 En ejecución" if plugin.status == "running" else "⚪ Detenido"
+        status_text = self.t("plugins_status_running") if plugin.status == "running" else self.t("plugins_status_stopped")
         if plugin.is_simulated:
-            status_text += " (Modo Simulación)"
-        add_info_row("Estado actual:", status_text, 0)
-        add_info_row("Puerto IPC:", str(plugin.ipc_port) if plugin.ipc_port else "--", 1)
-        add_info_row("Dispositivos detectados:", str(len(plugin.discovered_devices)), 2)
-        reqs_str = ", ".join(plugin.requirements) if plugin.requirements else "Ninguna"
-        add_info_row("Librerías (requirements):", reqs_str, 3)
-        add_info_row("Directorio:", plugin.plugin_dir, 4)
+            status_text += f" {self.t('plugins_dialog_sim_tag')}"
+        add_info_row(self.t("plugins_dialog_state"), status_text, 0)
+        add_info_row(self.t("plugins_dialog_ipc_port"), str(plugin.ipc_port) if plugin.ipc_port else "--", 1)
+        add_info_row(self.t("plugins_dialog_devs_count"), str(len(plugin.discovered_devices)), 2)
+        reqs_str = ", ".join(plugin.requirements) if plugin.requirements else self.t("plugins_dialog_none")
+        add_info_row(self.t("plugins_dialog_reqs"), reqs_str, 3)
+        add_info_row(self.t("plugins_dialog_dir"), plugin.plugin_dir, 4)
 
         btn_row = ttk.Frame(content_box)
         btn_row.pack(fill=tk.X, side=tk.BOTTOM)
 
         ttk.Button(btn_row, text=self.t("plugins_btn_open_folder"), command=lambda: self._open_folder(plugin.plugin_dir)).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn_row, text="Cerrar", command=dlg.destroy).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(btn_row, text=self.t("plugins_dialog_btn_close"), command=dlg.destroy).pack(side=tk.RIGHT, padx=4)
 
     def _open_folder(self, path: str):
         try:

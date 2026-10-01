@@ -1,0 +1,8 @@
+{
+  "plugin_name": "MIDI Keyboard/Pad Controller",
+  "plugin_desc": "Converts any MIDI musical keyboard, USB synth or Launchpad into a game controller.",
+  "calib_tab_title": "🎹 MIDI Calibration",
+  "vel_label": "VELOCITY",
+  "pitch_label": "PITCH BEND",
+  "mod_label": "MODULATION"
+}

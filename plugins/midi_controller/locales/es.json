@@ -1,0 +1,8 @@
+{
+  "plugin_name": "Controlador de Teclado/Pads MIDI",
+  "plugin_desc": "Convierte cualquier teclado musical MIDI, sintetizador USB o Launchpad en un mando de juegos.",
+  "calib_tab_title": "🎹 Calibración MIDI",
+  "vel_label": "VELOCIDAD",
+  "pitch_label": "PITCH BEND",
+  "mod_label": "MODULACIÓN"
+}

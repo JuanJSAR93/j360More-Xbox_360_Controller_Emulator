@@ -1,19 +1,51 @@
 {
   "id": "arduino_pedals",
-  "name": "Pedales Arduino USB",
+  "name": {
+    "es": "Pedales Arduino USB",
+    "en": "Arduino USB Pedals",
+    "fr": "Pédales USB Arduino",
+    "pt_BR": "Pedais USB Arduino",
+    "de": "Arduino USB-Pedale",
+    "it": "Pedali USB Arduino",
+    "ru": "Arduino USB Педали"
+  },
   "version": "1.0.0",
   "author": "Comunidad j360More",
-  "description": "Lectura analógica de acelerador (RT), freno (LT) y embrague (LB) vía comunicación Serial (Arduino / ESP32) con telemetría en vivo y soporte háptico.",
+  "description": {
+    "es": "Lectura analógica de acelerador (RT), freno (LT) y embrague (LB) vía comunicación Serial (Arduino / ESP32) con telemetría en vivo y soporte háptico.",
+    "en": "Analog reading of throttle (RT), brake (LT) and clutch (LB) via Serial communication (Arduino / ESP32) with live telemetry and haptic rumble.",
+    "fr": "Lecture analogique de l'accélérateur (RT), du frein (LT) et de l'embrayage (LB) via communication Série (Arduino / ESP32) avec télémétrie en direct et retour haptique.",
+    "pt_BR": "Leitura analógica de acelerador (RT), freio (LT) e embreagem (LB) via comunicação Serial (Arduino / ESP32) com telemetria ao vivo e vibração háptica.",
+    "de": "Analoge Erfassung von Gas (RT), Bremse (LT) und Kupplung (LB) über serielle Kommunikation (Arduino / ESP32) mit Live-Telemetrie und haptischem Feedback.",
+    "it": "Lettura analogica di acceleratore (RT), freno (LT) e frizione (LB) tramite comunicazione Seriale (Arduino / ESP32) con telemetria in tempo reale e feedback aptico.",
+    "ru": "Аналоговое считывание газа (RT), тормоза (LT) и сцепления (LB) через последовательный порт (Arduino / ESP32) с телеметрией и виброотдачей."
+  },
   "entrypoint": "main.py",
   "requirements": [
     "pyserial>=3.5"
   ],
   "global_ui": {
-    "title": "Ajustes de Conexión Serial",
+    "title": {
+      "es": "Ajustes de Conexión Serial",
+      "en": "Serial Connection Settings",
+      "fr": "Paramètres de Connexion Série",
+      "pt_BR": "Configurações de Conexão Serial",
+      "de": "Serielle Verbindungseinstellungen",
+      "it": "Impostazioni Connessione Seriale",
+      "ru": "Настройки последовательного порта"
+    },
     "fields": [
       {
         "id": "com_port",
-        "label": "Puerto COM:",
+        "label": {
+          "es": "Puerto COM / Serial:",
+          "en": "COM / Serial Port:",
+          "fr": "Port COM / Série :",
+          "pt_BR": "Porta COM / Serial:",
+          "de": "COM / Serieller Anschluss:",
+          "it": "Porta COM / Seriale:",
+          "ru": "COM / Последовательный порт:"
+        },
         "type": "dynamic_dropdown",
         "discovery_action": "scan_ports",
         "options": ["AUTO", "COM1", "COM3", "COM4", "COM5"],
@@ -21,7 +53,15 @@
       },
       {
         "id": "baudrate",
-        "label": "Velocidad (Baudios):",
+        "label": {
+          "es": "Velocidad (Baudios):",
+          "en": "Baud Rate:",
+          "fr": "Vitesse (Bauds) :",
+          "pt_BR": "Taxa de Transmissão (Baud):",
+          "de": "Baudrate:",
+          "it": "Baud Rate:",
+          "ru": "Скорость (Бод):"
+        },
         "type": "dropdown",
         "options": [9600, 38400, 57600, 115200],
         "default": 115200
@@ -35,14 +75,38 @@
     "custom_tabs": [
       {
         "id": "pedals_calibration",
-        "title": "🔌 Calibración de Pedales",
+        "title": {
+          "es": "🔌 Calibración de Pedales",
+          "en": "🔌 Pedals Calibration",
+          "fr": "🔌 Calibrage des Pédales",
+          "pt_BR": "🔌 Calibração de Pedais",
+          "de": "🔌 Pedalkalibrierung",
+          "it": "🔌 Calibrazione Pedali",
+          "ru": "🔌 Калибровка педалей"
+        },
         "sections": [
           {
-            "name": "Rangos Analógicos y Zonas Muertas",
+            "name": {
+              "es": "Rangos Analógicos y Zonas Muertas",
+              "en": "Analog Ranges & Deadzones",
+              "fr": "Plages Analogiques et Zones Mortes",
+              "pt_BR": "Faixas Analógicas e Zonas Mortas",
+              "de": "Analoge Bereiche & Totzonen",
+              "it": "Intervalli Analogici e Zone Morte",
+              "ru": "Аналоговые диапазоны и мертвые зоны"
+            },
             "fields": [
               {
                 "id": "gas_min",
-                "label": "Mínimo Acelerador (ADC):",
+                "label": {
+                  "es": "Mínimo Acelerador (ADC):",
+                  "en": "Minimum Throttle (ADC):",
+                  "fr": "Accélérateur Minimum (ADC) :",
+                  "pt_BR": "Mínimo Acelerador (ADC):",
+                  "de": "Gas Minimalwert (ADC):",
+                  "it": "Minimo Acceleratore (ADC):",
+                  "ru": "Минимум газа (ADC):"
+                },
                 "type": "slider",
                 "min": 0,
                 "max": 1023,
@@ -50,7 +114,15 @@
               },
               {
                 "id": "gas_max",
-                "label": "Máximo Acelerador (ADC):",
+                "label": {
+                  "es": "Máximo Acelerador (ADC):",
+                  "en": "Maximum Throttle (ADC):",
+                  "fr": "Accélérateur Maximum (ADC) :",
+                  "pt_BR": "Máximo Acelerador (ADC):",
+                  "de": "Gas Maximalwert (ADC):",
+                  "it": "Massimo Acceleratore (ADC):",
+                  "ru": "Максимум газа (ADC):"
+                },
                 "type": "slider",
                 "min": 0,
                 "max": 1023,
@@ -58,7 +130,15 @@
               },
               {
                 "id": "brake_min",
-                "label": "Mínimo Freno (ADC):",
+                "label": {
+                  "es": "Mínimo Freno (ADC):",
+                  "en": "Minimum Brake (ADC):",
+                  "fr": "Frein Minimum (ADC) :",
+                  "pt_BR": "Mínimo Freio (ADC):",
+                  "de": "Bremse Minimalwert (ADC):",
+                  "it": "Minimo Freno (ADC):",
+                  "ru": "Минимум тормоза (ADC):"
+                },
                 "type": "slider",
                 "min": 0,
                 "max": 1023,
@@ -66,7 +146,15 @@
               },
               {
                 "id": "brake_max",
-                "label": "Máximo Freno (ADC):",
+                "label": {
+                  "es": "Máximo Freno (ADC):",
+                  "en": "Maximum Brake (ADC):",
+                  "fr": "Frein Maximum (ADC) :",
+                  "pt_BR": "Máximo Freio (ADC):",
+                  "de": "Bremse Maximalwert (ADC):",
+                  "it": "Massimo Freno (ADC):",
+                  "ru": "Максимум тормоза (ADC):"
+                },
                 "type": "slider",
                 "min": 0,
                 "max": 1023,
@@ -74,24 +162,64 @@
               },
               {
                 "id": "invert_brake",
-                "label": "Invertir Polaridad del Freno",
+                "label": {
+                  "es": "Invertir Polaridad del Freno",
+                  "en": "Invert Brake Polarity",
+                  "fr": "Inverser la Polarité du Frein",
+                  "pt_BR": "Inverter Polaridade do Freio",
+                  "de": "Bremspolarität umkehren",
+                  "it": "Inverti Polarità del Freno",
+                  "ru": "Инвертировать полярность тормоза"
+                },
                 "type": "checkbox",
                 "default": false
               }
             ]
           },
           {
-            "name": "Telemetría en Vivo",
+            "name": {
+              "es": "Telemetría en Vivo",
+              "en": "Live Telemetry",
+              "fr": "Télémétrie en Direct",
+              "pt_BR": "Telemetria ao Vivo",
+              "de": "Live-Telemetrie",
+              "it": "Telemetria in Tempo Reale",
+              "ru": "Телеметрия в реальном времени"
+            },
             "fields": [
               {
                 "id": "pedals_telemetry",
-                "label": "Presión de Pedales (Acelerador / Freno / Embrague):",
+                "label": {
+                  "es": "Presión de Pedales (Acelerador / Freno / Embrague):",
+                  "en": "Pedal Pressure (Throttle / Brake / Clutch):",
+                  "fr": "Pression des Pédales (Accélérateur / Frein / Embrayage) :",
+                  "pt_BR": "Pressão dos Pedais (Acelerador / Freio / Embreagem):",
+                  "de": "Pedaldruck (Gas / Bremse / Kupplung):",
+                  "it": "Pressione Pedali (Acceleratore / Freno / Frizione):",
+                  "ru": "Давление на педали (Газ / Тормоз / Сцепление):"
+                },
                 "type": "progress_bar_multi",
-                "labels": ["GAS", "FRENO", "CLUTCH"]
+                "labels": {
+                  "es": ["GAS", "FRENO", "EMBRAGUE"],
+                  "en": ["THROTTLE", "BRAKE", "CLUTCH"],
+                  "fr": ["ACCÉL", "FREIN", "EMBRAYAGE"],
+                  "pt_BR": ["ACELERADOR", "FREIO", "EMBREAGEM"],
+                  "de": ["GAS", "BREMSE", "KUPPLUNG"],
+                  "it": ["ACCELERATORE", "FRENO", "FRIZIONE"],
+                  "ru": ["ГАЗ", "ТОРМОЗ", "СЦЕПЛЕНИЕ"]
+                }
               },
               {
                 "id": "calibrate_zero",
-                "label": "Poner a Cero Posición de Reposo",
+                "label": {
+                  "es": "Poner a Cero Posición de Reposo",
+                  "en": "Zero Out Rest Position",
+                  "fr": "Mettre à Zéro la Position de Repos",
+                  "pt_BR": "Zerar Posição de Repouso",
+                  "de": "Ruheposition nullen",
+                  "it": "Azzera Posizione di Riposo",
+                  "ru": "Обнулить положение покоя"
+                },
                 "type": "button",
                 "action": "calibrate_zero"
               }
