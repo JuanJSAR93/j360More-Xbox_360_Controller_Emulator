@@ -169,6 +169,8 @@ class DeviceManager:
                 return True
             if drv in ("vigem", "vigembus", "all") and any(k in name for k in ("vigem", "nefarius", "virtual gamepad")):
                 return True
+            if drv in ("hidmaestro", "maestro", "all") and any(k in name for k in ("hidmaestro", "hmcompanion")):
+                return True
             return is_virtual_device(instance_id=guid, name=name, active_driver=drv, max_age=4.0)
         except Exception:
             pass

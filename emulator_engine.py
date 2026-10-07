@@ -23,6 +23,9 @@ from viiper_backend import (
     NS2PRO_BUTTONS
 )
 
+import hidmaestro_backend
+from hidmaestro_backend import HidMaestroClient, is_hidmaestro_available, HM_BUTTONS
+
 from input_devices import DeviceManager
 from i18n import canonicalize_mapping, is_none_mapping
 import web_gamepad_server
@@ -207,9 +210,9 @@ def apply_trigger_calibration(
     return max(0.0, min(1.0, res))
 
 def get_pad_emulated_type(config: dict, pad_id: int) -> str:
-    """Determina si un pad_id debe ser emulado como 'xbox360', 'xboxone', 'ds4', 'dualsense' o 'ns2pro'."""
+    """Determina si un pad_id debe ser emulado como 'xbox360', 'xboxone', 'xboxseries', 'xboxelite', 'ds4', 'dualsense', 'ns2pro' o 'joycon_grip'."""
     mode = config.get("emulated_type", "xbox360").lower()
-    if mode in ("xboxone", "xbox_one", "ds4", "dualsense", "ns2pro"):
+    if mode in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite", "ds4", "dualsense", "ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
         return mode
     elif mode in ("mixed", "mixto"):
         max_ctrls = config.get("max_controllers", 8)
@@ -297,6 +300,7 @@ class EmulatorEngine:
         self.config: Dict[str, Any] = {}
         self.gamepads: Dict[int, Any] = {}
         self.viiper_client: Optional[ViiperClient] = None
+        self.hidmaestro_client: Optional[HidMaestroClient] = None
         self.driver_backend: str = "vigem"
         self.running = False
         self.thread: Optional[threading.Thread] = None
@@ -438,26 +442,32 @@ class EmulatorEngine:
             if self.running:
                 return
 
-            max_ctrls = self.config.get("max_controllers", 12)
-            emulated_type = self.config.get("emulated_type", "xbox360").lower()
-            if emulated_type in ("mixed", "mixto"):
-                half = max_ctrls // 2
-                ctrl_type_name = f"Mixto ({half}x Xbox 360 + {half}x DS4)"
-            elif emulated_type in ("xboxone", "xbox_one"):
-                ctrl_type_name = "Xbox One"
-            elif emulated_type == "ds4":
-                ctrl_type_name = "DualShock 4"
-            elif emulated_type == "dualsense":
-                ctrl_type_name = "DualSense (PS5)"
-            elif emulated_type == "ns2pro":
-                ctrl_type_name = "Switch 2 Pro"
-            else:
-                ctrl_type_name = "Xbox 360"
-
             backend = self.config.get("driver_backend", "vigem" if sys.platform == "win32" else "viiper").lower()
             if sys.platform != "win32":
                 backend = "viiper"
             self.driver_backend = backend
+
+            max_ctrls = self.config.get("max_controllers", 12)
+            emulated_type = self.config.get("emulated_type", "xbox360").lower()
+            if emulated_type in ("mixed", "mixto"):
+                half = max_ctrls // 2
+                ctrl_type_name = f"Mixto ({half}x x360 + {half}x DS4)"
+            elif emulated_type in ("xboxone", "xbox_one"):
+                ctrl_type_name = "Xbox One/Series (beta)" if self.driver_backend == "viiper" else "Xbox One"
+            elif emulated_type in ("xboxseries", "xbox_series"):
+                ctrl_type_name = "Xbox One/Series (beta)" if self.driver_backend == "viiper" else "Xbox Series X|S"
+            elif emulated_type in ("xboxelite", "xbox_elite"):
+                ctrl_type_name = "Xbox Elite Series 2"
+            elif emulated_type in ("joycon", "joycon_grip", "joycon_switch"):
+                ctrl_type_name = "Joy-Con (Charging Grip)"
+            elif emulated_type in ("ns2pro", "switchpro", "switch_pro"):
+                ctrl_type_name = "Nintendo Switch Pro" if self.driver_backend == "hidmaestro" else "Switch 2 Pro"
+            elif emulated_type == "ds4":
+                ctrl_type_name = "DualShock 4"
+            elif emulated_type == "dualsense":
+                ctrl_type_name = "DualSense (PS5)"
+            else:
+                ctrl_type_name = "Xbox 360"
 
             print(f"[*] Iniciando motor de emulacion {ctrl_type_name} usando backend [{self.driver_backend.upper()}] (hasta {max_ctrls} mandos)...")
 
@@ -480,6 +490,39 @@ class EmulatorEngine:
                             pad_label = pad_type.upper()
                             print(f"  [!] Error creando mando virtual #{i} ({pad_label}) en VIIPER.")
                 active_count = len(self.viiper_client.devices)
+            elif self.driver_backend == "hidmaestro":
+                self.hidmaestro_client = HidMaestroClient()
+                if not self.hidmaestro_client.start():
+                    print("[!] Error: No se pudo iniciar el servicio de HIDMaestro.")
+                    return
+
+                if not self.hidmaestro_client.is_driver_installed():
+                    print("[*] Driver de HIDMaestro no detectado en DriverStore. Intentando instalación...")
+                    if not self.hidmaestro_client.install_driver():
+                        print("[!] Error: El driver de HIDMaestro no está instalado. Debe instalarse con privilegios de Administrador.")
+                        self.hidmaestro_client.stop()
+                        self.hidmaestro_client = None
+                        return
+
+                for i in range(1, max_ctrls + 1):
+                    cfg = self.config.get("controllers", {}).get(str(i), {})
+                    p_dev = cfg.get("physical_device_id", "none")
+                    if cfg.get("enabled", True) and p_dev and p_dev != "none":
+                        pad_type = get_pad_emulated_type(self.config, i)
+                        def _make_hm_feedback_cb(slot_idx: int):
+                            def _hmcb(slot, l_mot, r_mot):
+                                self.route_virtual_rumble(slot_idx, int(l_mot), int(r_mot))
+                            return _hmcb
+
+                        if not self.hidmaestro_client.add_device(i, pad_type, feedback_cb=_make_hm_feedback_cb(i)):
+                            pad_label = pad_type.upper()
+                            print(f"  [!] Error creando mando virtual #{i} ({pad_label}) en HIDMaestro.")
+                active_count = len(self.hidmaestro_client.devices)
+                if active_count == 0:
+                    print("[!] No se pudo inicializar ningún mando virtual con HIDMaestro.")
+                    self.hidmaestro_client.stop()
+                    self.hidmaestro_client = None
+                    return
             else:
                 if not HAS_VGAMEPAD or vg is None:
                     print("[!] Error: ViGEmBus/vgamepad no está disponible en este sistema.")
@@ -536,6 +579,12 @@ class EmulatorEngine:
                 except Exception as e:
                     print(f"[!] Error deteniendo VIIPER: {e}")
                 self.viiper_client = None
+            elif self.driver_backend == "hidmaestro" and self.hidmaestro_client:
+                try:
+                    self.hidmaestro_client.stop()
+                except Exception as e:
+                    print(f"[!] Error deteniendo HIDMaestro: {e}")
+                self.hidmaestro_client = None
             else:
                 for i, pad in list(self.gamepads.items()):
                     try:
@@ -597,8 +646,11 @@ class EmulatorEngine:
             with self.lock:
                 controllers_cfg = self.config.get("controllers", {})
                 is_viiper = (self.driver_backend == "viiper" and self.viiper_client is not None)
+                is_hidmaestro = (self.driver_backend == "hidmaestro" and self.hidmaestro_client is not None)
                 if is_viiper:
                     active_pad_ids = list(self.viiper_client.devices.keys())
+                elif is_hidmaestro:
+                    active_pad_ids = list(self.hidmaestro_client.devices.keys())
                 else:
                     active_pad_ids = list(self.gamepads.keys())
 
@@ -621,7 +673,7 @@ class EmulatorEngine:
                 pad_type = get_pad_emulated_type(self.config, pad_id)
                 is_ds4 = (pad_type in ("ds4", "dualsense"))
                 is_ns2pro = (pad_type == "ns2pro")
-                pad = self.gamepads.get(pad_id) if not is_viiper else None
+                pad = self.gamepads.get(pad_id) if (not is_viiper and not is_hidmaestro) else None
                 p_comp = self.compiled_mappings.get(pad_id, {})
 
                 # 1. Botones Digitales
@@ -785,6 +837,15 @@ class EmulatorEngine:
                         rx_int = int(rx_calib * 32767)
                         ry_int = int(-ry_calib * 32767)
                         self.viiper_client.send_xboxone_state(pad_id, btn_mask, lt_byte, rt_byte, lx_int, ly_int, rx_int, ry_int)
+                    elif pad_type in ("xboxseries", "xbox_series"):
+                        btn_mask = 0
+                        for b in pressed_buttons:
+                            btn_mask |= XBOX_ONE_BUTTONS.get(b, 0)
+                        lx_int = int(lx_calib * 32767)
+                        ly_int = int(-ly_calib * 32767)
+                        rx_int = int(rx_calib * 32767)
+                        ry_int = int(-ry_calib * 32767)
+                        self.viiper_client.send_xboxseries_state(pad_id, btn_mask, lt_byte, rt_byte, lx_int, ly_int, rx_int, ry_int)
                     elif pad_type == "ds4":
                         btn_mask = 0
                         for b in pressed_buttons:
@@ -818,6 +879,30 @@ class EmulatorEngine:
                         rx_u = max(0, min(4095, int(2048 + rx_calib * 2047)))
                         ry_u = max(0, min(4095, int(2048 + ry_calib * 2047)))
                         self.viiper_client.send_ns2pro_state(pad_id, btn_mask, lx_u, ly_u, rx_u, ry_u)
+                elif is_hidmaestro:
+                    # HIDMaestro utiliza su propia configuración y arquitectura nativa (HMButton, HMHat, HMAxis).
+                    # A diferencia de VIIPER (que usa tramas GIP) o ViGEm (que usa estructuras XUSB),
+                    # HIDMaestro opera sobre su propio mapa unificado para todos sus perfiles.
+                    hm_btns = 0
+                    for b in pressed_buttons:
+                        hm_btns |= HM_BUTTONS.get(b, 0)
+
+                    dpad = 0
+                    if is_d_up and is_d_right: dpad = 5
+                    elif is_d_up and is_d_left: dpad = 8
+                    elif is_d_down and is_d_right: dpad = 6
+                    elif is_d_down and is_d_left: dpad = 7
+                    elif is_d_up: dpad = 1
+                    elif is_d_down: dpad = 2
+                    elif is_d_left: dpad = 3
+                    elif is_d_right: dpad = 4
+
+                    lx_int = int(lx_calib * 32767)
+                    ly_int = int(-ly_calib * 32767)
+                    rx_int = int(rx_calib * 32767)
+                    ry_int = int(-ry_calib * 32767)
+
+                    self.hidmaestro_client.send_state(pad_id, hm_btns, dpad, lt_byte, rt_byte, lx_int, ly_int, rx_int, ry_int)
                 elif pad is not None:
                     # Modo ViGEmBus
                     if is_ds4:

@@ -35,7 +35,7 @@ from plugins.plugin_ui_renderer import PluginUIRenderer
 from i18n import (
     get_text, get_target_name, SUPPORTED_LANGUAGES,
     ALL_NONE_LABELS, get_none_label, get_input_options, is_none_mapping,
-    canonicalize_mapping, localize_mapping
+    canonicalize_mapping, localize_mapping, get_supported_emulated_types
 )
 
 APP_VERSION = "1.6.0"
@@ -990,31 +990,31 @@ class J360MoreApp:
 
     def _get_hitboxes(self, pad_id: Optional[int] = None) -> dict:
         t = self.get_pad_emulated_type(pad_id)
-        if t in ("xboxone", "xbox_one"):
+        if t in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             return XBOXONE_HITBOXES
         elif t == "dualsense":
             return DS5_HITBOXES
         elif t == "ds4":
             return DS4_HITBOXES
-        elif t == "ns2pro":
+        elif t in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             return NS2PRO_HITBOXES
         return XBOX_HITBOXES
 
     def _get_canvas_points(self, pad_id: Optional[int] = None) -> dict:
         t = self.get_pad_emulated_type(pad_id)
-        if t in ("xboxone", "xbox_one"):
+        if t in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             return XBOXONE_CANVAS_POINTS
         elif t == "dualsense":
             return DS5_CANVAS_POINTS
         elif t == "ds4":
             return DS4_CANVAS_POINTS
-        elif t == "ns2pro":
+        elif t in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             return NS2PRO_CANVAS_POINTS
         return XBOX_CANVAS_POINTS
 
     def _get_pad_img_tk(self, pad_id: Optional[int] = None):
         t = self.get_pad_emulated_type(pad_id)
-        if t in ("xboxone", "xbox_one"):
+        if t in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             if getattr(self, "ctrl_one_tk", None) is None:
                 self._load_one_asset()
             return self.ctrl_one_tk
@@ -1026,7 +1026,7 @@ class J360MoreApp:
             if getattr(self, "ctrl_ds4_tk", None) is None:
                 self._load_ds4_asset()
             return self.ctrl_ds4_tk
-        elif t == "ns2pro":
+        elif t in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             if getattr(self, "ctrl_ns2p_tk", None) is None:
                 self._load_ns2p_asset()
             return self.ctrl_ns2p_tk
@@ -1036,7 +1036,7 @@ class J360MoreApp:
 
     def _get_pad_hires_img(self, pad_id: Optional[int] = None):
         t = self.get_pad_emulated_type(pad_id)
-        if t in ("xboxone", "xbox_one"):
+        if t in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             if getattr(self, "ctrl_one_hires", None) is None:
                 self._load_one_asset()
             return getattr(self, "ctrl_one_hires", None) or getattr(self, "ctrl_one_base", None) or self.ctrl_360_hires
@@ -1048,7 +1048,7 @@ class J360MoreApp:
             if getattr(self, "ctrl_ds4_hires", None) is None:
                 self._load_ds4_asset()
             return self.ctrl_ds4_hires or self.ctrl_ds4_base
-        elif t == "ns2pro":
+        elif t in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             if getattr(self, "ctrl_ns2p_hires", None) is None:
                 self._load_ns2p_asset()
             return getattr(self, "ctrl_ns2p_hires", None) or getattr(self, "ctrl_ns2p_base", None) or self.ctrl_360_hires
@@ -1303,13 +1303,13 @@ class J360MoreApp:
         self.ctrl_ns2p_hires = self.ctrl_ns2p_base = self.ctrl_ns2p_tk = None
 
         emulated_type = self.config.get("emulated_type", "xbox360").lower()
-        if emulated_type in ("xboxone", "xbox_one"):
+        if emulated_type in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             self._load_one_asset()
         elif emulated_type == "dualsense":
             self._load_ds5_asset()
         elif emulated_type == "ds4":
             self._load_ds4_asset()
-        elif emulated_type == "ns2pro":
+        elif emulated_type in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             self._load_ns2p_asset()
         else:
             self._load_360_asset()
@@ -1318,7 +1318,7 @@ class J360MoreApp:
 
     def _update_active_assets(self):
         emulated_type = self.config.get("emulated_type", "xbox360").lower()
-        if emulated_type in ("xboxone", "xbox_one"):
+        if emulated_type in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             if getattr(self, "ctrl_one_tk", None) is None:
                 self._load_one_asset()
             if getattr(self, "ctrl_one_base", None) is not None:
@@ -1337,7 +1337,7 @@ class J360MoreApp:
             self.controller_pil_hires = self.ctrl_ds4_hires
             self.controller_pil_base = self.ctrl_ds4_base
             self.controller_img_tk = self.ctrl_ds4_tk
-        elif emulated_type == "ns2pro" and getattr(self, "ctrl_ns2p_base", None) is not None:
+        elif emulated_type in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch") and getattr(self, "ctrl_ns2p_base", None) is not None:
             self.controller_pil_hires = self.ctrl_ns2p_hires
             self.controller_pil_base = self.ctrl_ns2p_base
             self.controller_img_tk = self.ctrl_ns2p_tk
@@ -1354,12 +1354,14 @@ class J360MoreApp:
                     # Regla de backend de drivers:
                     if sys.platform != "win32":
                         data["driver_backend"] = "viiper"
-                    elif "driver_backend" not in data or data["driver_backend"] != "viiper":
+                    elif "driver_backend" not in data or data["driver_backend"] not in ("viiper", "hidmaestro"):
                         data["driver_backend"] = "vigem"
 
-                    # Si está en ViGEmBus, solo se permiten xbox360, ds4 o mixed
-                    if data.get("driver_backend") == "vigem" and data.get("emulated_type") in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
+                    # Regla de backend y compatibilidad de tipos emulados:
+                    if data.get("driver_backend") == "vigem" and data.get("emulated_type") not in ("xbox360", "ds4", "mixed", "mixto"):
                         data["emulated_type"] = "xbox360"
+                    elif data.get("driver_backend") == "viiper" and data.get("emulated_type") in ("xboxseries", "xbox_series"):
+                        data["emulated_type"] = "xboxone"
 
                     if "language" not in data:
                         data["language"] = "es"
@@ -1717,7 +1719,7 @@ class J360MoreApp:
 
         pad_type = self.get_pad_emulated_type(pad_id)
         is_ps = pad_type in ("ds4", "dualsense")
-        is_switch = (pad_type == "ns2pro")
+        is_switch = pad_type in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch")
 
         # Columna Izquierda
         if is_ps:
@@ -1867,7 +1869,7 @@ class J360MoreApp:
         pad_type = self.get_pad_emulated_type(pad_id)
 
         # Centros geométricos de D-Pad y Sticks según el controlador emulado activo
-        if pad_type in ("xboxone", "xbox_one"):
+        if pad_type in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite"):
             dpad_cx, dpad_cy = 129.8, 165.5
             ls_cx, ls_cy = 81.5, 124.4
             rs_cx, rs_cy = 218.0, 167.9
@@ -1879,7 +1881,7 @@ class J360MoreApp:
             dpad_cx, dpad_cy = 70.0, 126.5
             ls_cx, ls_cy = 123.5, 167.5
             rs_cx, rs_cy = 225.5, 167.5
-        elif pad_type == "ns2pro":
+        elif pad_type in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             dpad_cx, dpad_cy = 126.3, 171.0
             ls_cx, ls_cy = 79.4, 131.8
             rs_cx, rs_cy = 224.4, 172.0
@@ -2146,7 +2148,7 @@ class J360MoreApp:
         if pad_type in ("ds4", "dualsense"):
             t_lt = self.t("title_left_trigger_ds4")
             t_rt = self.t("title_right_trigger_ds4")
-        elif pad_type == "ns2pro":
+        elif pad_type in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             t_lt = self.t("title_left_trigger_ns2pro")
             t_rt = self.t("title_right_trigger_ns2pro")
         else:
@@ -2291,7 +2293,7 @@ class J360MoreApp:
         if pad_type in ("ds4", "dualsense"):
             t_ls = self.t("title_left_stick_ds4")
             t_rs = self.t("title_right_stick_ds4")
-        elif pad_type == "ns2pro":
+        elif pad_type in ("ns2pro", "switchpro", "switch_pro", "joycon", "joycon_grip", "joycon_switch"):
             t_ls = self.t("title_left_stick_ns2pro")
             t_rs = self.t("title_right_stick_ns2pro")
         else:
@@ -3270,6 +3272,30 @@ class J360MoreApp:
 
             self._hide_emulation_devices()
             self.engine.start()
+            if not self.engine.is_running():
+                self._unhide_emulation_devices()
+                self.btn_toggle_emu.config(text=self.t("btn_start_emu"))
+                self.status_dot.itemconfig(self.status_circle, fill="#888888")
+                self.status_text_lbl.config(text=self.t("status_stopped"))
+                self._update_virtual_rumble_buttons_state(False)
+
+                backend = self.config.get("driver_backend", "vigem")
+                is_es = (self.config.get("language", "es") == "es")
+                if backend == "hidmaestro":
+                    err_msg = (
+                        "No se pudo iniciar la emulación con HIDMaestro.\n\n"
+                        "Se requieren privilegios de Administrador (UAC) para instanciar dispositivos virtuales.\n"
+                        "Por favor, acepte el cuadro de elevación de Windows o ejecute la aplicación como Administrador."
+                        if is_es else
+                        "Failed to start emulation with HIDMaestro.\n\n"
+                        "Administrator privileges (UAC) are required to create virtual controllers.\n"
+                        "Please accept the Windows elevation prompt or run the application as Administrator."
+                    )
+                else:
+                    err_msg = self.t("emu_unavailable_msg")
+                messagebox.showerror(self.t("msg_error"), err_msg)
+                return
+
             self.btn_toggle_emu.config(text=self.t("btn_stop_emu"))
             self.status_dot.itemconfig(self.status_circle, fill="#00cc44")
             self.status_text_lbl.config(text=self.t("status_active"))
@@ -3340,6 +3366,29 @@ class J360MoreApp:
                     self.t("vigem_missing_title"),
                     self.t("vigem_missing_msg")
                 )
+        elif driver_backend == "hidmaestro":
+            if not self.driver_manager.is_hidmaestro_available():
+                messagebox.showwarning(
+                    self.t("hidmaestro_missing_title"),
+                    self.t("hidmaestro_missing_msg")
+                )
+            elif not self.driver_manager.is_hidmaestro_driver_installed():
+                ans = messagebox.askyesno(
+                    self.t("hidmaestro_driver_missing_title"),
+                    self.t("hidmaestro_driver_missing_msg")
+                )
+                if ans:
+                    ok = self.driver_manager.install_hidmaestro_driver()
+                    if ok:
+                        messagebox.showinfo(
+                            self.t("hidmaestro_driver_missing_title"),
+                            self.t("hidmaestro_driver_installed_ok")
+                        )
+                    else:
+                        messagebox.showwarning(
+                            self.t("hidmaestro_driver_missing_title"),
+                            self.t("hidmaestro_driver_install_failed")
+                        )
         else:
             from viiper_backend import is_usbip_installed, get_viiper_binary_path
             if not get_viiper_binary_path():
@@ -3496,21 +3545,14 @@ class J360MoreApp:
         driver_row.pack(fill=tk.X, padx=4, pady=2)
 
         def on_driver_changed():
-            d = driver_var.get()
-            if d == "vigem":
-                rb_xbone.configure(state="disabled")
-                rb_ps5.configure(state="disabled")
-                rb_ns2.configure(state="disabled")
-                if type_var.get() in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
-                    type_var.set("xbox360")
-                    on_type_changed()
-            else:
-                rb_xbone.configure(state="normal")
-                rb_ps5.configure(state="normal")
-                rb_ns2.configure(state="normal")
+            refresh_type_dropdown()
 
         rb_viiper = ttk.Radiobutton(driver_row, text=self.t("set_driver_viiper"), variable=driver_var, value="viiper", command=on_driver_changed)
         rb_viiper.pack(anchor="w", pady=1)
+
+        hidmaestro_state = "normal" if sys.platform == "win32" else "disabled"
+        rb_hidmaestro = ttk.Radiobutton(driver_row, text=self.t("set_driver_hidmaestro"), variable=driver_var, value="hidmaestro", state=hidmaestro_state, command=on_driver_changed)
+        rb_hidmaestro.pack(anchor="w", pady=1)
 
         vigem_state = "normal" if sys.platform == "win32" else "disabled"
         rb_vigem = ttk.Radiobutton(driver_row, text=self.t("set_driver_vigem"), variable=driver_var, value="vigem", state=vigem_state, command=on_driver_changed)
@@ -3523,8 +3565,22 @@ class J360MoreApp:
         box_type.pack(fill=tk.X, pady=(0, 6))
 
         cur_type = self.config.get("emulated_type", "xbox360").lower()
-        if driver_var.get() == "vigem" and cur_type in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
+        if cur_type in ("joycon", "joycon_switch"):
+            cur_type = "joycon_grip"
+        elif cur_type in ("switchpro", "switch_pro"):
+            cur_type = "ns2pro"
+        elif cur_type in ("xbox_elite",):
+            cur_type = "xboxelite"
+        elif cur_type in ("xbox_one",):
+            cur_type = "xboxone"
+
+        if driver_var.get() == "vigem" and cur_type not in ("xbox360", "ds4", "mixed", "mixto"):
             cur_type = "xbox360"
+        elif driver_var.get() == "viiper" and cur_type in ("xboxseries", "xbox_series"):
+            cur_type = "xboxone"
+        elif driver_var.get() == "viiper" and cur_type in ("xboxelite", "joycon_grip"):
+            cur_type = "xbox360"
+
         type_var = tk.StringVar(value=cur_type)
 
         def get_ctrl_label(cnt):
@@ -3532,13 +3588,16 @@ class J360MoreApp:
             base = self.t("set_ctrl_count_1") if cnt == 1 else self.t("set_ctrl_count", count=cnt)
             if t in ("mixed", "mixto"):
                 half = cnt // 2
-                return f"{base}  ({half} Xbox + {half} DS4)"
+                return f"{base}  ({half} x360 + {half} DS4)"
             return base
 
         is_updating = [False]
+        slider = None
 
         def on_type_changed():
             t = type_var.get().lower()
+            if slider is None:
+                return
             cur = val_var.get()
             if t in ("mixed", "mixto"):
                 if cur % 2 != 0:
@@ -3558,20 +3617,75 @@ class J360MoreApp:
 
         type_row = ttk.Frame(box_type)
         type_row.pack(fill=tk.X, padx=4, pady=2)
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_x360"), variable=type_var, value="xbox360", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 10))
-        rb_xbone = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_xboxone"), variable=type_var, value="xboxone", command=on_type_changed)
-        rb_xbone.pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ds4"), variable=type_var, value="ds4", command=on_type_changed).pack(side=tk.LEFT, padx=(0, 10))
-        rb_ps5 = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_dualsense"), variable=type_var, value="dualsense", command=on_type_changed)
-        rb_ps5.pack(side=tk.LEFT, padx=(0, 10))
-        rb_ns2 = ttk.Radiobutton(type_row, text=self.t("set_emulated_type_ns2pro"), variable=type_var, value="ns2pro", command=on_type_changed)
-        rb_ns2.pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Radiobutton(type_row, text=self.t("set_emulated_type_mixed"), variable=type_var, value="mixed", command=on_type_changed).pack(side=tk.LEFT)
 
-        if driver_var.get() == "vigem":
-            rb_xbone.configure(state="disabled")
-            rb_ps5.configure(state="disabled")
-            rb_ns2.configure(state="disabled")
+        type_combo_var = tk.StringVar(value="")
+        type_combo = ttk.Combobox(type_row, textvariable=type_combo_var, state="readonly", width=36)
+        type_combo.pack(anchor="w", padx=2, pady=2)
+
+        type_mapping = {}
+
+        def get_current_lang_code():
+            for code, name in SUPPORTED_LANGUAGES.items():
+                if name == lang_var.get():
+                    return code
+            return self.config.get("language", "es")
+
+        def refresh_type_dropdown():
+            nonlocal type_mapping
+            backend = driver_var.get()
+            l_code = get_current_lang_code()
+            items = get_supported_emulated_types(backend, l_code)
+            type_mapping = {}
+            for tid, lbl in items:
+                type_mapping[lbl] = tid
+                type_mapping[lbl.strip()] = tid
+            labels = [lbl for tid, lbl in items]
+            type_combo["values"] = labels
+
+            # Priorizar lo que el usuario tenía seleccionado visualmente si es compatible
+            current_label = (type_combo.get() or type_combo_var.get() or "").strip()
+            current_id = type_mapping.get(current_label) or type_var.get()
+
+            if backend == "viiper" and current_id in ("xboxseries", "xbox_series"):
+                current_id = "xboxone"
+
+            valid_ids = [tid for tid, _ in items]
+            if current_id not in valid_ids:
+                current_id = "xbox360"
+
+            type_var.set(current_id)
+
+            matching_lbl = None
+            matching_idx = 0
+            for idx, (tid, lbl) in enumerate(items):
+                if tid == current_id:
+                    matching_lbl = lbl
+                    matching_idx = idx
+                    break
+            if not matching_lbl and labels:
+                matching_lbl = labels[0]
+                matching_idx = 0
+                type_var.set(items[0][0])
+
+            if matching_lbl:
+                type_combo_var.set(matching_lbl)
+                type_combo.set(matching_lbl)
+                try:
+                    type_combo.current(matching_idx)
+                except Exception:
+                    pass
+            on_type_changed()
+
+        def on_combo_selected(event=None):
+            selected_lbl = (type_combo.get() or type_combo_var.get() or "").strip()
+            tid = type_mapping.get(selected_lbl)
+            if tid:
+                type_var.set(tid)
+            on_type_changed()
+
+        type_combo.bind("<<ComboboxSelected>>", on_combo_selected)
+        type_combo_var.trace_add("write", lambda *_: on_combo_selected())
+        lang_combo.bind("<<ComboboxSelected>>", lambda e: refresh_type_dropdown())
 
         ttk.Label(box_type, text=self.t("set_emulated_type_desc"), font=("Segoe UI", 8), foreground="#555555", wraplength=660).pack(anchor="w", padx=4, pady=(2, 0))
 
@@ -3612,6 +3726,8 @@ class J360MoreApp:
         ttk.Label(ticks_frame, text=self.t("set_1_controller"), font=("Segoe UI", 8)).pack(side=tk.LEFT)
         ttk.Label(ticks_frame, text=self.t("set_6_controllers"), font=("Segoe UI", 8)).pack(side=tk.LEFT, expand=True)
         ttk.Label(ticks_frame, text=self.t("set_12_controllers"), font=("Segoe UI", 8)).pack(side=tk.RIGHT)
+
+        refresh_type_dropdown()
 
         # SECCION 5: Integración con HidHide (Opcional, solo en Windows)
         current_path = self.driver_manager.get_hidhide_cli_path() or ""
@@ -4295,8 +4411,16 @@ class J360MoreApp:
 
             # 3. Aplicar tipo de mando emulado
             old_type = self.config.get("emulated_type", "xbox360").lower()
-            new_type = type_var.get().lower()
-            if new_driver == "vigem" and new_type in ("xboxone", "xbox_one", "dualsense", "ns2pro"):
+            sel_text = (type_combo.get() or type_combo_var.get() or "").strip()
+            if sel_text in type_mapping:
+                new_type = type_mapping[sel_text].lower()
+            else:
+                new_type = type_var.get().lower() if type_var.get() else "xbox360"
+            if new_driver == "vigem" and new_type in ("xboxone", "xbox_one", "xboxseries", "xbox_series", "xboxelite", "xbox_elite", "dualsense", "ns2pro", "switchpro", "joycon", "joycon_grip"):
+                new_type = "xbox360"
+            elif new_driver == "viiper" and new_type in ("xboxseries", "xbox_series"):
+                new_type = "xboxone"
+            elif new_driver == "viiper" and new_type in ("xboxelite", "xbox_elite", "joycon", "joycon_grip"):
                 new_type = "xbox360"
             type_changed = (new_type != old_type)
             self.config["emulated_type"] = new_type
@@ -5247,8 +5371,14 @@ class J360MoreApp:
             pad_badge = "DualSense (PS5)"
         elif pad_type == "ds4":
             pad_badge = "DualShock 4"
-        elif pad_type == "ns2pro":
-            pad_badge = "Switch 2 Pro"
+        elif pad_type in ("joycon", "joycon_grip", "joycon_switch"):
+            pad_badge = "Joy-Con (Charging Grip)"
+        elif pad_type in ("ns2pro", "switchpro", "switch_pro"):
+            pad_badge = "Nintendo Switch Pro"
+        elif pad_type in ("xboxelite", "xbox_elite"):
+            pad_badge = "Xbox Elite Series 2"
+        elif pad_type in ("xboxseries", "xbox_series"):
+            pad_badge = "Xbox Series"
         elif pad_type in ("xboxone", "xbox_one"):
             pad_badge = "Xbox One"
         else:

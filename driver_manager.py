@@ -45,6 +45,33 @@ class DriverManager:
         return False
 
     # ==========================================
+    # DETECCION DE HIDMAESTRO
+    # ==========================================
+    def is_hidmaestro_available(self) -> bool:
+        """Verifica si los binarios de HIDMaestro están presentes en el sistema."""
+        try:
+            from hidmaestro_backend import is_hidmaestro_available
+            return is_hidmaestro_available()
+        except Exception:
+            return False
+
+    def is_hidmaestro_driver_installed(self) -> bool:
+        """Verifica si el controlador HIDMaestro está registrado en el DriverStore."""
+        try:
+            from hidmaestro_backend import is_hidmaestro_driver_installed
+            return is_hidmaestro_driver_installed()
+        except Exception:
+            return False
+
+    def install_hidmaestro_driver(self) -> bool:
+        """Lanza la instalación del controlador HIDMaestro solicitando elevación de Administrador."""
+        try:
+            from hidmaestro_backend import install_hidmaestro_driver
+            return install_hidmaestro_driver()
+        except Exception:
+            return False
+
+    # ==========================================
     # DETECCION Y RUTA DE HIDHIDE
     # ==========================================
     def get_hidhide_cli_path(self) -> Optional[str]:

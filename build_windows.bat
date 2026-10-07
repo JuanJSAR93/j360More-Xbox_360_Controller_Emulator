@@ -16,7 +16,7 @@ python -m PyInstaller --noconfirm --onefile --windowed --noupx ^
     --icon "assets/icon.ico" ^
     --version-file "version_info.txt" ^
     --add-data "assets;assets" ^
-    --add-data "bin;bin" ^
+    --collect-all "vgamepad" ^
     --collect-all "resvg_py" ^
     --collect-all "PIL" ^
     --collect-all "qrcode" ^
@@ -28,23 +28,13 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [*] Copiando binarios auxiliares a dist/...
-if exist "bin" (
-    xcopy /e /i /y "bin" "dist\bin" >nul
-)
-
-if exist "dist\config_mapping.json" (
-    del /q "dist\config_mapping.json"
-)
-
-echo.
-echo [*] Creando paquete ZIP de Windows (j360More-v1.6.0-windows-amd64.zip)...
-python -c "import zipfile, os; z = zipfile.ZipFile('dist/j360More-v1.6.0-windows-amd64.zip', 'w', zipfile.ZIP_DEFLATED); z.write('dist/j360More.exe', 'j360More.exe'); v_src = 'bin/viiper-amd64.exe' if os.path.exists('bin/viiper-amd64.exe') else ('dist/bin/viiper.exe' if os.path.exists('dist/bin/viiper.exe') else ('bin/viiper.exe' if os.path.exists('bin/viiper.exe') else None)); (z.write(v_src, 'bin/viiper.exe') if v_src else None); z.close()"
+echo [*] Empaquetando versiones para Windows AMD64 y ARM64...
+python package_windows.py
 
 echo.
 echo =======================================================
 echo   ¡COMPILACION PARA WINDOWS COMPLETADA CON EXITO!
 echo =======================================================
-echo Ejecutable: dist\j360More.exe
-echo Paquete ZIP: dist\j360More-v1.6.0-windows-amd64.zip
+echo Paquete AMD64: dist\j360More-v1.6.0-windows-amd64.zip
+echo Paquete ARM64: dist\j360More-v1.6.0-windows-arm64.zip
 echo =======================================================

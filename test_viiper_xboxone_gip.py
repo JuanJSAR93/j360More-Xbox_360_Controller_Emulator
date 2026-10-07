@@ -7,7 +7,7 @@ from ctypes import wintypes as w
 # Add current dir to sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from viiper_backend import ViiperClient, XBOX_ONE_BUTTONS
+from viiper_backend import ViiperClient, XBOX_ONE_BUTTONS, XBOX_SERIES_BUTTONS
 
 class XInputGamepad(ctypes.Structure):
     _fields_ = [
@@ -48,24 +48,18 @@ def get_xinput_states():
             }
     return states
 
-def main():
-    print("[*] Diagnosticando estados XInput iniciales...")
+def test_device_profile(client, dev_type, button_name, button_mask, trigger_side):
+    print(f"\n==========================================")
+    print(f"[*] INICIANDO PRUEBA PARA: {dev_type.upper()} (GIP)")
+    print(f"==========================================")
     init_states = get_xinput_states()
     print(f"    Ranuras XInput activas antes del test: {list(init_states.keys())}")
 
-    client = ViiperClient()
-    print("[*] Iniciando bus VIIPER...")
-    if not client.start_bus():
-        print("[!] No se pudo iniciar el bus VIIPER.")
-        return 1
+    if not client.add_device(0, dev_type):
+        print(f"[!] Error creando mando {dev_type} GIP.")
+        return False
 
-    print("[*] Anadiendo mando virtual Xbox One (GIP)...")
-    if not client.add_device(0, 'xboxone'):
-        print("[!] Error creando mando Xbox One GIP.")
-        client.stop()
-        return 1
-
-    print("[+] Mando Xbox One GIP creado con exito. Esperando enumeracion PnP en Windows...")
+    print(f"[+] Mando {dev_type} GIP creado con exito. Esperando enumeracion PnP en Windows...")
     time.sleep(2.0)
 
     # Buscar ranura XInput nueva
@@ -83,43 +77,74 @@ def main():
     if new_slot is None:
         print("[!] No se detecto nueva ranura XInput tras la conexion.")
         print(f"    Ranuras actuales: {get_xinput_states()}")
-        client.stop()
-        return 1
+        client.remove_device(0)
+        return False
 
     print(f"[+] Nueva ranura XInput detectada: Ranura #{new_slot}")
     print(f"    Estado inicial: {get_xinput_states()[new_slot]}")
 
-    # Enviar pulsacion de Boton A
-    print("[*] Enviando pulsacion de BOTON A + Gatillo Izquierdo (255)...")
-    client.send_xboxone_state(0, XBOX_ONE_BUTTONS['A'], 255, 0, 0, 0, 0, 0)
+    # Enviar pulsación
+    lt_val = 255 if trigger_side == 'lt' else 0
+    rt_val = 255 if trigger_side == 'rt' else 0
+    print(f"[*] Enviando pulsacion de BOTON {button_name} + Gatillo {trigger_side.upper()} (255)...")
+    if dev_type == 'xboxone':
+        client.send_xboxone_state(0, button_mask, lt_val, rt_val, 0, 0, 0, 0)
+    else:
+        client.send_xboxseries_state(0, button_mask, lt_val, rt_val, 0, 0, 0, 0)
     time.sleep(0.5)
 
-    st_after_a = get_xinput_states().get(new_slot, {})
-    print(f"    Estado XInput leido: {st_after_a}")
-    btn_a_pressed = bool(st_after_a.get('buttons', 0) & 0x1000) # XINPUT_GAMEPAD_A = 0x1000
-    lt_pressed = st_after_a.get('lt', 0) > 200
+    st_pressed = get_xinput_states().get(new_slot, {})
+    print(f"    Estado XInput leido: {st_pressed}")
 
-    print(f"    -> Boton A reconocido por XInput: {btn_a_pressed}")
-    print(f"    -> Gatillo Izquierdo reconocido por XInput: {lt_pressed}")
+    # XINPUT masks: A=0x1000, B=0x2000
+    expected_xinput_btn = 0x1000 if button_name == 'A' else 0x2000
+    btn_pressed = bool(st_pressed.get('buttons', 0) & expected_xinput_btn)
+    trig_pressed = st_pressed.get(trigger_side, 0) > 200
 
-    # Enviar estado neutral
+    print(f"    -> Boton {button_name} reconocido por XInput: {btn_pressed}")
+    print(f"    -> Gatillo {trigger_side.upper()} reconocido por XInput: {trig_pressed}")
+
+    # Enviar neutral
     print("[*] Enviando estado neutral...")
-    client.send_xboxone_state(0, 0, 0, 0, 0, 0, 0, 0)
+    if dev_type == 'xboxone':
+        client.send_xboxone_state(0, 0, 0, 0, 0, 0, 0, 0)
+    else:
+        client.send_xboxseries_state(0, 0, 0, 0, 0, 0, 0, 0)
     time.sleep(0.3)
-    st_neutral = get_xinput_states().get(new_slot, {})
-    print(f"    Estado XInput tras soltar: {st_neutral}")
 
     print("[*] Desconectando y liberando mando...")
     client.remove_device(0)
-    time.sleep(1.0)
-    client.stop()
-    print("[+] Servidor VIIPER detenido y dispositivos liberados.")
+    time.sleep(1.5)
 
-    if btn_a_pressed and lt_pressed:
-        print("\n>>> TEST GIP XINPUT: EXITO TOTAL (PASS) <<<")
+    success = btn_pressed and trig_pressed
+    if success:
+        print(f"[+] PRUEBA DE {dev_type.upper()} SUPERADA CON EXITO.")
+    else:
+        print(f"[!] PRUEBA DE {dev_type.upper()} FALLIDA.")
+    return success
+
+def main():
+    client = ViiperClient()
+    print("[*] Iniciando bus VIIPER...")
+    if not client.start_bus():
+        print("[!] No se pudo iniciar el bus VIIPER.")
+        return 1
+
+    ok_one = False
+    ok_series = False
+    try:
+        ok_one = test_device_profile(client, 'xboxone', 'A', XBOX_ONE_BUTTONS['A'], 'lt')
+        time.sleep(1.0)
+        ok_series = test_device_profile(client, 'xboxseries', 'B', XBOX_SERIES_BUTTONS['B'], 'rt')
+    finally:
+        client.stop()
+        print("[+] Servidor VIIPER detenido y recursos liberados.")
+
+    if ok_one and ok_series:
+        print("\n>>> TEST GIP XINPUT (XBOX ONE & XBOX SERIES): EXITO TOTAL (PASS) <<<")
         return 0
     else:
-        print("\n>>> TEST GIP XINPUT: FALLO DE RECEPCION <<<")
+        print(f"\n>>> TEST GIP XINPUT: FALLO (XboxOne={ok_one}, XboxSeries={ok_series}) <<<")
         return 1
 
 if __name__ == '__main__':

@@ -52,11 +52,12 @@ Get-CimInstance Win32_PnPEntity | ForEach-Object {
   $name = [string]$_.Name
   $service = [string]$_.Service
   $preCandidate = $hardwareText -match
-    'VID_045E&PID_(028E|02EA|0B12)|VID_054C&PID_(05C4|09CC|0CE6|0DF2)|VID_057E&PID_2069' -or
+    'VID_045E&PID_(028E|02D1|02EA|0B12)|VID_054C&PID_(05C4|09CC|0CE6|0DF2)|VID_057E&PID_2069' -or
     $hardwareText -match 'HID_DEVICE_SYSTEM_GAME' -or
     $class -in @('XnaComposite', 'XboxComposite') -or
-    $name -match 'Gamepad|Xbox|DualShock|DualSense|Switch|VIIPER|Mando|Game controller|Controlador de juego' -or
-    $service -match 'xusb22|vigem|usbip|vhci|dc1-controller'
+    $name -match 'Gamepad|Xbox|DualShock|DualSense|Switch|VIIPER|HIDMaestro|Mando|Game controller|Controlador de juego' -or
+    $service -match 'xusb22|vigem|usbip|vhci|dc1-controller|hidmaestro|hmxinput' -or
+    $hardwareText -match 'HIDMaestro|HMCOMPANION|ROOT\\HIDMAESTRO'
   if (-not $preCandidate) { return }
   $deviceProperties = @(Get-PnpDeviceProperty -InstanceId $instanceId -KeyName @(
     'DEVPKEY_Device_Parent',
@@ -80,14 +81,14 @@ Get-CimInstance Win32_PnPEntity | ForEach-Object {
 
   # Include known controller identities even when Windows exposes them through
   # a localized or vendor-specific PnP class. The classifier decides later if
-  # the controller is physical, ViGEmBus, USB/IP, or VIIPER.
+  # the controller is physical, ViGEmBus, USB/IP, VIIPER, or HIDMaestro.
   $knownControllerId = $hardwareText -match
-    'VID_045E&PID_(028E|02EA|0B12)|VID_054C&PID_(05C4|09CC|0CE6|0DF2)|VID_057E&PID_2069'
+    'VID_045E&PID_(028E|02D1|02EA|0B12)|VID_054C&PID_(05C4|09CC|0CE6|0DF2)|VID_057E&PID_2069'
   $isCandidate = $knownControllerId -or
     (($class -in @('HIDClass', 'XnaComposite', 'XboxComposite') -and
       $name -match 'Gamepad|Xbox|DualShock|DualSense|Switch|Controller|Mando|Controlador')) -or
-    $service -match 'xusb22|vigem|usbip|vhci|dc1-controller' -or
-    $identityText -match 'VIIPER|Virtual Gamepad|Virtual Xbox|Virtual DS4|Virtual DualShock|Virtual DualSense' -or
+    $service -match 'xusb22|vigem|usbip|vhci|dc1-controller|hidmaestro|hmxinput' -or
+    $identityText -match 'VIIPER|HIDMaestro|HM-CTL|HMCOMPANION|Virtual Gamepad|Virtual Xbox|Virtual DS4|Virtual DualShock|Virtual DualSense' -or
     ($class -eq 'HIDClass' -and $hardwareText -match 'HID_DEVICE_SYSTEM_GAME')
 
   if ($isCandidate) {
@@ -166,14 +167,15 @@ def native_windows_devices() -> list[dict[str, Any]]:
         text_scan = f"{dev_id} {cls} {service} {name} {hwid} {comp} {bus_reported} {enum_name}".upper()
         
         # Omitir chipsets de placa base comunes a menos que sean transporte USB/IP o buses virtuales
-        if any(ign in text_scan for ign in ('VEN_8086', 'VEN_1022', 'INTEL(R)', 'AMD ', 'HOST CONTROLLER', 'GPIO', 'SPI (FLASH)')) and not any(v in text_scan for v in ('USBIP', 'VHCI', 'VIGEM')):
+        if any(ign in text_scan for ign in ('VEN_8086', 'VEN_1022', 'INTEL(R)', 'AMD ', 'HOST CONTROLLER', 'GPIO', 'SPI (FLASH)')) and not any(v in text_scan for v in ('USBIP', 'VHCI', 'VIGEM', 'HIDMAESTRO', 'HMCOMPANION')):
             continue
 
         is_candidate = any(k in text_scan for k in (
-            '045E', '054C', '057E', '028E', '02EA', '0B12', '0B13',
+            '045E', '054C', '057E', '028E', '02D1', '02EA', '0B12', '0B13',
             '05C4', '09CC', '0CE6', '0DF2', '2069',
             'HID_DEVICE_SYSTEM_GAME', 'GAMEPAD', 'JOYSTICK', 'XBOX',
-            'DUALSHOCK', 'DUALSENSE', 'SWITCH', 'VIGEM', 'VIIPER',
+            'DUALSHOCK', 'DUALSENSE', 'SWITCH', 'VIGEM', 'VIIPER', 'HIDMAESTRO',
+            'HMCOMPANION', 'HMXINPUT', 'HM-CTL',
             'USBIP', 'VHCI', 'XUSB22', 'DC1-CONTROLLER', 'MANDO'
         ))
         if not is_candidate and cls not in ('XnaComposite', 'XboxComposite'):
@@ -430,7 +432,7 @@ def controller_model(device: dict[str, Any]) -> str:
     signals = pnp_signal_text(device)
     if "xbox series" in signals or "pid_0b12" in signals:
         return "Xbox Series X|S"
-    if "xbox one" in signals or "pid_02ea" in signals:
+    if "xbox one" in signals or "pid_02ea" in signals or "pid_02d1" in signals:
         return "Xbox One"
     if "xbox 360" in signals or "pid_028e" in signals:
         return "Xbox 360"
@@ -475,6 +477,22 @@ def classify_origin(d: dict[str, Any]) -> tuple[str, str, int, str]:
     if vigem_evidence:
         return "virtual", "ViGEmBus PnP chain", 100, "ViGEmBus"
 
+    # HIDMaestro signature (UMDF2 minidriver + XUSB companion + composite personas)
+    hidmaestro_evidence = (
+        "hidmaestro" in signals
+        or "hmcompanion" in signals
+        or "hmxinput" in signals
+        or "root\\hidmaestro" in signals
+        or "hidmaestro_ude" in signals
+        or "hm-ctl-" in signals
+        or "hm-ctl-" in instance
+        or "hm-ctl-" in bus_description
+        or "hm-ctl-" in parent_description
+        or service in ("hidmaestro", "hmxinput")
+    )
+    if hidmaestro_evidence:
+        return "virtual", "HIDMaestro PnP identity / serial", 100, "HIDMaestro"
+
     if any(token in signals for token in ("usbip", "vhci", "usb/ip")):
         return "virtual", "USB/IP or VIIPER transport", 98, "VIIPER"
 
@@ -494,6 +512,7 @@ def classify_driver(d: dict[str, Any], active_driver: str = "all") -> tuple[str,
     
     - Si active_driver == 'viiper': Solo clasifica como virtual los creados por VIIPER.
     - Si active_driver in ('vigem', 'vigembus'): Solo clasifica como virtual los de ViGEmBus.
+    - Si active_driver in ('hidmaestro', 'maestro'): Solo clasifica como virtual los de HIDMaestro.
     - Si active_driver in ('all', 'both'): Clasifica cualquier virtual.
     """
     kind, reason, confidence, origin = classify_origin(d)
@@ -502,14 +521,20 @@ def classify_driver(d: dict[str, Any], active_driver: str = "all") -> tuple[str,
     if norm_driver in ("viiper", "usbip"):
         if origin == "VIIPER":
             return kind, reason, confidence, origin
-        # Si fue creado por ViGEmBus pero el driver activo es VIIPER, no se filtra
+        # Si fue creado por otro driver pero el activo es VIIPER, no se filtra
         return "other", f"Ignorado bajo filtro exclusivo VIIPER (origen: {origin})", 0, origin
 
     elif norm_driver in ("vigem", "vigembus"):
         if origin == "ViGEmBus":
             return kind, reason, confidence, origin
-        # Si fue creado por VIIPER pero el driver activo es ViGEmBus, no se filtra
+        # Si fue creado por otro driver pero el activo es ViGEmBus, no se filtra
         return "other", f"Ignorado bajo filtro exclusivo ViGEmBus (origen: {origin})", 0, origin
+
+    elif norm_driver in ("hidmaestro", "maestro"):
+        if origin == "HIDMaestro":
+            return kind, reason, confidence, origin
+        # Si fue creado por otro driver pero el activo es HIDMaestro, no se filtra
+        return "other", f"Ignorado bajo filtro exclusivo HIDMaestro (origen: {origin})", 0, origin
 
     # Modo 'all': reporta cualquier dispositivo virtual detectado
     return kind, reason, confidence, origin
@@ -591,6 +616,9 @@ def is_virtual_device(
     if norm_driver in ("vigem", "vigembus", "all"):
         if any(x in norm_name for x in ("vigem", "nefarius", "virtual gamepad emulation bus")):
             return True
+    if norm_driver in ("hidmaestro", "maestro", "all"):
+        if any(x in norm_name for x in ("hidmaestro", "hmcompanion")):
+            return True
 
     return False
 
@@ -661,7 +689,7 @@ def compact(d: dict[str, Any], active_driver: str = "all") -> dict[str, Any]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Clasifica mandos físicos y virtuales mediante metadatos PnP de Windows o sysfs de Linux.")
-    ap.add_argument("--driver", choices=["all", "viiper", "vigem"], default="all", help="driver activo a considerar para la detección condicionada (default: all)")
+    ap.add_argument("--driver", choices=["all", "viiper", "vigem", "hidmaestro"], default="all", help="driver activo a considerar para la detección condicionada (default: all)")
     ap.add_argument("--all", action="store_true", help="mostrar todos los dispositivos PnP")
     ap.add_argument("--virtual-only", action="store_true", help="mostrar solo virtuales o probablemente virtuales")
     ap.add_argument("--json", action="store_true", help="emitir JSON")

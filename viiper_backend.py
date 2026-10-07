@@ -30,25 +30,27 @@ XBOX_BUTTONS = {
     'Y': 0x8000,
 }
 
-# Xbox One Semantic Buttons (conforme a device/xboxone/semantic_input_wire.go)
+# Xbox One / Xbox Series / GIP Semantic Buttons (conforme a device/xboxgip y device/xboxone)
 XBOX_ONE_BUTTONS = {
-    'START': 1 << 0,          # Menu
-    'BACK': 1 << 1,           # View
-    'A': 1 << 2,
-    'B': 1 << 3,
-    'X': 1 << 4,
-    'Y': 1 << 5,
-    'DPAD_UP': 1 << 6,
-    'DPAD_DOWN': 1 << 7,
-    'DPAD_LEFT': 1 << 8,
-    'DPAD_RIGHT': 1 << 9,
-    'LEFT_SHOULDER': 1 << 10,
-    'RIGHT_SHOULDER': 1 << 11,
-    'LEFT_THUMB': 1 << 12,
-    'RIGHT_THUMB': 1 << 13,
-    'GUIDE': 1 << 14,
-    'SHARE': 1 << 15,
+    'DPAD_UP': 1 << 0,        # 0x0001
+    'DPAD_DOWN': 1 << 1,      # 0x0002
+    'DPAD_LEFT': 1 << 2,      # 0x0004
+    'DPAD_RIGHT': 1 << 3,     # 0x0008
+    'START': 1 << 4,          # 0x0010 (Menu)
+    'BACK': 1 << 5,           # 0x0020 (View)
+    'LEFT_THUMB': 1 << 6,     # 0x0040 (L3)
+    'RIGHT_THUMB': 1 << 7,    # 0x0080 (R3)
+    'LEFT_SHOULDER': 1 << 8,  # 0x0100 (LB)
+    'RIGHT_SHOULDER': 1 << 9, # 0x0200 (RB)
+    'GUIDE': 1 << 10,         # 0x0400 (Xbox Logo / Home)
+    'A': 1 << 11,             # 0x0800
+    'B': 1 << 12,             # 0x1000
+    'X': 1 << 13,             # 0x2000
+    'Y': 1 << 14,             # 0x4000
+    'SHARE': 1 << 15,         # 0x8000
 }
+XBOX_SERIES_BUTTONS = XBOX_ONE_BUTTONS
+XBOX_GIP_BUTTONS = XBOX_ONE_BUTTONS
 
 # DS4 Buttons
 DS4_BUTTONS = {
@@ -118,9 +120,9 @@ def find_viiper_executable() -> Optional[str]:
     mach = platform.machine().lower()
     if sys.platform == 'win32':
         if mach in ('aarch64', 'arm64'):
-            bin_names = ['viiper.exe', 'viiper_arm64.exe', 'viiper-arm64.exe']
+            bin_names = ['viiper_arm64.exe', 'viiper-arm64.exe', 'viiper.exe']
         else:
-            bin_names = ['viiper.exe', 'viiper-amd64.exe', 'viiper_amd64.exe']
+            bin_names = ['viiper-amd64.exe', 'viiper_amd64.exe', 'viiper.exe']
     elif mach in ('aarch64', 'arm64'):
         bin_names = ['viiper', 'viiper-arm64', 'viiper_arm64', 'viiper-aarch64']
     elif mach in ('x86_64', 'amd64'):
@@ -345,7 +347,7 @@ class ViiperClient:
 
     def _send_cmd(self, cmd_path: str, payload: Optional[dict] = None) -> dict:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(4.0)
+        s.settimeout(8.0)
         s.connect((self.host, self.port))
         line = cmd_path
         if payload is not None:
@@ -425,10 +427,10 @@ class ViiperClient:
             vtype = 'dualshock4'
         elif vtype in ('dualsense', 'ps5'):
             vtype = 'dualsensegamepadv5'
-
-        # Soporte para Xbox One vía flujo retenido autenticado
-        if vtype in ('xboxone', 'xbox_one', 'xboxseries'):
-            return self._add_xboxone_device(slot, vtype, feedback_cb=feedback_cb)
+        elif vtype in ('xboxone', 'xbox_one'):
+            vtype = 'xboxone-gip'
+        elif vtype in ('xboxseries', 'xbox_series'):
+            vtype = 'xboxseries-gip'
 
         res = self._send_cmd(f'bus/{self.bus_id}/add', {'type': vtype})
         if 'devId' not in res:
@@ -481,119 +483,8 @@ class ViiperClient:
         return True
 
     def _add_xboxone_device(self, slot: int, profile: str, feedback_cb: Optional[Callable[[int, int, int], None]] = None) -> bool:
-        key = get_viiper_key()
-        if not key:
-            print('[!] VIIPER Xbox One: No se encontro el archivo de clave de autenticacion en %APPDATA%\\VIIPER\\viiper.key.txt')
-            return False
-
-        try:
-            device_id = 0x0000fffb00000000 | (int(time.time_ns()) & 0xffffffff)
-            import_dev_id = int(time.time_ns())
-            serial = f'{device_id:016x}A1B2C3D4E5F60706'
-            pid = 0x0B12 if profile == 'xboxseries' else 0x02EA
-            prod = "VIIPER Xbox Series X|S Controller" if profile == 'xboxseries' else "VIIPER Xbox One Controller"
-
-            create_req = {
-                'version': 1,
-                'identityAuthorizationGranted': True,
-                'baseGamepadMetadata': True,
-                'identity': {
-                    'vendorId': 0x045E, 'productId': pid, 'deviceReleaseBcd': 0x0100,
-                    'deviceId': device_id, 'firmwareMajor': 1, 'firmwareBuild': 1, 'hardwareMajor': 1
-                },
-                'usb': {'maxPower2mA': 250, 'outIntervalMs': 4, 'inIntervalMs': 4},
-                'strings': {'manufacturer': '©Microsoft Corporation', 'product': prod, 'serial': serial},
-                'feedback': {'source': 1, 'personaGeneration': 1, 'deviceGeneration': 1, 'transportGeneration': 1, 'ownershipEpoch': 1, 'timeToLiveMicroseconds': 250000},
-                'importDeviceId': import_dev_id, 'localTimeoutMilliseconds': 100
-            }
-
-            # 1. Crear persona autorizada
-            c_auth = connect_secure_viiper(self.host, self.port, key, timeout=10.0)
-            c_auth.write(f'bus/{self.bus_id}/add-authorized-xboxone {json.dumps(create_req)}\0'.encode('utf-8'))
-            created_raw = c_auth.read_record()
-            c_auth.close()
-            created = json.loads(created_raw.decode('utf-8').strip('\0\r\n'))
-            dev_id = created.get('devId')
-            removal_token = created.get('removalToken')
-            if not dev_id or not removal_token:
-                print(f'[!] Error creando persona autorizada Xbox One: {created}')
-                return False
-
-            act_req = {'version': 1, 'removalToken': removal_token}
-
-            # 2. Conectar stream de broker persistente (debe preceder a la activación)
-            c_stream = connect_secure_viiper(self.host, self.port, key, timeout=10.0)
-            c_stream.write(f'bus/{self.bus_id}/{dev_id}/stream-authorized-xboxone {json.dumps(act_req)}\0'.encode('utf-8'))
-
-            # ConsumerReady frame: magic X1BR, ver 1, type 0x01
-            ready_frame = b'X1BR\x01\x01' + struct.pack('<HQ', 0, 0)
-            c_stream.write(ready_frame)
-            ready_ack = c_stream.read_record()
-            if not ready_ack.startswith(b'X1BR\x01\x81'):
-                c_stream.close()
-                print(f'[!] Error en ConsumerReadyAck de Xbox One: {ready_ack[:6]}')
-                return False
-
-            # 3. Activar el attach del dispositivo retenido (operación de driver PnP de Windows)
-            c_act = connect_secure_viiper(self.host, self.port, key, timeout=25.0)
-            c_act.write(f'bus/{self.bus_id}/{dev_id}/activate-authorized-xboxone {json.dumps(act_req)}\0'.encode('utf-8'))
-            act_res_raw = c_act.read_record()
-            c_act.close()
-            activated = json.loads(act_res_raw.decode('utf-8').strip('\0\r\n'))
-
-            # 4. Enviar estado neutral inicial (correlación 2)
-            neutral_wire = bytearray(24)
-            struct.pack_into('<HH', neutral_wire, 0, 1, 24)
-            neutral_frame = b'X1BR\x01\x02' + struct.pack('<HQ', 24, 2) + bytes(neutral_wire)
-            c_stream.write(neutral_frame)
-            try:
-                c_stream.sock.settimeout(2.0)
-                _ = c_stream.read_record()
-            except Exception:
-                pass
-            c_stream.sock.settimeout(None)
-
-            stop_evt = threading.Event()
-            def feedback_worker():
-                while not stop_evt.is_set():
-                    try:
-                        c_stream.sock.settimeout(0.5)
-                        record = c_stream.read_record()
-                        if not record or len(record) < 16:
-                            continue
-                        if record[:4] == b'X1BR':
-                            ftype = record[5]
-                            length, corr = struct.unpack('<HQ', record[6:16])
-                            if ftype == 0x83: # xboxOneCanonicalFeedback
-                                ack_frame = b'X1BR\x01\x03' + struct.pack('<HQ', 1, corr) + b'\x01'
-                                c_stream.write(ack_frame)
-                                if feedback_cb and length > 0:
-                                    payload = record[16:16+length]
-                                    if len(payload) >= 2:
-                                        feedback_cb(slot, payload[0], payload[1])
-                    except (socket.timeout, TimeoutError):
-                        continue
-                    except Exception:
-                        break
-
-            t = threading.Thread(target=feedback_worker, daemon=True, name=f"viiper-gip-feedback-{slot}")
-            t.start()
-
-            self.devices[slot] = {
-                'devId': dev_id,
-                'type': 'xboxone',
-                'secure_conn': c_stream,
-                'removal_token': removal_token,
-                'correlation': 3,
-                'last_pkt': None,
-                'last_send_time': 0.0,
-                'stop_event': stop_evt,
-                'thread': t,
-            }
-            return True
-        except Exception as e:
-            print(f'[!] Excepción configurando mando virtual Xbox One: {e}')
-            return False
+        vtype = 'xboxseries-gip' if 'series' in profile.lower() else 'xboxone-gip'
+        return self.add_device(slot, vtype, feedback_cb=feedback_cb)
 
     def _send_stream_pkt(self, slot: int, pkt: bytes):
         dev = self.devices.get(slot)
@@ -618,41 +509,21 @@ class ViiperClient:
         self._send_stream_pkt(slot, pkt)
 
     def send_xboxone_state(self, slot: int, buttons: int, lt: int, rt: int, lx: int, ly: int, rx: int, ry: int):
-        """Envía estado semántico a un mando virtual Xbox One conectado en el slot."""
-        dev = self.devices.get(slot)
-        if not dev or not dev.get('secure_conn'):
-            return
-
-        # Escalamiento: gatillos 0..1023 (10 bits), sticks -32768..32767
+        """Envía estado a un mando virtual Xbox One / GIP (14 bytes: <HHHhhhh)."""
         lt_val = max(0, min(1023, int(lt * 4)))
         rt_val = max(0, min(1023, int(rt * 4)))
         lx_val = max(-32768, min(32767, int(lx)))
         ly_val = max(-32768, min(32767, int(ly)))
         rx_val = max(-32768, min(32767, int(rx)))
         ry_val = max(-32768, min(32767, int(ry)))
+        pkt = struct.pack('<HHHhhhh', buttons, lt_val, rt_val, lx_val, ly_val, rx_val, ry_val)
+        self._send_stream_pkt(slot, pkt)
 
-        # Estructura semántica InputStateV1 (24 bytes)
-        wire = bytearray(24)
-        struct.pack_into('<HH', wire, 0, 1, 24)
-        struct.pack_into('<I', wire, 4, buttons)
-        struct.pack_into('<HH', wire, 8, lt_val, rt_val)
-        struct.pack_into('<hhhh', wire, 12, lx_val, ly_val, rx_val, ry_val)
+    def send_xboxseries_state(self, slot: int, buttons: int, lt: int, rt: int, lx: int, ly: int, rx: int, ry: int):
+        """Envía estado a un mando virtual Xbox Series X|S / GIP (14 bytes: <HHHhhhh)."""
+        self.send_xboxone_state(slot, buttons, lt, rt, lx, ly, rx, ry)
 
-        now = time.time()
-        if dev.get('last_pkt') == bytes(wire) and (now - dev.get('last_send_time', 0.0)) < 1.0:
-            return
-        dev['last_pkt'] = bytes(wire)
-        dev['last_send_time'] = now
-
-        corr = dev.get('correlation', 3)
-        dev['correlation'] = (corr + 1) if corr < 0xFFFFFFFFFFFFFFF0 else 3
-
-        # Trama del broker X1BR: tipo 0x02 (SemanticInput)
-        frame = b'X1BR\x01\x02' + struct.pack('<HQ', 24, corr) + bytes(wire)
-        try:
-            dev['secure_conn'].write(frame)
-        except Exception:
-            pass
+    send_xbox_gip_state = send_xboxone_state
 
     def send_ds4_state(self, slot: int, buttons: int, dpad: int, l2: int, r2: int, lx: int, ly: int, rx: int, ry: int):
         # VIIPER DS4: 31 bytes (<bbbbHBBB22s)

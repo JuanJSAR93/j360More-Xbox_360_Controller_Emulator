@@ -7,6 +7,8 @@ __pycache__/
 build/
 dist/
 *.spec
+src_dotnet/**/bin/
+src_dotnet/**/obj/
 
 # Backups and archives
 *.7z

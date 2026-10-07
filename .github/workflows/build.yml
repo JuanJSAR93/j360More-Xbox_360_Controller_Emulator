@@ -20,10 +20,14 @@ jobs:
             os: windows-latest
             python_arch: x64
             viiper_src: bin/viiper-amd64.exe
+            hidmaestro_src: bin/hidmaestro_host-amd64.exe
+            core_dll_src: bin/HIDMaestro.Core.amd64.dll
           - arch: arm64
             os: windows-11-arm
             python_arch: arm64
             viiper_src: bin/viiper_arm64.exe
+            hidmaestro_src: bin/hidmaestro_host-arm64.exe
+            core_dll_src: bin/HIDMaestro.Core.arm64.dll
 
     steps:
       - name: Checkout Repository
@@ -61,15 +65,42 @@ jobs:
       - name: Package Windows Release
         shell: pwsh
         run: |
-          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.5.2" }
+          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.6.0" }
           New-Item -ItemType Directory -Path "dist/pkg/bin" -Force | Out-Null
           Copy-Item "dist/j360More.exe" "dist/pkg/" -Force
+
+          # 1. Copiar viiper sin sufijo arch
           $vsrc = "${{ matrix.viiper_src }}"
           if (Test-Path $vsrc) {
               Copy-Item $vsrc "dist/pkg/bin/viiper.exe" -Force
+          } elseif (Test-Path "bin/viiper-${{ matrix.arch }}.exe") {
+              Copy-Item "bin/viiper-${{ matrix.arch }}.exe" "dist/pkg/bin/viiper.exe" -Force
+          } elseif (Test-Path "bin/viiper_${{ matrix.arch }}.exe") {
+              Copy-Item "bin/viiper_${{ matrix.arch }}.exe" "dist/pkg/bin/viiper.exe" -Force
           } elseif (Test-Path "bin/viiper.exe") {
               Copy-Item "bin/viiper.exe" "dist/pkg/bin/viiper.exe" -Force
           }
+
+          # 2. Copiar hidmaestro_host sin sufijo arch
+          $hsrc = "${{ matrix.hidmaestro_src }}"
+          if (Test-Path $hsrc) {
+              Copy-Item $hsrc "dist/pkg/bin/hidmaestro_host.exe" -Force
+          } elseif (Test-Path "bin/hidmaestro_host-${{ matrix.arch }}.exe") {
+              Copy-Item "bin/hidmaestro_host-${{ matrix.arch }}.exe" "dist/pkg/bin/hidmaestro_host.exe" -Force
+          } elseif (Test-Path "bin/hidmaestro_host.exe") {
+              Copy-Item "bin/hidmaestro_host.exe" "dist/pkg/bin/hidmaestro_host.exe" -Force
+          }
+
+          # 3. Copiar HIDMaestro.Core dll sin sufijo arch
+          $csrc = "${{ matrix.core_dll_src }}"
+          if (Test-Path $csrc) {
+              Copy-Item $csrc "dist/pkg/bin/HIDMaestro.Core.dll" -Force
+          } elseif (Test-Path "bin/HIDMaestro.Core.${{ matrix.arch }}.dll") {
+              Copy-Item "bin/HIDMaestro.Core.${{ matrix.arch }}.dll" "dist/pkg/bin/HIDMaestro.Core.dll" -Force
+          } elseif (Test-Path "bin/HIDMaestro.Core.dll") {
+              Copy-Item "bin/HIDMaestro.Core.dll" "dist/pkg/bin/HIDMaestro.Core.dll" -Force
+          }
+
           $zipName = "j360More-$ver-windows-${{ matrix.arch }}.zip"
           Compress-Archive -Path "dist/pkg/*" -DestinationPath "dist/$zipName" -Force
 
