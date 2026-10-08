@@ -199,6 +199,9 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -222,7 +225,10 @@ jobs:
             echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
             echo "release_name=j360More $TAG" >> "$GITHUB_OUTPUT"
           else
-            APP_VER=$(grep -E '^APP_VERSION = ' gui_app.py | cut -d '"' -f 2)
+            APP_VER=""
+            if [ -f gui_app.py ]; then
+              APP_VER=$(grep -E '^APP_VERSION = ' gui_app.py | cut -d '"' -f 2)
+            fi
             if [ -z "$APP_VER" ]; then
               APP_VER="1.6.0"
             fi
