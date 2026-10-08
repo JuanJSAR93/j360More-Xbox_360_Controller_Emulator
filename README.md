@@ -1,4 +1,4 @@
-# j360More - Multi-Gamepad Emulator (Xbox 360, Xbox One, PS4, PS5 & Switch 2 Pro)
+# j360More - Multi-Gamepad Emulator (Xbox 360, Xbox One/Elite, PS4, PS5, Switch & Joy-Con)
 
 [📖 Leer en Español](README_es.md) | [🔌 Plugin Guide](README_PLUGINS.md) | [Official Releases](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Web Documentation](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
@@ -7,7 +7,7 @@
 > Downloads & Releases: [Official Releases](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases)  
 > Web Documentation (GitHub Pages): `/docs` folder
 
-**j360More** is an advanced multi-controller virtual gamepad solution developed by **JuanJSAR**. Supporting both **VIIPER** (multiplatform USB/IP) and **ViGEmBus** backends, it features a modern bilingual interface (**English and Spanish**), an intuitive layout inspired by x360ce, support for up to **12 simultaneous virtual controllers** (**Xbox 360**, **Xbox One**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense**, and **Nintendo Switch 2 Pro**), and optional integration with **Nefarius HidHide** to eliminate the double-input issue in PC games and emulators.
+**j360More** is an advanced multi-controller virtual gamepad solution developed by **JuanJSAR**. Supporting three distinct driver engines (**VIIPER** multiplatform USB/IP, **HIDMaestro** native Virtual HID, and **ViGEmBus** kernel driver), it features a modern bilingual interface (**English and Spanish**), an intuitive layout inspired by x360ce, support for up to **12 simultaneous virtual controllers** (**Xbox 360**, **Xbox One / Series**, **Xbox Elite Series 2**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense**, **Nintendo Switch Pro**, and **Joy-Con Charging Grip**), and optional integration with **Nefarius HidHide** to eliminate the double-input issue in PC games and emulators.
 
 Designed with cross-platform architecture: running natively on **Windows (10/11)** with full **Linux support (Beta)** powered by VIIPER and the standard USB/IP protocol!
 
@@ -33,24 +33,31 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 - Adjust the number of active virtual gamepads (from 1 to 12) from the **`⚙ Settings...`** modal.
 - Dedicated, independent tabs for each player (`Controller 1` to `Controller 12`).
 
-### 2. Dual Emulation Driver Backends (VIIPER & ViGEmBus)
-- **VIIPER Driver Backend (Recommended / Default for new installs)**:
+### 2. Triple Emulation Driver Backends (VIIPER, HIDMaestro & ViGEmBus)
+- **VIIPER Driver Backend (Multiplatform / Default for new installs)**:
   - Modern cross-platform architecture utilizing USB/IP.
   - Powered by a custom, modified build of [JuanJSAR93/VIIPER](https://github.com/JuanJSAR93/VIIPER) (forked from [Alia5/VIIPER](https://github.com/Alia5/VIIPER)) adding native **Xbox One (GIP protocol)** support and precise virtual device localization/enumeration.
   - Bundled directly inside `bin/viiper.exe` — launched and managed automatically by the application.
-  - Unlocks emulation of **Xbox 360**, **Xbox One (GIP)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)**, and **Nintendo Switch 2 Pro (`ns2pro`)**.
+  - Unlocks emulation of **Xbox 360**, **Xbox One/Series (beta)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)**, and **Nintendo Switch 2 Pro (`ns2pro`)**.
   - Paves the way for seamless **Linux support (Beta)** using the Linux kernel's built-in `usbip` modules.
+- **HIDMaestro Driver Backend (Native High-Precision Virtual HID)**:
+  - High-performance, direct virtual HID emulation framework written in C# / .NET 8 (`bin/hidmaestro_host.exe` and `bin/HIDMaestro.Core.dll`).
+  - Spawns virtual gamepads directly through the Windows Virtual HID framework with zero network overhead, no external background daemons, and low latency.
+  - Unlocks native emulation of **Nintendo Switch Pro Controller**, **Joy-Con (Charging Grip)**, and pro-grade **Xbox Elite Series 2**.
+  - Built with separate architecture-optimized binaries for Windows `amd64` and `arm64`.
 - **ViGEmBus Driver Backend**:
-  - Legacy Windows kernel-mode driver supporting **Xbox 360**, **DualShock 4**, and **Mixed** modes.
+  - Legacy Windows kernel-mode driver supporting **Xbox 360**, **DualShock 4**, and **Mixed (x360 + DS4)** modes.
   - 100% backward-compatible: existing configuration files keep ViGEmBus automatically unless changed by the user.
 
 ### 3. Multi-Console Emulation Support
 - **Xbox 360 (XInput)**: The ubiquitous PC standard for Steam, Game Pass, and legacy/modern titles.
-- **Xbox One (GIP / XInput)**: Emulated using the official Microsoft **General Input Protocol (GIP)** via VIIPER (`authorized-xboxone`). Enumerated directly by Windows PnP as an authentic native Xbox One controller and exposed via standard XInput with high compatibility for modern PC titles, Microsoft Store, and Xbox Game Pass.
+- **Xbox One / Series (GIP / XInput)**: Emulated using the official Microsoft **General Input Protocol (GIP)** via VIIPER (`authorized-xboxone`). Enumerated directly by Windows PnP as an authentic native Xbox One controller with full XInput support.
+- **Xbox Elite Series 2**: Pro-grade controller layout with authentic vendor IDs and high-fidelity trigger/paddle support via HIDMaestro.
 - **PlayStation 4 (DualShock 4)**: DirectInput / Sony HID with native PlayStation button icons in supported games.
 - **PlayStation 5 (DualSense)**: Full next-gen Sony layout emulation with bumper/trigger responsiveness.
-- **Nintendo Switch 2 Pro (`ns2pro`)**: Authentic Nintendo layout (B/A, Y/X, L/ZL, R/ZR, -, +, Home), normalized $0 \dots 4095$ range with precision centering at $2048$.
-- **Mixed Mode**: Automatically emulates half as Xbox 360/Xbox One and half as PlayStation/Nintendo gamepads for mixed multiplayer setups.
+- **Nintendo Switch Pro / Switch 2 Pro (`ns2pro`)**: Authentic Nintendo layout (B/A, Y/X, L/ZL, R/ZR, -, +, Home), normalized $0 \dots 4095$ range with precision centering at $2048$ supported across VIIPER and HIDMaestro.
+- **Joy-Con (Charging Grip)**: Dual-grip split Nintendo Joy-Con emulation via HIDMaestro.
+- **Mixed Mode (x360 + DS4)**: Automatically emulates half as Xbox 360 and half as PlayStation DualShock 4 gamepads for mixed multiplayer setups.
 
 ### 4. Cross-Platform Vision: Windows & Linux (Beta)
 - **Windows**: Ready out of the box with `usbip-win2` or `ViGEmBus`.
@@ -99,20 +106,25 @@ Map real physical hardware (DirectInput/XInput gamepads via USB or Bluetooth, ge
 - **Linux (x86_64)** (*Beta via native ELF binary and USB/IP*)
 
 ### Driver Requirements:
-Choose one of the two supported backends:
+Choose one of the three supported backends:
 1. **VIIPER Backend (Default / Multiplatform)**:
    - `bin/viiper.exe` is already bundled with the application.
    - Requires the **usbip-win2** driver installed on Windows (`C:\Program Files\USBip`).
    - Official Download: [usbip-win2 Releases (GitHub)](https://github.com/vadimgrn/usbip-win2/releases)
-2. **ViGEmBus Backend (Windows Only)**:
+2. **HIDMaestro Backend (Native Virtual HID / Windows)**:
+   - `bin/hidmaestro_host.exe` and `bin/HIDMaestro.Core.dll` are already bundled directly inside `bin/`.
+   - Native Windows Virtual HID framework with zero extra network installations required.
+   - Ideal for **Nintendo Switch Pro**, **Joy-Con (Charging Grip)**, and **Xbox Elite Series 2**.
+3. **ViGEmBus Backend (Windows Classic)**:
    - Requires the **ViGEmBus** driver installed on Windows.
    - Official Download: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
 
-> **❓ Why is it mandatory to install usbip-win2 or ViGEmBus?**  
-> Windows does not permit applications to spawn virtual input devices without a signed system-level driver.  
-> - **If using VIIPER (default)**: you need the **usbip-win2** driver to bridge and expose gamepads via USB/IP (supporting Xbox 360, Xbox One GIP, DualShock 4, DualSense, and Switch 2 Pro).  
-> - **If using ViGEmBus (classic alternative)**: you need the **ViGEmBus** driver (supporting Xbox 360 and DualShock 4).  
-> Without at least one of these installed, Windows cannot instantiate virtual controllers for your games.
+> **❓ Why is a driver backend required?**  
+> Windows does not permit applications to spawn virtual input devices without a signed system-level driver or Virtual HID framework.  
+> - **If using VIIPER (default)**: you need the **usbip-win2** driver to bridge and expose gamepads via USB/IP (supporting Xbox 360, Xbox One/Series, DualShock 4, DualSense, and Switch 2 Pro).  
+> - **If using HIDMaestro (native)**: uses the built-in Windows Virtual HID framework with bundled standalone host and core libraries (supporting Switch Pro, Joy-Con, and Xbox Elite Series 2).  
+> - **If using ViGEmBus (classic alternative)**: you need the **ViGEmBus** driver (supporting Xbox 360, DualShock 4, and Mixed mode).  
+> Without at least one of these enabled, Windows cannot instantiate virtual controllers for your games.
 
 ### Optional:
 - **Nefarius HidHide**: Prevents double-input in games when using physical DirectInput controllers.

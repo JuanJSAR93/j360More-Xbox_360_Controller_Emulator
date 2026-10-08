@@ -1,4 +1,4 @@
-# j360More - Emulador Multimando (Xbox 360, Xbox One, PS4, PS5 y Switch 2 Pro)
+# j360More - Emulador Multimando (Xbox 360, Xbox One/Elite, PS4, PS5, Switch y Joy-Con)
 
 [📖 Read in English](README.md) | [🔌 Guía de Plugins](README_PLUGINS_es.md) | [Descargas Oficiales (Releases)](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases) | [Documentación Web](https://juanjsar93.github.io/j360More-Xbox_360_Controller_Emulator/)
 
@@ -7,7 +7,7 @@
 > Descargas y Versiones: [Releases Oficiales](https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases)  
 > Documentación Web (GitHub Pages): Carpeta `/docs`
 
-**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte tanto para el nuevo driver multiplataforma **VIIPER** (USB/IP) como para **ViGEmBus**, ofrece una moderna interfaz bilingüe (**Español e Inglés**), diseño intuitivo inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **Xbox One**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense** y **Nintendo Switch 2 Pro**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
+**j360More** es una solución avanzada de emulación multi-mando desarrollada por **JuanJSAR**. Con soporte para tres motores de controladores distintos (**VIIPER** multiplataforma USB/IP, **HIDMaestro** nativo Virtual HID y **ViGEmBus** clásico), ofrece una moderna interfaz bilingüe (**Español e Inglés**), diseño intuitivo inspirado en x360ce, emulación de hasta **12 mandos virtuales** simultáneos (**Xbox 360**, **Xbox One / Series**, **Xbox Elite Series 2**, **PlayStation 4 DualShock 4**, **PlayStation 5 DualSense**, **Nintendo Switch Pro** y **Joy-Con Charging Grip**) e integración opcional con **Nefarius HidHide** para erradicar el problema de "doble entrada" en juegos de PC y emuladores.
 
 Diseñado con arquitectura multiplataforma: funcionamiento nativo en **Windows (10/11)** y con **soporte completo para Linux (Beta)** gracias a VIIPER y al protocolo estándar USB/IP.
 
@@ -33,24 +33,31 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 - Configura libremente la cantidad de mandos virtuales activos (de 1 a 12) desde la ventana de **`⚙ Configuración...`**.
 - Pestañas individuales e independientes para cada jugador (`Control 1` a `Control 12`).
 
-### 2. Arquitectura de Doble Controlador (VIIPER y ViGEmBus)
-- **Driver VIIPER (Recomendado / Por defecto en nuevas instalaciones)**:
+### 2. Arquitectura de Triple Controlador (VIIPER, HIDMaestro y ViGEmBus)
+- **Driver VIIPER (Multiplataforma / Por defecto en nuevas instalaciones)**:
   - Arquitectura moderna basada en el protocolo USB/IP.
   - Basado en una versión personalizada y optimizada de [JuanJSAR93/VIIPER](https://github.com/JuanJSAR93/VIIPER) (fork de [Alia5/VIIPER](https://github.com/Alia5/VIIPER)), incorporando soporte nativo para **Xbox One (protocolo GIP)** y una correcta localización/enumeración de dispositivos emulados.
   - Binario autónomo `bin/viiper.exe` incluido directamente en la aplicación (se inicia y gestiona en segundo plano automáticamente).
-  - Desbloquea la emulación de **Xbox 360**, **Xbox One (GIP)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)** y **Nintendo Switch 2 Pro (`ns2pro`)**.
+  - Desbloquea la emulación de **Xbox 360**, **Xbox One/Series (beta)**, **PlayStation 4 (DualShock 4)**, **PlayStation 5 (DualSense)** y **Nintendo Switch 2 Pro (`ns2pro`)**.
   - Abre el camino a la compatibilidad nativa con **Linux (Beta)** mediante los módulos de kernel `usbip`.
+- **Driver HIDMaestro (Nativo Virtual HID de Alta Precisión / Windows)**:
+  - Motor de emulación virtual directo de alto rendimiento desarrollado en C# / .NET 8 (`bin/hidmaestro_host.exe` y `bin/HIDMaestro.Core.dll`).
+  - Crea mandos virtuales directamente mediante el framework Windows Virtual HID sin necesidad de servicios de red ni puentes externos, con mínima latencia y alta tasa de sondeo.
+  - Desbloquea la emulación nativa de **Nintendo Switch Pro**, **Joy-Con (Charging Grip)** y el mando profesional **Xbox Elite Series 2**.
+  - Binarios optimizados incluidos para arquitecturas Windows `amd64` y `arm64`.
 - **Driver ViGEmBus**:
-  - Controlador clásico a nivel de kernel para Windows que soporta mandos de **Xbox 360**, **DualShock 4** y modo **Mixto**.
+  - Controlador clásico a nivel de kernel para Windows que soporta mandos de **Xbox 360**, **DualShock 4** y modo **Mixto (x360 + DS4)**.
   - 100% retrocompatible: las configuraciones previas existentes conservan ViGEmBus de forma automática.
 
 ### 3. Soporte de Emulación Multi-Consola
 - **Xbox 360 (XInput)**: El estándar universal para juegos en Steam, Xbox Game Pass, Epic Games Store y emuladores.
-- **Xbox One (GIP / XInput)**: Emulación oficial mediante el protocolo **GIP (General Input Protocol)** de Microsoft a través de VIIPER (`authorized-xboxone`). El sistema Windows PnP lo reconoce e instala como un mando nativo de Xbox One, con soporte completo XInput, ideal para juegos modernos de Windows Store, Xbox Game Pass y títulos que requieren el estándar moderno de Xbox One.
+- **Xbox One / Series (GIP / XInput)**: Emulación oficial mediante el protocolo **GIP (General Input Protocol)** de Microsoft a través de VIIPER (`authorized-xboxone`). El sistema Windows PnP lo reconoce e instala como un mando nativo de Xbox One, con soporte completo XInput.
+- **Xbox Elite Series 2**: Perfil profesional con identificadores de hardware auténticos y soporte de palancas traseras y gatillos analógicos vía HIDMaestro.
 - **PlayStation 4 (DualShock 4)**: DirectInput / Sony HID nativo, con iconos oficiales de PlayStation en juegos compatibles.
 - **PlayStation 5 (DualSense)**: Emulación del layout oficial de PS5 con respuesta analógica completa.
-- **Nintendo Switch 2 Pro (`ns2pro`)**: Disposición auténtica de Nintendo (B/A, Y/X, L/ZL, R/ZR, -, +, Home) con rango escalado $0 \dots 4095$ y punto central calibrado en $2048$.
-- **Modo Mixto**: Divide automáticamente los mandos creados entre Xbox 360/Xbox One y PlayStation/Nintendo para partidas combinadas.
+- **Nintendo Switch Pro / Switch 2 Pro (`ns2pro`)**: Disposición auténtica de Nintendo (B/A, Y/X, L/ZL, R/ZR, -, +, Home) con rango escalado $0 \dots 4095$ y punto central calibrado en $2048$ soportado en VIIPER y HIDMaestro.
+- **Joy-Con (Charging Grip)**: Emulación de mandos duales Joy-Con en soporte de carga vía HIDMaestro.
+- **Modo Mixto (x360 + DS4)**: Divide automáticamente los mandos creados entre Xbox 360 y PlayStation DualShock 4 para partidas combinadas.
 
 ### 4. Visión Multiplataforma: Windows y Linux (Beta)
 - **Windows**: Compatible de fábrica mediante el driver `usbip-win2` o `ViGEmBus`.
@@ -99,20 +106,25 @@ Permite asociar periféricos físicos reales (mandos USB o Bluetooth DirectInput
 - **Linux (x86_64)** (*Beta mediante binario ELF y USB/IP*)
 
 ### Controladores de Emulación Requeridos:
-Elige uno de los dos controladores soportados:
+Elige uno de los tres controladores soportados:
 1. **Controlador VIIPER (Por defecto / Multiplataforma)**:
    - El ejecutable `bin/viiper.exe` ya viene preempaquetado con j360More.
    - Requiere la instalación del driver **usbip-win2** en Windows (`C:\Program Files\USBip`).
    - Descarga oficial: [usbip-win2 Releases (GitHub)](https://github.com/vadimgrn/usbip-win2/releases)
-2. **Controlador ViGEmBus (Solo Windows)**:
+2. **Controlador HIDMaestro (Nativo Virtual HID / Solo Windows)**:
+   - `bin/hidmaestro_host.exe` y `bin/HIDMaestro.Core.dll` ya vienen incluidos directamente en la carpeta `bin/`.
+   - Utiliza el framework Virtual HID nativo de Windows sin requerir instalaciones de red adicionales.
+   - Ideal para **Nintendo Switch Pro**, **Joy-Con (Charging Grip)** y **Xbox Elite Series 2**.
+3. **Controlador ViGEmBus (Clásico en Windows)**:
    - Requiere el controlador **ViGEmBus** instalado en Windows.
    - Descarga oficial: [ViGEmBus Releases (GitHub)](https://github.com/nefarius/ViGEmBus/releases)
 
-> **❓ ¿Por qué es obligatorio instalar usbip-win2 o ViGEmBus?**  
-> Windows no permite que las aplicaciones creen dispositivos de entrada virtuales sin un controlador firmado a nivel de sistema.  
-> - **Si usas VIIPER (predeterminado)**: necesitas el driver **usbip-win2** para comunicar y exponer los mandos por USB/IP (soportando Xbox 360, Xbox One GIP, DualShock 4, DualSense y Switch 2 Pro).  
-> - **Si usas ViGEmBus (alternativo tradicional)**: necesitas el driver **ViGEmBus** (soportando Xbox 360 y DualShock 4).  
-> Sin al menos uno de ellos instalado, Windows no podrá instanciar los mandos virtuales para tus juegos.
+> **❓ ¿Por qué se requiere un controlador de emulación?**  
+> Windows no permite que las aplicaciones creen dispositivos de entrada virtuales sin un controlador firmado a nivel de sistema o un framework Virtual HID.  
+> - **Si usas VIIPER (predeterminado)**: necesitas el driver **usbip-win2** para comunicar y exponer los mandos por USB/IP (soportando Xbox 360, Xbox One/Series, DualShock 4, DualSense y Switch 2 Pro).  
+> - **Si usas HIDMaestro (nativo)**: utiliza el framework Virtual HID de Windows con binarios autónomos locales (soportando Switch Pro, Joy-Con y Xbox Elite Series 2).  
+> - **Si usas ViGEmBus (alternativo tradicional)**: necesitas el driver **ViGEmBus** (soportando Xbox 360, DualShock 4 y modo Mixto).  
+> Sin al menos uno de ellos activo, Windows no podrá instanciar los mandos virtuales para tus juegos.
 
 ### Opcional:
 - **Nefarius HidHide**: Evita la doble entrada en juegos cuando se utilizan periféricos físicos DirectInput.

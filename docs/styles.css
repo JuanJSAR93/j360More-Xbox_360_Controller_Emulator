@@ -1942,6 +1942,18 @@ html, body {
   box-shadow: 0 16px 40px rgba(255, 75, 85, 0.25), 0 0 20px rgba(255, 75, 85, 0.15);
 }
 
+.dual-controller-card.joycon-card:hover {
+  transform: translateY(-6px);
+  border-color: #00c3e3;
+  box-shadow: 0 16px 40px rgba(0, 195, 227, 0.25), 0 0 20px rgba(255, 69, 84, 0.2);
+}
+
+.dual-controller-card.elite-card:hover {
+  transform: translateY(-6px);
+  border-color: #f59e0b;
+  box-shadow: 0 16px 40px rgba(245, 158, 11, 0.25), 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
 .dual-controller-header {
   display: flex;
   justify-content: space-between;
@@ -2058,6 +2070,45 @@ html, body {
   background: rgba(88, 166, 255, 0.15);
   color: var(--accent-blue);
   border: 1px solid rgba(88, 166, 255, 0.35);
+}
+
+.driver-badge-tag.hidmaestro-tag {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.driver-purpose-box.hidmaestro {
+  border-left: 3px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.driver-purpose-box.hidmaestro h4 {
+  color: #38bdf8;
+}
+
+.btn-driver-download.hidmaestro {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.btn-driver-download.hidmaestro:hover {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.dual-badge.joycon-badge {
+  background: rgba(0, 195, 227, 0.15);
+  color: #00c3e3;
+  border: 1px solid rgba(0, 195, 227, 0.35);
+}
+
+.dual-badge.elite-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .dual-controller-title {

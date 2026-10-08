@@ -51,7 +51,7 @@
     "operatingSystem": "Windows 10, Windows 11 (64-bit), Linux (Beta)",
     "applicationCategory": "UtilitiesApplication",
     "gamePlatform": "PC",
-    "description": "Virtual Multi-Controller Emulator for Windows & Linux (1-12 Gamepads) supporting Xbox 360, DualShock 4, DualSense (PS5) and Nintendo Switch 2 Pro with VIIPER (USB/IP) & ViGEmBus kernel driver, independent multi-keyboard (Windows Raw Input), HidHide cloaking & DirectInput mapping.",
+    "description": "Virtual Multi-Controller Emulator for Windows & Linux (1-12 Gamepads) supporting Xbox 360, Xbox One/Series, Xbox Elite Series 2, DualShock 4, DualSense (PS5), Nintendo Switch Pro & Joy-Con with VIIPER (USB/IP), HIDMaestro (Virtual HID) & ViGEmBus kernel driver, independent multi-keyboard (Windows Raw Input), HidHide cloaking & DirectInput mapping.",
     "author": {
       "@type": "Person",
       "name": "JuanJSAR",
@@ -61,7 +61,7 @@
     "downloadUrl": "https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator/releases",
     "codeRepository": "https://github.com/JuanJSAR93/j360More-Xbox_360_Controller_Emulator",
     "softwareVersion": "1.6.0",
-    "softwareRequirements": "VIIPER (usbip-win2 driver) or ViGEmBus driver",
+    "softwareRequirements": "VIIPER (usbip-win2 driver), HIDMaestro or ViGEmBus driver",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -317,9 +317,9 @@
   <section id="emulacion-dual" class="dual-section">
     <div class="section-header">
       <span class="section-tag" data-i18n="dual_tag">Soporte Multi-Consola</span>
-      <h2 class="section-title" data-i18n="dual_title">Emulación de Xbox 360, Xbox One, PS4, PS5 y Switch 2 Pro</h2>
+      <h2 class="section-title" data-i18n="dual_title">Emulación de Xbox 360, Xbox One/Elite, PS4, PS5, Switch y Joy-Con</h2>
       <p class="section-desc" data-i18n="dual_subtitle">
-        j360More te permite elegir qué tipo de mando crear en tu sistema mediante los drivers VIIPER y ViGEmBus: Xbox 360, Xbox One (GIP), DualShock 4, DualSense (PS5), Nintendo Switch 2 Pro o modo Mixto simultáneo.
+        j360More te permite elegir qué tipo de mando crear en tu sistema mediante los drivers VIIPER, HIDMaestro y ViGEmBus: Xbox 360, Xbox One/Series, Xbox Elite Series 2, DualShock 4, DualSense (PS5), Nintendo Switch Pro, Joy-Con (Charging Grip) o modo Mixto simultáneo.
       </p>
     </div>
 
@@ -405,6 +405,40 @@
           <h3 class="dual-controller-title" data-i18n="dual_switch_title">Mando Nintendo Switch 2 Pro</h3>
           <p class="dual-controller-desc" data-i18n="dual_switch_desc">
             Soporte para el nuevo mando Switch 2 Pro (ns2pro) con disposición de botones de Nintendo, calibración precisa de 12 bits y centrado neutro.
+          </p>
+        </div>
+      </div>
+
+      <!-- Controller 5: Joy-Con Charging Grip -->
+      <div class="dual-controller-card joycon-card">
+        <div class="dual-controller-header">
+          <div class="dual-badge joycon-badge" data-i18n="dual_joycon_badge">HIDMaestro</div>
+          <span class="dual-count-pill" data-i18n="dual_joycon_count">1 a 12 Mandos</span>
+        </div>
+        <div class="dual-svg-wrapper">
+          <img src="assets/controller_ns2p.svg" alt="Joy-Con Charging Grip Vectorial" class="dual-controller-svg">
+        </div>
+        <div class="dual-controller-body">
+          <h3 class="dual-controller-title" data-i18n="dual_joycon_title">Joy-Con (Charging Grip)</h3>
+          <p class="dual-controller-desc" data-i18n="dual_joycon_desc">
+            Emulación precisa de mandos Joy-Con combinados en soporte de carga mediante HIDMaestro, con mapeo analógico completo y baja latencia.
+          </p>
+        </div>
+      </div>
+
+      <!-- Controller 6: Xbox Elite Series 2 -->
+      <div class="dual-controller-card elite-card">
+        <div class="dual-controller-header">
+          <div class="dual-badge elite-badge" data-i18n="dual_elite_badge">HIDMaestro Pro</div>
+          <span class="dual-count-pill" data-i18n="dual_elite_count">1 a 12 Mandos</span>
+        </div>
+        <div class="dual-svg-wrapper">
+          <img src="assets/controller_one.svg" alt="Mando Xbox Elite Series 2 Vectorial" class="dual-controller-svg">
+        </div>
+        <div class="dual-controller-body">
+          <h3 class="dual-controller-title" data-i18n="dual_elite_title">Xbox Elite Series 2</h3>
+          <p class="dual-controller-desc" data-i18n="dual_elite_desc">
+            Perfil profesional para mandos Xbox Elite con identificadores oficiales de hardware, gatillos de alta resolución y compatibilidad directa.
           </p>
         </div>
       </div>
@@ -761,6 +795,48 @@
           </div>
         </div>
 
+        <!-- HIDMaestro Card (NATIVO / WINDOWS) -->
+        <div class="driver-card recommended">
+          <div>
+            <div class="driver-header">
+              <div>
+                <h3 class="driver-title">HIDMaestro</h3>
+                <span class="driver-author">Por JuanJSAR &amp; HIDMaestro Team</span>
+              </div>
+              <span class="driver-badge-tag hidmaestro-tag" data-i18n="driver_hidmaestro_tag">Nativo / Virtual HID (.NET 8)</span>
+            </div>
+
+            <div class="driver-body">
+              <p class="driver-desc" data-i18n="driver_hidmaestro_desc">
+                Motor de emulación virtual directo de alto rendimiento para Windows basado en la arquitectura Virtual HID Framework (.NET 8). No requiere servicios externos ni bridges de red. <strong>Los ejecutables y DLLs ya vienen incluidos en j360More</strong>.
+              </p>
+
+              <div class="driver-purpose-box hidmaestro">
+                <h4 data-i18n="driver_hidmaestro_why_title">¿Para qué se utiliza en j360More?</h4>
+                <p data-i18n="driver_hidmaestro_why_desc">
+                  Permite emular mandos de <strong>Nintendo Switch Pro</strong>, <strong>Joy-Con (Charging Grip)</strong> y el mando profesional <strong>Xbox Elite Series 2</strong> con máxima fidelidad, baja latencia y sin dependencias de red.
+                </p>
+              </div>
+
+              <ul class="driver-bullets">
+                <li data-i18n="driver_hidmaestro_b1">Emulación nativa de Nintendo Switch Pro y Joy-Con (Charging Grip).</li>
+                <li data-i18n="driver_hidmaestro_b2">Perfil avanzado para mando Xbox Elite Series 2.</li>
+                <li data-i18n="driver_hidmaestro_b3">Binarios optimizados incluidos en 'bin/' para arquitecturas amd64 y arm64.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="driver-footer">
+            <span class="btn-driver-download hidmaestro" data-i18n="driver_hidmaestro_btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Integrado en j360More (Listo para usar)
+            </span>
+          </div>
+        </div>
+
         <!-- ViGEmBus Card (ALTERNATIVO / WINDOWS) -->
         <div class="driver-card recommended">
           <div>
@@ -876,8 +952,8 @@
               </tr>
               <tr>
                 <td class="req-comp" data-i18n="req_row_drivers">Driver de Emulación</td>
-                <td data-label="Mínimo" data-i18n="req_row_drivers_val1">VIIPER (con usbip-win2) o ViGEmBus</td>
-                <td data-label="Recomendado" data-i18n="req_row_drivers_val2">VIIPER (Multiplataforma: X360, DS4, PS5, Switch 2)</td>
+                <td data-label="Mínimo" data-i18n="req_row_drivers_val1">VIIPER, HIDMaestro o ViGEmBus</td>
+                <td data-label="Recomendado" data-i18n="req_row_drivers_val2">VIIPER / HIDMaestro (Soporte total X360, Xbox One/Elite, DS4, PS5, Switch y Joy-Con)</td>
               </tr>
               <tr>
                 <td class="req-comp" data-i18n="req_row_hidhide">Driver HidHide</td>
@@ -912,8 +988,8 @@
     <div class="steps-container">
       <div class="step-card">
         <div class="step-number">01</div>
-        <h3 data-i18n="q1_title">Instala usbip-win2 o ViGEmBus</h3>
-        <p data-i18n="q1_desc">Instala el driver usbip-win2 para el nuevo motor VIIPER por defecto (o ViGEmBus para el motor clásico). Solo debes hacerlo una vez.</p>
+        <h3 data-i18n="q1_title">Elige tu Driver de Emulación</h3>
+        <p data-i18n="q1_desc">Utiliza el motor nativo HIDMaestro (integrado), instala usbip-win2 para el motor VIIPER, o usa ViGEmBus para el motor clásico.</p>
       </div>
 
       <div class="step-card">
@@ -955,9 +1031,9 @@
 
     <div class="faq-grid">
       <div class="faq-item">
-        <div class="faq-question" data-i18n="faq_q1">¿Por qué es obligatorio instalar usbip-win2 o ViGEmBus?</div>
+        <div class="faq-question" data-i18n="faq_q1">¿Por qué requiero un driver de emulación (VIIPER, HIDMaestro o ViGEmBus)?</div>
         <div class="faq-answer" data-i18n="faq_a1">
-          Windows no permite crear dispositivos de control virtual sin un controlador firmado del sistema. Si utilizas el motor predeterminado VIIPER, requieres el driver complementario usbip-win2 para comunicar los mandos por USB/IP (soportando Xbox 360, PS4, PS5 y Switch 2 Pro). Si optas por el motor clásico alternativo, necesitas ViGEmBus. Sin al menos uno de ellos instalado, el sistema no puede crear los mandos virtuales reconocibles por tus juegos.
+          Windows no permite crear dispositivos de control virtual sin un controlador firmado o un framework Virtual HID. Con el motor integrado HIDMaestro puedes crear mandos de Switch Pro, Joy-Con y Xbox Elite directamente sin controladores de red. Con VIIPER requieres el driver usbip-win2 para comunicar mandos por USB/IP (soportando Xbox 360, Xbox One, PS4, PS5 y Switch 2 Pro). O puedes optar por el clásico ViGEmBus. Sin al menos uno de ellos activo, el sistema no puede crear los mandos virtuales para tus juegos.
         </div>
       </div>
 
