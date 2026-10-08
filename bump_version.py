@@ -111,7 +111,8 @@ def update_all_files(old_ver: str, new_ver: str):
 
     # 3. package_windows.py
     def repl_pkg_win(content, o, n):
-        return content.replace(f"j360More-v{o}-", f"j360More-v{n}-")
+        c = content.replace(f"j360More-v{o}-", f"j360More-v{n}-")
+        return re.sub(r'ver\s*=\s*["\']' + re.escape(o) + r'["\']', f'ver = "{n}"', c)
     bump_file("package_windows.py", old_ver, new_ver, repl_pkg_win)
 
     # 4. docs/index.html

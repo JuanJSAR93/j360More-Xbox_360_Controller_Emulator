@@ -104,11 +104,23 @@ jobs:
           $zipName = "j360More-$ver-windows-${{ matrix.arch }}.zip"
           Compress-Archive -Path "dist/pkg/*" -DestinationPath "dist/$zipName" -Force
 
+          # 4. Crear paquete de soporte de plugins separado (solo una vez en amd64)
+          if ("${{ matrix.arch }}" -eq "amd64" -and (Test-Path "plugins")) {
+              python -c "import os, zipfile; zname = 'dist/j360More-$ver-plugins-support.zip'; zf = zipfile.ZipFile(zname, 'w', zipfile.ZIP_DEFLATED); [zf.write(os.path.join(r, f), os.path.relpath(os.path.join(r, f), '.')) for r, d, files in os.walk('plugins') for f in files if not any(x in r for x in ('.venv', '__pycache__', 'tests')) and not f.endswith(('.pyc', '.pyo'))]; zf.close(); print(f'[+] Creado {zname}')"
+          }
+
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: j360More-Windows-${{ matrix.arch }}
           path: dist/*windows-${{ matrix.arch }}*.zip
+
+      - name: Upload Plugins Support Artifact
+        if: matrix.arch == 'amd64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: j360More-Plugins-Support
+          path: dist/*plugins-support*.zip
 
   build-linux:
     name: Build Linux (${{ matrix.arch }})

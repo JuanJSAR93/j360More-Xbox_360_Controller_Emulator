@@ -59,8 +59,35 @@ def package():
                     zf.write(full_p, rel_p)
         print(f"[+] {zip_name} creado ({os.path.getsize(zip_path)} bytes)")
 
-    make_zip(amd64_dir, "j360More-v1.6.0-windows-amd64.zip")
-    make_zip(arm64_dir, "j360More-v1.6.0-windows-arm64.zip")
+    ver = "1.6.0"
+    try:
+        import re
+        with open("gui_app.py", "r", encoding="utf-8") as f:
+            m = re.search(r'^APP_VERSION\s*=\s*["\']([^"\']+)["\']', f.read(), re.MULTILINE)
+            if m:
+                ver = m.group(1)
+    except Exception:
+        pass
+
+    make_zip(amd64_dir, f"j360More-v{ver}-windows-amd64.zip")
+    make_zip(arm64_dir, f"j360More-v{ver}-windows-arm64.zip")
+
+    # 4. Crear paquete de plugins separado (j360More-v{ver}-plugins-support.zip)
+    plugins_src = "plugins"
+    if os.path.exists(plugins_src):
+        plugins_zip_name = f"j360More-v{ver}-plugins-support.zip"
+        plugins_zip_path = os.path.join(dist_dir, plugins_zip_name)
+        print(f"[*] Generando {plugins_zip_path}...")
+        with zipfile.ZipFile(plugins_zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(plugins_src):
+                dirs[:] = [d for d in dirs if d not in (".venv", "__pycache__", "tests")]
+                for f in files:
+                    if f.endswith(".pyc") or f.endswith(".pyo"):
+                        continue
+                    full_p = os.path.join(root, f)
+                    rel_p = os.path.relpath(full_p, ".")
+                    zf.write(full_p, rel_p)
+        print(f"[+] {plugins_zip_name} creado ({os.path.getsize(plugins_zip_path)} bytes)")
 
 if __name__ == "__main__":
     package()

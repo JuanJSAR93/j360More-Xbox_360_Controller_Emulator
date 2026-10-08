@@ -37,4 +37,5 @@ echo   ¡COMPILACION PARA WINDOWS COMPLETADA CON EXITO!
 echo =======================================================
 echo Paquete AMD64: dist\j360More-v1.6.0-windows-amd64.zip
 echo Paquete ARM64: dist\j360More-v1.6.0-windows-arm64.zip
+echo Paquete Plugins: dist\j360More-v1.6.0-plugins-support.zip
 echo =======================================================
