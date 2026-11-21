@@ -3501,23 +3501,110 @@ class J360MoreApp:
         """Ventana modal de configuración con pestañas General (Emulación/HidHide/Auto-asignación) y Mandos Móviles AirPad."""
         dlg = tk.Toplevel(self.root)
         dlg.title(self.t("set_dlg_title"))
-        dlg.geometry("750x710")
-        dlg.resizable(False, False)
         self._setup_modal_dialog(dlg)
 
-        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - 375)
-        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - 355)
-        dlg.geometry(f"750x710+{x}+{y}")
+        # Dimensiones responsivas para ajustarse a pantallas de cualquier tamaño (768p, laptops, escalado DPI)
+        screen_w = dlg.winfo_screenwidth()
+        screen_h = dlg.winfo_screenheight()
+        target_w = min(760, max(560, screen_w - 40))
+        target_h = min(700, max(420, screen_h - 100))
+
+        x = max(0, self.root.winfo_x() + (self.root.winfo_width() // 2) - (target_w // 2))
+        y = max(0, self.root.winfo_y() + (self.root.winfo_height() // 2) - (target_h // 2))
+        dlg.geometry(f"{target_w}x{target_h}+{x}+{y}")
+        dlg.minsize(580, 420)
+        dlg.resizable(True, True)
 
         main_box = ttk.Frame(dlg, padding=8)
         main_box.pack(fill=tk.BOTH, expand=True)
 
+        # Barra inferior de acciones (fija y garantizada en la parte inferior del diálogo)
+        btn_box = ttk.Frame(main_box)
+        btn_box.pack(fill=tk.X, side=tk.BOTTOM, pady=(6, 0))
+
+        sep_bottom = ttk.Separator(main_box, orient=tk.HORIZONTAL)
+        sep_bottom.pack(fill=tk.X, side=tk.BOTTOM, pady=(2, 6))
+
         notebook_settings = ttk.Notebook(main_box)
-        notebook_settings.pack(fill=tk.BOTH, expand=True, padx=4, pady=(4, 8))
+        notebook_settings.pack(fill=tk.BOTH, expand=True, padx=4, pady=(4, 2))
+
+        # Gestor de canvas con scrollbar vertical para cada pestaña
+        tab_canvas_map = {}
+        active_canvas_ref = [None]
+
+        def create_scrollable_tab(notebook, tab_title: str):
+            """Crea una pestaña con canvas y scrollbar vertical para adaptarse a cualquier resolución."""
+            tab_outer = ttk.Frame(notebook)
+            notebook.add(tab_outer, text=tab_title)
+
+            bg_color = ttk.Style().lookup("TFrame", "background")
+            if not bg_color:
+                bg_color = self.root.cget("bg") or "#f0f0f0"
+
+            canvas = tk.Canvas(tab_outer, highlightthickness=0, borderwidth=0, bg=bg_color)
+            v_scroll = ttk.Scrollbar(tab_outer, orient=tk.VERTICAL, command=canvas.yview)
+            inner_frame = ttk.Frame(canvas, padding=10)
+
+            window_id = canvas.create_window((0, 0), window=inner_frame, anchor="nw")
+
+            def _on_inner_configure(event=None):
+                canvas.configure(scrollregion=canvas.bbox("all"))
+
+            def _on_canvas_configure(event):
+                canvas.itemconfig(window_id, width=event.width)
+
+            inner_frame.bind("<Configure>", _on_inner_configure)
+            canvas.bind("<Configure>", _on_canvas_configure)
+            canvas.configure(yscrollcommand=v_scroll.set)
+
+            v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            tab_canvas_map[str(tab_outer)] = canvas
+            return tab_outer, inner_frame
+
+        def _on_tab_changed(event=None):
+            try:
+                selected_tab = notebook_settings.select()
+                active_canvas_ref[0] = tab_canvas_map.get(str(selected_tab))
+            except Exception:
+                pass
+
+        notebook_settings.bind("<<NotebookTabChanged>>", _on_tab_changed)
+
+        def _on_mousewheel(event):
+            cur_canvas = active_canvas_ref[0]
+            if cur_canvas and cur_canvas.winfo_exists():
+                bbox = cur_canvas.bbox("all")
+                if bbox and (bbox[3] - bbox[1]) > cur_canvas.winfo_height():
+                    cur_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _on_linux_scroll_up(event):
+            cur_canvas = active_canvas_ref[0]
+            if cur_canvas and cur_canvas.winfo_exists():
+                cur_canvas.yview_scroll(-1, "units")
+
+        def _on_linux_scroll_down(event):
+            cur_canvas = active_canvas_ref[0]
+            if cur_canvas and cur_canvas.winfo_exists():
+                cur_canvas.yview_scroll(1, "units")
+
+        dlg.bind_all("<MouseWheel>", _on_mousewheel)
+        dlg.bind_all("<Button-4>", _on_linux_scroll_up)
+        dlg.bind_all("<Button-5>", _on_linux_scroll_down)
+
+        def _cleanup_mousewheel():
+            try:
+                dlg.unbind_all("<MouseWheel>")
+                dlg.unbind_all("<Button-4>")
+                dlg.unbind_all("<Button-5>")
+            except Exception:
+                pass
+
+        dlg.bind("<Destroy>", lambda e: _cleanup_mousewheel() if e.widget == dlg else None)
 
         # ==================== PESTAÑA 1: GENERAL & EMULACIÓN ====================
-        tab_general = ttk.Frame(notebook_settings, padding=10)
-        notebook_settings.add(tab_general, text=self.t("set_tab_general"))
+        tab_general_outer, tab_general = create_scrollable_tab(notebook_settings, self.t("set_tab_general"))
 
         # SECCION 1: Idioma / Language
         box_lang = ttk.LabelFrame(tab_general, text="🌐 " + self.t("set_language_label"), padding=8)
@@ -3777,10 +3864,9 @@ class J360MoreApp:
 
 
         # ==================== PESTAÑA 2: MANDOS MÓVILES (AIRPAD) ====================
-        tab_airpad = ttk.Frame(notebook_settings, padding=10)
-        notebook_settings.add(tab_airpad, text=self.t("set_tab_airpad"))
+        tab_airpad_outer, tab_airpad = create_scrollable_tab(notebook_settings, self.t("set_tab_airpad"))
         if initial_tab == 1:
-            notebook_settings.select(tab_airpad)
+            notebook_settings.select(tab_airpad_outer)
 
         srv = web_gamepad_server.get_server_instance()
 
@@ -4080,10 +4166,9 @@ class J360MoreApp:
         refresh_airpad_tree()
 
         # ==================== PESTAÑA 3: PLUGINS ====================
-        tab_plugins = ttk.Frame(notebook_settings, padding=10)
-        notebook_settings.add(tab_plugins, text=self.t("set_tab_plugins"))
+        tab_plugins_outer, tab_plugins = create_scrollable_tab(notebook_settings, self.t("set_tab_plugins"))
         if initial_tab == 2:
-            notebook_settings.select(tab_plugins)
+            notebook_settings.select(tab_plugins_outer)
 
         plg_container = ttk.Frame(tab_plugins)
         plg_container.pack(fill=tk.BOTH, expand=True)
@@ -4391,6 +4476,7 @@ class J360MoreApp:
 
         def on_dlg_close():
             timer_active[0] = False
+            _cleanup_mousewheel()
             dlg.destroy()
 
         dlg.protocol("WM_DELETE_WINDOW", on_dlg_close)
@@ -4482,14 +4568,15 @@ class J360MoreApp:
             self._update_ui_texts()
 
             timer_active[0] = False
+            _cleanup_mousewheel()
             dlg.destroy()
             messagebox.showinfo(self.t("set_dlg_title"), self.t("set_saved"))
 
-        btn_box = ttk.Frame(main_box)
-        btn_box.pack(fill=tk.X, side=tk.BOTTOM, pady=(4, 0))
-
         ttk.Button(btn_box, text="✔ " + self.t("set_btn_save"), command=apply_settings).pack(side=tk.RIGHT, padx=4)
         ttk.Button(btn_box, text=self.t("set_btn_cancel"), command=on_dlg_close).pack(side=tk.RIGHT, padx=4)
+
+        # Inicializar canvas activo para la rueda del ratón
+        _on_tab_changed()
 
     def _on_plugin_telemetry_received(self, plugin_id: str, pad_id: int, data: Dict[str, Any]):
         try:
