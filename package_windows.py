@@ -59,7 +59,7 @@ def package():
                     zf.write(full_p, rel_p)
         print(f"[+] {zip_name} creado ({os.path.getsize(zip_path)} bytes)")
 
-    ver = "1.6.0"
+    ver = "1.6.1"
     try:
         import re
         with open("gui_app.py", "r", encoding="utf-8") as f:

@@ -123,8 +123,8 @@ def update_all_files(old_ver: str, new_ver: str):
             content
         )
         c = re.sub(
-            r'(<span class="window-title">j360More\s+v)[^<]+(</span>)',
-            r'\g<1>' + n + r'\2',
+            r'<span class="window-title">j360More\s+v[^<]+</span>',
+            f'<span class="window-title">j360More v{n}</span>',
             c
         )
         return c

@@ -12,7 +12,7 @@ import subprocess
 import sys
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from plugins.plugin_ipc import IPCServer
 from plugins.venv_manager import VenvManager

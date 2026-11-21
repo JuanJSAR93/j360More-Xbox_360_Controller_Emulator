@@ -38,7 +38,7 @@ from i18n import (
     canonicalize_mapping, localize_mapping, get_supported_emulated_types
 )
 
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.6.1"
 
 def parse_version(v_str: str) -> tuple:
     if not v_str:

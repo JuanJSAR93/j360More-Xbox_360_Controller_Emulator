@@ -65,7 +65,7 @@ jobs:
       - name: Package Windows Release
         shell: pwsh
         run: |
-          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.6.0" }
+          $ver = if ($env:GITHUB_REF -like "refs/tags/*") { $env:GITHUB_REF_NAME } else { "v1.6.1" }
           New-Item -ItemType Directory -Path "dist/pkg/bin" -Force | Out-Null
           Copy-Item "dist/j360More.exe" "dist/pkg/" -Force
 
@@ -131,7 +131,7 @@ jobs:
           else
             APP_VER=$(grep -E '^APP_VERSION = ' gui_app.py | cut -d '"' -f 2)
             if [ -z "$APP_VER" ]; then
-              APP_VER="1.6.0"
+              APP_VER="1.6.1"
             fi
             VER="v${APP_VER}"
           fi
@@ -230,7 +230,7 @@ jobs:
               APP_VER=$(grep -E '^APP_VERSION = ' gui_app.py | cut -d '"' -f 2)
             fi
             if [ -z "$APP_VER" ]; then
-              APP_VER="1.6.0"
+              APP_VER="1.6.1"
             fi
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
             echo "tag_name=v${APP_VER}" >> "$GITHUB_OUTPUT"
