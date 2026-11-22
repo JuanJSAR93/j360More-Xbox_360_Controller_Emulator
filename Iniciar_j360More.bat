@@ -1,2 +1,3 @@
 @echo off
-start "" "%~dp0dist\j360More\j360More.exe"
+cd /d "%~dp0"
+python gui_app.py

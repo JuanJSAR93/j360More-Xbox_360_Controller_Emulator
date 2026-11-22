@@ -21,9 +21,7 @@ plugins/.venv/
 bin/python_portable/
 env/
 venv/
-GEMINI.md
-AGENTS.md
-RULES.md
+
 assets/*auto.pem
 plugins/*/config.json
 config_mapping.json

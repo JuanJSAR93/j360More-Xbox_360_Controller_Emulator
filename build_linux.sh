@@ -81,9 +81,19 @@ else
     echo "[!] Advertencia: No se encontro $VIIPER_SRC en el workspace."
 fi
 
+# Copiar licencias obligatorias de controladores
+if [ -f "/workspace/bin/LICENSE-VIIPER.txt" ]; then
+    echo "[*] Copiando bin/LICENSE-VIIPER.txt..."
+    cp -f "/workspace/bin/LICENSE-VIIPER.txt" /tmp/pydist/bin/LICENSE-VIIPER.txt
+fi
+if [ -f "/workspace/bin/LICENSE-HIDMaestro.txt" ]; then
+    echo "[*] Copiando bin/LICENSE-HIDMaestro.txt..."
+    cp -f "/workspace/bin/LICENSE-HIDMaestro.txt" /tmp/pydist/bin/LICENSE-HIDMaestro.txt
+fi
+
 cd /tmp/pydist
 echo "[*] Creando archivo comprimido j360More-v1.6.1-linux-${PKG_ARCH}.tar.gz..."
-tar -czvf "/workspace/dist/j360More-v1.6.1-linux-${PKG_ARCH}.tar.gz" j360More bin/viiper
+tar -czvf "/workspace/dist/j360More-v1.6.1-linux-${PKG_ARCH}.tar.gz" j360More bin/
 cp -f /tmp/pydist/j360More "/workspace/dist/j360More-${PKG_ARCH}" 2>/dev/null || true
 if [ "$PKG_ARCH" = "amd64" ] || [ "$PKG_ARCH" = "x86_64" ]; then
     cp -f /tmp/pydist/j360More /workspace/dist/j360More 2>/dev/null || true

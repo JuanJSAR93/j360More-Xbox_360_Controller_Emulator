@@ -220,8 +220,13 @@ xbox_multi_emulator/
 
 ## 📄 License & Credits
 - **Creator & Lead Developer**: **JuanJSAR** ([@JuanJSAR93](https://github.com/JuanJSAR93))
-- **VIIPER**: Developed by Alia5 ([Original VIIPER on GitHub](https://github.com/Alia5/VIIPER)), enabling cross-platform virtual USB gamepad emulation via USB/IP. **j360More** bundles and maintains an enhanced, modified build by JuanJSAR ([JuanJSAR93/VIIPER: Virtual Input over IP Emulator](https://github.com/JuanJSAR93/VIIPER)) with native Xbox One GIP support and proper PnP device localization.
-- **usbip-win2**: Developed by vadimgrn ([usbip-win2 on GitHub](https://github.com/vadimgrn/usbip-win2)).
-- **ViGEmBus & HidHide**: Created by Benjamin Höglinger-Stelzer (Nefarius Software Solutions).
-- **pygame-ce (SDL2)**: Powering hot-plug detection and input handling.
+- **VIIPER**: Developed by Alia5 ([Original VIIPER on GitHub](https://github.com/Alia5/VIIPER)), enabling cross-platform virtual USB gamepad emulation via USB/IP. **j360More** bundles and maintains an enhanced, modified build by JuanJSAR ([JuanJSAR93/VIIPER: Virtual Input over IP Emulator](https://github.com/JuanJSAR93/VIIPER)) with native Xbox One GIP support and proper PnP device localization (GPL-3.0 License).
+- **HIDMaestro**: Developed by hifihedgehog ([HIDMaestro on GitHub](https://github.com/hifihedgehog/HIDMaestro)), providing high-performance user-mode driver emulation for byte-accurate virtual gamepads (Xbox 360, Xbox One/Series, Xbox Elite Series 2, DualShock 4, DualSense, Switch Pro, Joy-Con Charging Grip) on Windows (MIT License).
+- **usbip-win2**: Developed by vadimgrn ([usbip-win2 on GitHub](https://github.com/vadimgrn/usbip-win2)), providing Windows USB/IP kernel-mode drivers (GPL-2.0 License).
+- **ViGEmBus & HidHide**: Created by Benjamin Höglinger-Stelzer ([Nefarius Software Solutions](https://github.com/nefarius)) — [ViGEmBus](https://github.com/nefarius/ViGEmBus) for virtual gamepad emulation and [HidHide](https://github.com/nefarius/HidHide) for physical controller cloaking to eliminate double-input issues (MIT License).
+- **vgamepad**: Developed by Yann Bouteiller ([vgamepad on GitHub](https://github.com/yannbouteiller/vgamepad)), high-level Python library wrapping ViGEmClient (MIT License).
+- **pygame-ce (SDL2)**: Developed by the pygame-ce team and contributors ([pygame-ce on GitHub](https://github.com/pygame-community/pygame-ce)), powering hot-plug hardware detection, event polling, and direct input access (GNU LGPL v2.1 License / zlib License for SDL2).
+- **pynput**: Developed by Moses Palmer ([pynput on GitHub](https://github.com/moses-palmer/pynput)), enabling global keyboard and mouse monitoring (GNU LGPL v3.0 License).
+- **Pillow & resvg-py**: Powering image processing, SVG controller vector rasterization, and hi-res diagram scaling ([Pillow](https://github.com/python-pillow/Pillow) - HPND License / [resvg-py](https://github.com/y21/resvg-py) - MPL-2.0 License).
+- **qrcode**: Developed by Lincoln Loop ([qrcode on GitHub](https://github.com/lincolnloop/python-qrcode)), generating instant Wi-Fi pairing QR codes for AirPad mobile controllers (BSD-3-Clause License).
 - Built for local multiplayer PC gaming enthusiasts worldwide.

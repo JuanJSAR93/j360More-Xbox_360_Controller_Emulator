@@ -100,6 +100,14 @@ jobs:
               Copy-Item "bin/HIDMaestro.Core.dll" "dist/pkg/bin/HIDMaestro.Core.dll" -Force
           }
 
+          # 4. Copiar licencias obligatorias de controladores
+          if (Test-Path "bin/LICENSE-HIDMaestro.txt") {
+              Copy-Item "bin/LICENSE-HIDMaestro.txt" "dist/pkg/bin/LICENSE-HIDMaestro.txt" -Force
+          }
+          if (Test-Path "bin/LICENSE-VIIPER.txt") {
+              Copy-Item "bin/LICENSE-VIIPER.txt" "dist/pkg/bin/LICENSE-VIIPER.txt" -Force
+          }
+
           $zipName = "j360More-$ver-windows-${{ matrix.arch }}.zip"
           Compress-Archive -Path "dist/pkg/*" -DestinationPath "dist/$zipName" -Force
 

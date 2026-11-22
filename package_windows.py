@@ -21,6 +21,8 @@ def package():
         (["HIDMaestro.Core.amd64.dll", "HIDMaestro.Core.dll"], "HIDMaestro.Core.dll"),
         (["hidmaestro_host-amd64.exe", "hidmaestro_host.exe"], "hidmaestro_host.exe"),
         (["viiper-amd64.exe", "viiper_amd64.exe", "viiper.exe"], "viiper.exe"),
+        (["LICENSE-HIDMaestro.txt"], "LICENSE-HIDMaestro.txt"),
+        (["LICENSE-VIIPER.txt"], "LICENSE-VIIPER.txt"),
     ]:
         for sname in src_candidates:
             src = os.path.join("bin", sname)
@@ -40,6 +42,8 @@ def package():
         (["HIDMaestro.Core.arm64.dll", "HIDMaestro.Core.dll"], "HIDMaestro.Core.dll"),
         (["hidmaestro_host-arm64.exe", "hidmaestro_host.exe"], "hidmaestro_host.exe"),
         (["viiper_arm64.exe", "viiper-arm64.exe", "viiper.exe"], "viiper.exe"),
+        (["LICENSE-HIDMaestro.txt"], "LICENSE-HIDMaestro.txt"),
+        (["LICENSE-VIIPER.txt"], "LICENSE-VIIPER.txt"),
     ]:
         for sname in src_candidates:
             src = os.path.join("bin", sname)
